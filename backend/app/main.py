@@ -5,8 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .core.config import get_settings
 from .core.database import create_tables, AsyncSessionLocal
-from .api.routes import listings, market, performance, internal, references
-from .models import scenario  # noqa: F401 — registers scenarios_rules with Base
+from .api.routes import listings, market, performance, internal, references, scenarios, thresholds
+from .models import scenario   # noqa: F401 — registers scenarios_rules with Base
+from .models import threshold  # noqa: F401 — registers threshold_configs with Base
 from .models import import_batch, listing_report, keyword_report  # noqa: F401 — register with Base
 from .services import performance_service
 
@@ -40,6 +41,8 @@ app.include_router(market.router, prefix="/api/v1")
 app.include_router(performance.router, prefix="/api/v1")
 app.include_router(internal.router, prefix="/api/v1")
 app.include_router(references.router, prefix="/api/v1")
+app.include_router(scenarios.router,   prefix="/api/v1")
+app.include_router(thresholds.router,  prefix="/api/v1")
 
 
 @app.get("/health")
@@ -47,6 +50,11 @@ async def health():
     return {"status": "ok", "env": settings.APP_ENV}
 
 
+
+# Serve docs/ markdown files — must be before the catch-all frontend mount
+_docs_dir = Path(__file__).resolve().parents[2] / "docs"
+if _docs_dir.exists():
+    app.mount("/docs", StaticFiles(directory=str(_docs_dir)), name="docs")
 
 # Serve frontend static files (index.html, css/, js/) — must be AFTER API routes
 _frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
