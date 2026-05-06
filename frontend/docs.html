@@ -233,21 +233,25 @@
 </div>
 
 <script>
+  // Local file:// opens can't fetch absolute paths — use relative ../docs/ prefix instead
+  const isLocal = location.protocol === 'file:';
+  const DOC_PREFIX = isLocal ? '../docs/' : '/md-docs/';
+
   const DOCS = [
-    { label: 'Flow 01 — Performance Hub',        file: '/md-docs/01_performance_hub.md' },
-    { label: 'Flow 02 — Listing Improvement',    file: '/md-docs/02_listing_improvement.md' },
-    { label: 'Flow 03 — Listing Scale-up',       file: '/md-docs/03_listing_scaleup.md' },
-    { label: 'Flow 04 — Internal Import',        file: '/md-docs/04_internal_import.md' },
-    { label: 'Flow 05 — Research Hub',           file: '/md-docs/05_research_hub.md' },
-    { label: 'Flow 06 — Listings CRUD',          file: '/md-docs/06_listings_crud.md' },
-    { label: 'Performance Hub Rules',            file: '/md-docs/PERFORMANCE_HUB_RULES.md' },
-    { label: 'Research Hub Rules',               file: '/md-docs/RESEARCH_HUB_RULES.md' },
-    { label: 'Plan — Internal Ads Pipeline',     file: '/md-docs/PLAN_INTERNAL_ADS_PIPELINE.md' },
-    { label: 'Technical Doc',                    file: '/md-docs/TECHNICAL_DOC.md' },
-    { label: 'Operation Workflow',               file: '/md-docs/OPERATION_WORKFLOW.md' },
-    { label: 'Etsy POD Listing Guide 2026',      file: '/md-docs/Etsy_POD_Listing_Guide_2026.docx',      isDocx: true },
-    { label: 'Star Engine Data Modeling',        file: '/md-docs/etsy_star_engine_data_modeling.docx',   isDocx: true },
-    { label: 'Internal DB — Data Modeling',     file: '/md-docs/data-modeling-intdb.md' },
+    { label: 'Flow 01 — Performance Hub',        file: '01_performance_hub.md' },
+    { label: 'Flow 02 — Listing Improvement',    file: '02_listing_improvement.md' },
+    { label: 'Flow 03 — Listing Scale-up',       file: '03_listing_scaleup.md' },
+    { label: 'Flow 04 — Internal Import',        file: '04_internal_import.md' },
+    { label: 'Flow 05 — Research Hub',           file: '05_research_hub.md' },
+    { label: 'Flow 06 — Listings CRUD',          file: '06_listings_crud.md' },
+    { label: 'Performance Hub Rules',            file: 'PERFORMANCE_HUB_RULES.md' },
+    { label: 'Research Hub Rules',               file: 'RESEARCH_HUB_RULES.md' },
+    { label: 'Plan — Internal Ads Pipeline',     file: 'PLAN_INTERNAL_ADS_PIPELINE.md' },
+    { label: 'Technical Doc',                    file: 'TECHNICAL_DOC.md' },
+    { label: 'Operation Workflow',               file: 'OPERATION_WORKFLOW.md' },
+    { label: 'Etsy POD Listing Guide 2026',      file: 'Etsy_POD_Listing_Guide_2026.docx',      isDocx: true },
+    { label: 'Star Engine Data Modeling',        file: 'etsy_star_engine_data_modeling.docx',   isDocx: true },
+    { label: 'Internal DB — Data Modeling',     file: 'data-modeling-intdb.md' },
   ];
 
   const sidebar = document.getElementById('sidebar');
@@ -255,7 +259,7 @@
 
   // Group: Flows, Rules & Plans, Reference
   const groups = [
-    { label: 'Flows',          items: DOCS.filter(d => d.file.startsWith('/md-docs/0')) },
+    { label: 'Flows',          items: DOCS.filter(d => /^0\d_/.test(d.file)) },
     { label: 'Rules & Plans',  items: DOCS.filter(d => d.file.match(/RULES|PLAN/)) },
     { label: 'Technical',      items: DOCS.filter(d => d.file.match(/TECHNICAL|OPERATION|data-modeling/)) },
     { label: 'Reference',      items: DOCS.filter(d => d.isDocx) },
@@ -290,24 +294,25 @@
     btn.classList.add('active');
     location.hash = encodeURIComponent(doc.file);
 
+    const path = DOC_PREFIX + doc.file;
     if (doc.isDocx) {
       content.innerHTML = `<div style="padding-top:20px"><div class="docx-notice">
         <strong>${doc.label}</strong>
         <p>File <code>.docx</code> không thể render trực tiếp trên trình duyệt.<br>Tải về để mở bằng Word hoặc Google Docs.</p>
-        <a href="${doc.file}" download>⬇ Tải xuống ${doc.file.split('/').pop()}</a>
+        <a href="${path}" download>⬇ Tải xuống ${doc.file}</a>
       </div></div>`;
       return;
     }
 
     content.innerHTML = `<div style="color:var(--stone);font-size:0.80rem;padding-top:20px">Đang tải…</div>`;
     try {
-      const res = await fetch(doc.file);
+      const res = await fetch(path);
       if (!res.ok) throw new Error(res.status);
       const md = await res.text();
       content.innerHTML = `<div class="md-body">${marked.parse(md)}</div>`;
       content.scrollTop = 0;
     } catch (e) {
-      content.innerHTML = `<div style="color:#b53333;font-size:0.82rem;padding-top:20px">Không tải được tài liệu: ${doc.file}</div>`;
+      content.innerHTML = `<div style="color:#b53333;font-size:0.82rem;padding-top:20px">Không tải được tài liệu: ${path}</div>`;
     }
   }
 </script>
