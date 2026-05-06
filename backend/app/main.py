@@ -51,10 +51,10 @@ async def health():
 
 
 
-# Serve docs/ markdown files — must be before the catch-all frontend mount
+# Serve docs/ markdown files at /md-docs/ to avoid prefix clash with /docs.html
 _docs_dir = Path(__file__).resolve().parents[2] / "docs"
 if _docs_dir.exists():
-    app.mount("/docs", StaticFiles(directory=str(_docs_dir)), name="docs")
+    app.mount("/md-docs", StaticFiles(directory=str(_docs_dir)), name="docs")
 
 # Serve frontend static files (index.html, css/, js/) — must be AFTER API routes
 _frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
