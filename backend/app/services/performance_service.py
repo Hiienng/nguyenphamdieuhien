@@ -103,7 +103,8 @@ async def seed_scenarios(db: AsyncSession) -> None:
             action    VARCHAR(32) NOT NULL,
             cause     TEXT,
             fix_listing TEXT,
-            fix_ads   TEXT
+            fix_ads   TEXT,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
     """))
     for row in _SCENARIO_SEED:
@@ -169,7 +170,7 @@ async def get_dashboard_listings(db: AsyncSession, market_db: AsyncSession) -> l
                     ELSE 'low'
                 END                                AS ctr_level
             FROM listing_report
-            WHERE period LIKE '% - %' OR period LIKE '%/%-%'
+            WHERE period ~ '^\d{{4}}-\d{{2}}-\d{{2}}/\d{{4}}-\d{{2}}-\d{{2}}$'
             ORDER BY listing_id, period, import_time DESC
         )
         SELECT

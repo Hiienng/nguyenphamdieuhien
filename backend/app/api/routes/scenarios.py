@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +23,7 @@ async def update_rule(rule_id: int, body: ScenarioRuleIn, db: AsyncSession = Dep
         raise HTTPException(status_code=404, detail="Rule not found")
     for field, value in body.model_dump().items():
         setattr(rule, field, value)
+    rule.updated_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(rule)
     return rule

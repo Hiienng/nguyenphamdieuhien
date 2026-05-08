@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel
 
 
@@ -11,6 +12,7 @@ class ScenarioRuleOut(BaseModel):
     cause: str | None = None
     fix_listing: str | None = None
     fix_ads: str | None = None
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 

@@ -1,13 +1,32 @@
 """
-References service — on-demand: pair internal listings với top-N market
-listings cùng category, rank theo tag_ranking ASC.
+References service — pair internal listings với top-N market listings cùng
+category, rank theo tag_ranking ASC.
 
-Gọi từ route POST /api/v1/references/refresh. Mỗi lần gọi chạy lại toàn
-bộ pipeline rồi UPSERT vào bảng references_engine (composite PK
-(listing_id, reference_listing_id)).
+Schema mapping (market_listing):
+  - market_listing.listing_id  → reference_listing_id
+  - market_listing.keyword     → search_tag
+  - market_listing.tag_ranking → tag_ranking
+  - market_listing.title       → derive product_type qua Gemini (1 call/run)
+
+Gọi từ POST /api/v1/references/refresh.
 """
 
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+import re
+
+import google.generativeai as genai
+import httpx
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..core.config import get_settings
+
+logger = logging.getLogger(__name__)
+
 
 # Map internal category → market product_type keywords to match against
 _CATEGORY_KEYWORDS: dict[str, list[str]] = {
@@ -24,7 +43,9 @@ _CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "crown":    ["crown", "first birthday", "first birthday gift", "baby milestone",
                  "birthday gift"],
 }
-from sqlalchemy.ext.asyncio import AsyncSession
+
+# Canonical product_types Gemini có thể trả về (= keys of _CATEGORY_KEYWORDS + "other")
+_PRODUCT_TYPES = ["onesie", "blanket", "sweater", "crown", "other"]
 
 
 _CREATE_TABLE_SQL = """
@@ -50,7 +71,6 @@ CREATE TABLE IF NOT EXISTS references_engine (
 )
 """
 
-# Migration: add columns if table đã tồn tại với schema cũ.
 _MIGRATE_COLUMNS_SQL = """
 ALTER TABLE references_engine
     ADD COLUMN IF NOT EXISTS ref_discount      INTEGER,
@@ -58,7 +78,6 @@ ALTER TABLE references_engine
     ADD COLUMN IF NOT EXISTS ref_product_type  TEXT,
     ADD COLUMN IF NOT EXISTS ref_import_date   DATE
 """
-
 
 _UPSERT_SQL = """
 INSERT INTO references_engine (
@@ -92,6 +111,127 @@ ON CONFLICT (listing_id, reference_listing_id) DO UPDATE SET
 """
 
 
+def _classify_titles_with_gemini_sync(titles: list[str]) -> dict[str, str]:
+    """Batch-classify titles → product_type. 1 Gemini call cho tất cả."""
+    settings = get_settings()
+    if not settings.GEMINI_API_KEY or not titles:
+        return {}
+
+    genai.configure(api_key=settings.GEMINI_API_KEY)
+    model = genai.GenerativeModel("gemini-2.5-flash")
+
+    try:
+        response = model.generate_content(_build_classify_prompt(titles))
+        result = _parse_classify_response(response.text.strip(), titles)
+        logger.info("Gemini classified %d/%d titles", sum(1 for v in result.values() if v), len(titles))
+        return result
+    except Exception as e:
+        logger.warning("Gemini classification failed: %s", e)
+        return {}
+
+
+def _build_classify_prompt(titles: list[str]) -> str:
+    types_str = ", ".join(_PRODUCT_TYPES)
+    numbered = "\n".join(f"{i+1}|{t}" for i, t in enumerate(titles))
+    return (
+        f"Classify each Etsy listing title by the PHYSICAL PRODUCT being sold. "
+        f"Pick exactly ONE product_type from: {types_str}.\n\n"
+        f"Definitions (match ONLY when title clearly names the physical item):\n"
+        f"- onesie: baby onesie or bodysuit (one-piece infant garment).\n"
+        f"- blanket: baby blanket or swaddle.\n"
+        f"- sweater: knit/woven sweater, romper, or coming-home outfit.\n"
+        f"- crown: a wearable crown (e.g. birthday/cake-smash crown for babies).\n"
+        f"- other: anything else (necklaces, jewelry, prints, signs, mugs, decor, "
+        f"  digital files, accessories, gift items not in the four categories above).\n\n"
+        f"IMPORTANT:\n"
+        f"- Words like \"birthday gift\", \"mother's day\", \"personalized\" alone do NOT make it a crown — "
+        f"  classify as \"other\" unless title explicitly says \"crown\".\n"
+        f"- Necklaces, rings, earrings, bracelets, watches → other.\n"
+        f"- Wall art, prints, signs, plaques, frames → other.\n"
+        f"- When unsure, choose \"other\".\n\n"
+        f"Input: {len(titles)} lines, format `<index>|<title>`.\n"
+        f"Output: JSON array of objects, exactly {len(titles)} items, in input order.\n"
+        f"Each item: {{\"i\": <index>, \"t\": \"<product_type>\"}}.\n"
+        f"Do NOT split titles on commas. Return ONLY the JSON array.\n\n"
+        f"INPUT:\n{numbered}"
+    )
+
+
+def _parse_classify_response(raw: str, titles: list[str]) -> dict[str, str]:
+    match = re.search(r"\[[\s\S]*\]", raw)
+    arr = json.loads(match.group() if match else raw)
+    if not isinstance(arr, list):
+        return {}
+    idx_to_type = {}
+    for item in arr:
+        if isinstance(item, dict) and "i" in item and "t" in item:
+            try:
+                idx_to_type[int(item["i"]) - 1] = str(item["t"]).lower().strip()
+            except (ValueError, TypeError):
+                continue
+    out = {}
+    for i, t in enumerate(titles):
+        ptype = idx_to_type.get(i, "")
+        if ptype not in _PRODUCT_TYPES:
+            ptype = "other"
+        out[t] = ptype
+    return out
+
+
+async def _classify_titles_with_groq(titles: list[str]) -> dict[str, str]:
+    settings = get_settings()
+    if not settings.GROQ_API_KEY or not titles:
+        return {}
+    prompt = _build_classify_prompt(titles)
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0,
+        "response_format": {"type": "json_object"},
+    }
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            resp = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {settings.GROQ_API_KEY}"},
+                json=payload,
+            )
+            resp.raise_for_status()
+            raw = resp.json()["choices"][0]["message"]["content"]
+        # Groq with json_object mode returns {"result": [...]} — try both shapes
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict):
+                for v in parsed.values():
+                    if isinstance(v, list):
+                        raw = json.dumps(v)
+                        break
+        except Exception:
+            pass
+        result = _parse_classify_response(raw, titles)
+        logger.info("Groq classified %d/%d titles", sum(1 for v in result.values() if v), len(titles))
+        return result
+    except Exception as e:
+        logger.warning("Groq classification failed: %s", e)
+        return {}
+
+
+async def _classify_titles(titles: list[str]) -> dict[str, str]:
+    # Try Gemini first, fall back to Groq
+    result = await asyncio.to_thread(_classify_titles_with_gemini_sync, titles)
+    if result:
+        return result
+    logger.info("Gemini unavailable — falling back to Groq for %d titles", len(titles))
+    return await _classify_titles_with_groq(titles)
+
+
+def _matches_category(text_blob: str, category: str) -> bool:
+    """Substring match listing title/keyword against category-specific keywords."""
+    blob = (text_blob or "").lower()
+    kws = _CATEGORY_KEYWORDS.get(category, [category])
+    return any(kw in blob for kw in kws)
+
+
 async def refresh_references(
     db: AsyncSession,
     market_db: AsyncSession,
@@ -101,7 +241,7 @@ async def refresh_references(
     await db.execute(text(_CREATE_TABLE_SQL))
     await db.execute(text(_MIGRATE_COLUMNS_SQL))
 
-    # Xoá refs cũ của scope đang refresh — tránh tồn đọng khi top-N thay đổi.
+    # Xoá refs cũ của scope đang refresh
     await db.execute(
         text(
             """
@@ -112,7 +252,6 @@ async def refresh_references(
         {"listing_id": listing_id},
     )
 
-    # Fetch candidates từ market_db (market_listing), listings từ db
     listings_result = await db.execute(
         text("SELECT listing_id, category FROM listings WHERE category IS NOT NULL"
              + (" AND listing_id = :lid" if listing_id else "")),
@@ -120,47 +259,66 @@ async def refresh_references(
     )
     internal_listings = [dict(r._mapping) for r in listings_result]
 
-    # Build SQL filter from _CATEGORY_KEYWORDS mapping
-    all_keywords: list[str] = []
-    for lst in internal_listings:
-        cat = (lst["category"] or "").lower()
-        kws = _CATEGORY_KEYWORDS.get(cat, [cat])
-        all_keywords.extend(kws)
-    unique_kws = list(dict.fromkeys(all_keywords))  # dedupe, preserve order
-
-    if not unique_kws:
+    if not internal_listings:
         return {"upserted": 0, "listings_with_ref": 0, "total_refs": 0, "top_n": top_n, "scope": listing_id or "all"}
 
-    kw_filter = " OR ".join(
-        f"LOWER(ml.product_type) LIKE '%' || :kw_{i} || '%' OR LOWER(ml.search_tag) LIKE '%' || :kw_{i} || '%'"
-        for i in range(len(unique_kws))
-    )
-    kw_params = {f"kw_{i}": kw for i, kw in enumerate(unique_kws)}
-
-    mkt_sql = text(f"""
-        SELECT id AS reference_listing_id, title, shop_name, url, price, discount,
-               rating, review_count, tag_ranking, badge, free_shipping, product_type,
-               search_tag, import_date
-        FROM market_listing ml
-        WHERE tag_ranking IS NOT NULL AND ({kw_filter})
-    """)
+    # Ensure product_type column exists (idempotent — crawler có thể không biết về cột này)
     try:
-        mkt_result = await market_db.execute(mkt_sql, kw_params)
-        market_rows = [dict(r._mapping) for r in mkt_result]
-    except Exception:
-        market_rows = []  # ETSY_MARKET_DB chưa set hoặc market_listing chưa tồn tại
+        await market_db.execute(text("ALTER TABLE market_listing ADD COLUMN IF NOT EXISTS product_type TEXT"))
+        await market_db.commit()
+    except Exception as e:
+        logger.warning("Could not ensure product_type column: %s", e)
 
-    # Match & rank in Python using keyword mapping
+    # Pull all market candidates với product_type đã được lưu sẵn
+    try:
+        mkt_result = await market_db.execute(text("""
+            SELECT listing_id::text AS reference_listing_id,
+                   title, shop_name, url, price, discount,
+                   rating, review_count, tag_ranking, badge, free_shipping,
+                   keyword AS search_tag,
+                   product_type,
+                   crawled_at::date AS import_date
+            FROM market_listing
+            WHERE tag_ranking IS NOT NULL
+        """))
+        market_rows = [dict(r._mapping) for r in mkt_result]
+    except Exception as e:
+        logger.warning("market_listing query failed: %s", e)
+        market_rows = []
+
+    if not market_rows:
+        return {"upserted": 0, "listings_with_ref": 0, "total_refs": 0, "top_n": top_n, "scope": listing_id or "all"}
+
+    # Lazy backfill: chỉ classify các rows có product_type=NULL, UPDATE ngược về DB
+    needs_classify = [m for m in market_rows if not m.get("product_type") and m.get("title")]
+    if needs_classify:
+        titles = [m["title"] for m in needs_classify]
+        title_to_type = await _classify_titles(titles)
+        if title_to_type:
+            updates = []
+            for m in needs_classify:
+                ptype = title_to_type.get(m["title"])
+                if ptype:
+                    m["product_type"] = ptype
+                    updates.append({"lid": int(m["reference_listing_id"]), "kw": m["search_tag"], "pt": ptype})
+            for u in updates:
+                await market_db.execute(
+                    text("UPDATE market_listing SET product_type = :pt WHERE listing_id = :lid AND keyword = :kw"),
+                    u,
+                )
+            await market_db.commit()
+            logger.info("Backfilled product_type for %d market_listing rows", len(updates))
+
+    # Strict match: market.product_type phải khớp listing.category (canonical form).
+    # Listing nào không có market candidate cùng product_type → 0 refs.
+    def _canon(cat: str) -> str:
+        cat = (cat or "").lower().strip()
+        return "blanket" if cat in ("blanket", "blankets") else cat
+
     rows = []
     for lst in internal_listings:
-        cat = (lst["category"] or "").lower()
-        kws = _CATEGORY_KEYWORDS.get(cat, [cat])
-        matches = [
-            m for m in market_rows
-            if any(kw in (m.get("product_type") or "").lower()
-                   or kw in (m.get("search_tag") or "").lower()
-                   for kw in kws)
-        ]
+        target = _canon(lst["category"])
+        matches = [m for m in market_rows if (m.get("product_type") or "").lower() == target]
         matches.sort(key=lambda m: (m.get("tag_ranking") or 99999, -(m.get("review_count") or 0)))
         for rnk, m in enumerate(matches[:top_n], start=1):
             rows.append({
@@ -170,9 +328,9 @@ async def refresh_references(
                 "ref_title": m.get("title"),
                 "ref_shop": m.get("shop_name"),
                 "ref_url": m.get("url"),
-                "ref_price": m.get("price"),
+                "ref_price": int(m["price"]) if m.get("price") is not None else None,
                 "ref_discount": m.get("discount"),
-                "ref_rating": m.get("rating"),
+                "ref_rating": float(m["rating"]) if m.get("rating") is not None else None,
                 "ref_review_count": m.get("review_count"),
                 "ref_tag_ranking": m.get("tag_ranking"),
                 "ref_badge": m.get("badge"),
