@@ -9,7 +9,7 @@ UI tab: `tab-research`.
 sequenceDiagram
     autonumber
     actor U as User
-    participant FE as index.html (JS)
+    participant FE as EtseeMate.html (JS)
     participant API as /api/v1/market
     participant DB as Postgres<br/>(market_listing)
     participant CR as data/crawler/<br/>crawl_weekly.py

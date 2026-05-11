@@ -20,6 +20,8 @@ class ListingDashboardItem(BaseModel):
     orders: int | None = None
     revenue: Decimal | None = None
     spend: Decimal | None = None
+    cpc: Decimal | None = None
+    cpp: Decimal | None = None
     # own market data (market_listing WHERE id = listing_id, latest)
     price: int | None = None
     discount_price: int | None = None
@@ -39,3 +41,5 @@ class ListingDashboardItem(BaseModel):
     references: list[dict] | None = None
     # keywords: list of dicts from keyword_report at latest import_time
     keywords: list[dict] | None = None
+    # history: daily internal metrics per listing
+    history: list[dict] | None = None

@@ -11,7 +11,7 @@ UI pill: `perf-sub-improvement`.
 sequenceDiagram
     autonumber
     actor U as User
-    participant FE as index.html (JS)
+    participant FE as EtseeMate.html (JS)
     participant CACHE as performance_dashboard.json
     participant API as /api/v1/performance/refresh
     participant SVC as performance_service

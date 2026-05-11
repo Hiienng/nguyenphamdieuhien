@@ -23,7 +23,7 @@ stateDiagram-v2
 sequenceDiagram
     autonumber
     actor U as User
-    participant FE as index.html (JS)
+    participant FE as EtseeMate.html (JS)
     participant API as /api/v1/internal
     participant SVC as internal_service
     participant EXT as internal_extractor
@@ -72,7 +72,7 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor U as User
-    participant FE as index.html (JS)
+    participant FE as EtseeMate.html (JS)
     participant API as /api/v1/internal
     participant SVC as internal_service
     participant FS as data/raw/internal/

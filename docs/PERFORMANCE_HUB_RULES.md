@@ -1,6 +1,6 @@
 # Performance Hub — Quy chuẩn thiết kế & phân tích
 
-> Áp dụng cho mọi task liên quan đến tab **Performance Hub** trong `index.html`.  
+> Áp dụng cho mọi task liên quan đến tab **Performance Hub** trong `EtseeMate.html`.  
 > File này là nguồn sự thật duy nhất — đọc trước khi thực hiện bất kỳ thay đổi nào.
 
 ---

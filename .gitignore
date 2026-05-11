@@ -52,4 +52,4 @@ npm-debug.log*
 *.temp
 ~*
 logs/
-etsy_star_engine_crawler/output/
+market_engine_crawler/output/

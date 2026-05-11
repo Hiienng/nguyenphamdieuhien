@@ -1,16 +1,12 @@
-import asyncio
 import traceback
-from pathlib import Path
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from ...core.database import get_db, MarketSessionLocal
 from ...schemas.performance import ListingDashboardItem
-from ...services import performance_service
+from ...services import performance_service, reporting_etl
 
 router = APIRouter(prefix="/performance", tags=["performance"])
-
-_DASHBOARD_JSON = Path(__file__).resolve().parents[4] / "data" / "processed" / "performance_dashboard.json"
 
 
 @router.get("/listings", response_model=list[ListingDashboardItem])
@@ -23,11 +19,19 @@ async def get_listings_dashboard(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/refresh")
-async def refresh_dashboard(db: AsyncSession = Depends(get_db)):
+async def refresh_dashboard(force: bool = False, db: AsyncSession = Depends(get_db)):
+    """Trigger ETL rebuild of reporting tables from raw ingestion data.
+
+    Behaviour:
+        - Computes a signature over raw `import_time`s. If unchanged since last
+          refresh and `force` is false, returns `{status: 'cached'}` without
+          rebuilding.
+        - Otherwise truncates and rebuilds `listings_int_ext`, `listings_int_hist`,
+          and `keywords`, then upserts `refresh_state`.
+        - If another rebuild is in flight (advisory lock held), returns
+          `{status: 'in_progress'}`.
+    """
     try:
-        async with MarketSessionLocal() as market_db:
-            listings = await performance_service.get_dashboard_listings(db, market_db)
-        await asyncio.to_thread(performance_service.write_dashboard_json, listings, _DASHBOARD_JSON)
-        return {"status": "ok", "count": len(listings)}
+        return await reporting_etl.refresh_if_stale(db, force=force)
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e), "trace": traceback.format_exc()})

@@ -12,7 +12,7 @@
 User chụp Etsy Ads dashboard (mỗi ~7 ngày)
         |
         v
-[index.html] Drag & Drop ảnh vào upload zone
+[EtseeMate.html] Drag & Drop ảnh vào upload zone
         |
         v
 POST /api/v1/internal/upload
@@ -30,7 +30,7 @@ POST /api/v1/internal/extract   {batch_id}
   -> Return {listing_report: [...], keyword_report: [...]}
         |
         v
-[index.html] Hiện preview 2 bảng (editable)
+[EtseeMate.html] Hiện preview 2 bảng (editable)
   -> User kiểm tra số, sửa nếu cần
         |
         v
@@ -43,7 +43,7 @@ POST /api/v1/internal/confirm   {batch_id, listing_report, keyword_report}
   -> Return {imported: true, rows: {listing: N, keyword: M}}
         |
         v
-[index.html] Hiện "Import thành công" + link xem history
+[EtseeMate.html] Hiện "Import thành công" + link xem history
 ```
 
 ### Discard flow (user thấy data sai, không muốn import):
@@ -282,7 +282,7 @@ Backend gửi ảnh kèm prompt ngắn để Gemini tự phân loại:
 
 ## 5. Frontend UI
 
-### Đặt tại: section mới trong `index.html` (tab "Internal Data" hoặc modal)
+### Đặt tại: section mới trong `EtseeMate.html` (tab "Internal Data" hoặc modal)
 
 ### 5.1 Upload Zone
 
@@ -434,7 +434,7 @@ backend/app/
 | `backend/app/main.py` | Thêm `include_router(internal_router)` |
 | `backend/app/core/config.py` | Thêm `GEMINI_API_KEY` setting |
 | `backend/requirements.txt` | Thêm `google-generativeai`, `Pillow`, `python-multipart` |
-| `index.html` | Thêm Internal Data section/tab + JS upload/preview/confirm |
+| `EtseeMate.html` | Thêm Internal Data section/tab + JS upload/preview/confirm |
 | `.env.example` | Thêm `GEMINI_API_KEY` |
 
 ---

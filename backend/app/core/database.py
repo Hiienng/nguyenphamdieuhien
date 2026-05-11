@@ -1,8 +1,10 @@
+import logging
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from .config import get_settings
 
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
 engine = create_async_engine(
@@ -10,7 +12,10 @@ engine = create_async_engine(
     echo=settings.APP_ENV == "development",
     pool_size=5,
     max_overflow=10,
-    connect_args={"ssl": True},
+    # statement_cache_size=0 disables asyncpg's prepared statement cache, which
+    # prevents "InvalidCachedStatementError" after DDL (CREATE/ALTER TABLE at
+    # startup invalidates ALL server-side cached plans across ALL connections).
+    connect_args={"ssl": True, "statement_cache_size": 0},
 )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -57,32 +62,14 @@ async def get_db() -> AsyncSession:
     async with AsyncSessionLocal() as session:
         try:
             yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
         finally:
             await session.close()
 
 
 async def create_tables() -> None:
+    # NOTE: ALTER TABLE migrations removed — all columns were added long ago.
+    # Keeping DDL in startup causes asyncpg "InvalidCachedStatementError" because
+    # PostgreSQL invalidates ALL server-side prepared plans across ALL connections
+    # after any DDL statement. Use raw SQL migration scripts for new columns.
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-
-    # Safe migrations — add columns that don't exist yet.
-    # Each entry: (table, column, DDL type)
-    _MIGRATIONS = [
-        ("import_batch", "error_message", "TEXT"),
-        ("listing_report", "import_time", "TIMESTAMPTZ"),
-        ("listing_report", "importer", "VARCHAR(64)"),
-        ("keyword_report", "import_time", "TIMESTAMPTZ"),
-        ("keyword_report", "importer", "VARCHAR(64)"),
-        ("keyword_report", "relevant", "VARCHAR(8)"),
-    ]
-    async with engine.begin() as conn:
-        for table, col, ddl_type in _MIGRATIONS:
-            await conn.execute(
-                text(
-                    f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {ddl_type}"
-                )
-            )

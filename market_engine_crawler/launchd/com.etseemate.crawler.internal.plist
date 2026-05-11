@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Internal sweep — every 30 minutes. Pops listings from crawl_queue.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.etseemate.crawler.internal</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>-lc</string>
+    <string>cd /Users/USERNAME/Downloads/etsy_pilot/nguyenphamdieuhien.online/market_engine_crawler &amp;&amp; /Users/USERNAME/.pyenv/versions/3.11.9/bin/python3 run_scheduled.py internal_sweep</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/local/bin:/usr/bin:/bin:/Users/USERNAME/.pyenv/shims</string>
+  </dict>
+
+  <key>StartInterval</key>
+  <integer>1800</integer>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/crawler-internal.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/crawler-internal.err</string>
+
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>

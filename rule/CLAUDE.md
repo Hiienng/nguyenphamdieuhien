@@ -29,7 +29,7 @@ nguyenphamdieuhien.online/
 ### FRONTEND (`frontend/`)
 
 - Chỉ dùng **Vanilla HTML / CSS / JS** — không dùng React, Vue, hay bất kỳ JS framework nào
-- `frontend/index.html` là file chính — **KHÔNG tạo lại, KHÔNG xóa**
+- `frontend/EtseeMate.html` là file chính — **KHÔNG tạo lại, KHÔNG xóa**
 - CSS dùng design tokens trong `:root` (xem `docs/DESIGN.md`)
 - Màu sắc: dùng đúng tên biến CSS (`--terracotta`, `--parchment`...) — không hardcode hex
 - Gọi API backend qua `fetch('/api/v1/...')` — không gọi thẳng Neon hay external service

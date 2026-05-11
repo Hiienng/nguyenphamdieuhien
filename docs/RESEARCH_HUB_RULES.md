@@ -1,6 +1,6 @@
 # Research Hub — Quy chuẩn phân tích & đề xuất sản phẩm
 
-> Áp dụng cho mọi task liên quan đến tab **Research Hub** trong `index.html`.  
+> Áp dụng cho mọi task liên quan đến tab **Research Hub** trong `EtseeMate.html`.  
 > File này là nguồn sự thật duy nhất — đọc trước khi thực hiện bất kỳ thay đổi nào.
 
 ---

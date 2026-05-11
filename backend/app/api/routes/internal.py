@@ -3,8 +3,13 @@ Internal Ads Data Pipeline — API routes.
 
 Prefix: /api/v1/internal
 """
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+import asyncio
+import logging
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import NotSupportedError
+
+logger = logging.getLogger(__name__)
 
 from ...core.database import get_db
 from ...schemas.internal import (
@@ -15,9 +20,56 @@ from ...schemas.internal import (
     BatchActionResponse,
     BatchHistoryItem,
 )
-from ...services import internal_service
+from ...services import internal_service, reporting_etl, crawler_ops
 
 router = APIRouter(prefix="/internal", tags=["internal"])
+
+
+@router.get("/status")
+async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Get current progress of a batch.
+    """
+    from ...models.import_batch import ImportBatch
+    from sqlalchemy import select
+    
+    result = await db.execute(select(ImportBatch).where(ImportBatch.batch_id == batch_id))
+    batch = result.scalar_one_or_none()
+    if not batch:
+        raise HTTPException(404, "Batch not found")
+        
+    return {
+        "batch_id": batch.batch_id,
+        "status": batch.status,
+        "progress": batch.progress or 0,
+        "total_files": batch.total_files or 0,
+        "listing_count": batch.listing_count or 0,
+        "keyword_count": batch.keyword_count or 0,
+        "error_message": batch.error_message,
+        "quota_exhausted": bool((batch.preview_data or {}).get("quota_exhausted")),
+    }
+
+
+@router.get("/preview")
+async def get_batch_preview(batch_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Get the preview JSON data for a batch.
+    Returns empty streaming preview instead of 404 when data isn't ready yet.
+    """
+    try:
+        return await internal_service.get_batch_preview(batch_id)
+    except FileNotFoundError:
+        # Return empty preview instead of 404 to avoid console error spam from polling
+        return {
+            "batch_id": batch_id,
+            "listing_report": [],
+            "keyword_report": [],
+            "failed_files": [],
+            "successful_files": [],
+            "extraction_errors": {},
+            "quota_exhausted": False,
+            "streaming": True,
+        }
 
 
 # ── POST /upload — receive images, create batch ─────────────────────────────
@@ -30,7 +82,7 @@ async def upload_screenshots(
     if not files:
         raise HTTPException(400, "No files provided")
     if len(files) > 100:
-        raise HTTPException(400, "Maximum 100 files per batch")
+        raise HTTPException(400, "Tối đa 100 file mỗi lần import để đảm bảo tốc độ trích xuất.")
 
     allowed = {".png", ".jpg", ".jpeg", ".webp"}
     for f in files:
@@ -63,27 +115,16 @@ async def upload_screenshots(
 
 # ── POST /extract — run Claude Vision on batch images ────────────────────────
 
-@router.post("/extract", response_model=ExtractResponse)
-async def extract_batch(batch_id: str, db: AsyncSession = Depends(get_db)):
+@router.post("/extract")
+async def extract_batch(
+    batch_id: str
+):
     """
-    Start extraction. For batches with many images, this runs Claude Vision
-    concurrently (5 at a time) and updates progress in the DB.
+    Start extraction in the background using asyncio.create_task.
+    (BackgroundTasks closes DB connections after request — create_task avoids that.)
     """
-    try:
-        preview = await internal_service.run_extraction(batch_id, db)
-    except FileNotFoundError:
-        raise HTTPException(404, f"Batch directory not found: {batch_id}")
-    except ValueError as e:
-        raise HTTPException(400, str(e))
-
-    return ExtractResponse(
-        batch_id=batch_id,
-        status="extracted",
-        listing_report=preview.get("listing_report", []),
-        keyword_report=preview.get("keyword_report", []),
-        progress=len(preview.get("listing_report", []) + preview.get("keyword_report", [])),
-        total_files=preview.get("total_files", 0),
-    )
+    asyncio.create_task(internal_service.run_extraction(batch_id))
+    return {"message": "Extraction started in background", "batch_id": batch_id, "status": "processing"}
 
 
 # ── POST /confirm — write reviewed data to DB ───────────────────────────────
@@ -96,11 +137,26 @@ async def confirm_import(req: ConfirmRequest, db: AsyncSession = Depends(get_db)
             listing_report=[r.model_dump() for r in req.listing_report],
             keyword_report=[r.model_dump() for r in req.keyword_report],
             no_vm=req.no_vm,
-            importer=req.importer,
             db=db,
         )
     except ValueError as e:
         raise HTTPException(400, str(e))
+
+    # New raw rows just landed — rebuild reporting layer so the FE shows them
+    # without the user having to click "Tải lại". Failure here must not break
+    # the import response.
+    try:
+        await reporting_etl.refresh_if_stale(db, force=True)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Post-import reporting rebuild failed for batch %s: %s", req.batch_id, exc)
+
+    # Enqueue listing_ids vừa import vào crawl_queue để Flow 2 (internal sweep)
+    # pick up trong lần chạy tiếp theo. Idempotent — duplicate sẽ bị ON CONFLICT skip.
+    try:
+        new_ids = list({r.listing_id for r in req.listing_report if getattr(r, "listing_id", None)})
+        await crawler_ops.enqueue_listings(db, new_ids, reason="new_listing")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Enqueue crawl_queue failed for batch %s: %s", req.batch_id, exc)
 
     return ConfirmResponse(imported=result["imported"], rows=result["rows"])
 
@@ -141,7 +197,7 @@ async def import_history(
 
 @router.get("/snapshot/{batch_id}")
 async def get_snapshot(batch_id: str):
-    data = internal_service.get_snapshot(batch_id)
+    data = await internal_service.get_snapshot(batch_id)
     if data is None:
         raise HTTPException(404, f"Snapshot not found for batch {batch_id}")
     return data

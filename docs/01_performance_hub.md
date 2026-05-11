@@ -9,7 +9,7 @@ UI pill: `perf-sub-performance`.
 sequenceDiagram
     autonumber
     actor U as User
-    participant FE as index.html (JS)
+    participant FE as EtseeMate.html (JS)
     participant API as /api/v1/performance
     participant SVC as performance_service
     participant DB as Postgres (Neon)

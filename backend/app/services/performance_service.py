@@ -91,10 +91,9 @@ ROAS_BREAKEVEN = 2.0
 
 
 async def seed_scenarios(db: AsyncSession) -> None:
-    """Drop & re-create scenarios_rules with correct schema, then seed."""
-    await db.execute(text("DROP TABLE IF EXISTS scenarios_rules CASCADE"))
+    """Create scenarios_rules if not exists, and seed only if empty."""
     await db.execute(text("""
-        CREATE TABLE scenarios_rules (
+        CREATE TABLE IF NOT EXISTS scenarios_rules (
             id SERIAL PRIMARY KEY,
             roas_band VARCHAR(32) NOT NULL,
             cr_level  VARCHAR(8)  NOT NULL,
@@ -107,101 +106,72 @@ async def seed_scenarios(db: AsyncSession) -> None:
             updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
     """))
-    for row in _SCENARIO_SEED:
-        await db.execute(
-            text("""
-                INSERT INTO scenarios_rules
-                    (roas_band, cr_level, ctr_level, case_name, action, cause, fix_listing, fix_ads)
-                VALUES (:rb, :cr, :ctr, :cn, :act, :cause, :fl, :fa)
-            """),
-            dict(rb=row[0], cr=row[1], ctr=row[2], cn=row[3],
-                 act=row[4], cause=row[5], fl=row[6], fa=row[7]),
-        )
-    await db.commit()
+    
+    # Check if empty
+    res = await db.execute(text("SELECT count(*) FROM scenarios_rules"))
+    count = res.scalar()
+    if count == 0:
+        for row in _SCENARIO_SEED:
+            await db.execute(
+                text("""
+                    INSERT INTO scenarios_rules
+                        (roas_band, cr_level, ctr_level, case_name, action, cause, fix_listing, fix_ads)
+                    VALUES (:rb, :cr, :ctr, :cn, :act, :cause, :fl, :fa)
+                """),
+                dict(rb=row[0], cr=row[1], ctr=row[2], cn=row[3],
+                     act=row[4], cause=row[5], fl=row[6], fa=row[7]),
+            )
+        await db.commit()
 
 
 async def get_dashboard_listings(db: AsyncSession, market_db: AsyncSession) -> list[dict]:
     """
-    listings (all) → JOIN listing_report (all range-period rows, dedup listing_id+period)
-        → compute CTR/CR per row, classify bands
-        → LEFT JOIN LATERAL market_listing (id = listing_id, latest) → own market data
-        → LEFT JOIN scenarios_rules (3-dim)
-        → LEFT JOIN LATERAL market_listing (competitor ref, better badge/review/rating)
-    Sort: listing_id ASC
+    Build listing dashboard by reading the materialized reporting layer
+    (`listings_int_ext`, `listings_int_hist`, `keywords`) and enriching with
+    market data from ETSY_MARKET_DB.
+
+    The reporting tables are populated by `reporting_etl.rebuild_reporting`.
     """
-    sql = text(f"""
-        WITH lr AS (
-            SELECT DISTINCT ON (listing_id, period)
-                listing_id,
-                title,
-                no_vm,
-                category                           AS product,
-                period,
-                import_time                        AS reference_date,
-                views,
-                clicks,
-                orders,
-                revenue,
-                spend,
-                COALESCE(roas, 0)                  AS roas,
-                CASE WHEN views > 0
-                     THEN ROUND(clicks::numeric / views * 100, 2)
-                     ELSE 0 END                    AS ctr,
-                CASE WHEN clicks > 0
-                     THEN ROUND(orders::numeric / clicks * 100, 2)
-                     ELSE 0 END                    AS cr,
-                CASE
-                    WHEN COALESCE(orders, 0) = 0           THEN 'no_sales'
-                    WHEN COALESCE(roas, 0) >= {ROAS_BREAKEVEN} THEN 'profitable'
-                    WHEN COALESCE(roas, 0) >= 1            THEN 'slight_loss'
-                    ELSE 'heavy_loss'
-                END                                AS roas_band,
-                CASE
-                    WHEN COALESCE(orders, 0) = 0           THEN 'zero'
-                    WHEN clicks > 0
-                         AND (orders::numeric / clicks * 100) >= {CR_THRESHOLD}
-                                                            THEN 'high'
-                    ELSE 'low'
-                END                                AS cr_level,
-                CASE
-                    WHEN views > 0
-                         AND (clicks::numeric / views * 100) >= {CTR_THRESHOLD}
-                                                            THEN 'high'
-                    ELSE 'low'
-                END                                AS ctr_level
-            FROM listing_report
-            WHERE period ~ '^\d{{4}}-\d{{2}}-\d{{2}}/\d{{4}}-\d{{2}}-\d{{2}}$'
-            ORDER BY listing_id, period, import_time DESC
+    # Global set: keywords từng có revenue > 0 ở BẤT KỲ listing nào, BẤT KỲ period nào
+    # trong toàn bộ lịch sử raw (keyword_report ∪ manual_keyword_report).
+    # Dùng để gán cờ `history_has_revenue` cho từng keyword row trên FE → Suggestion.
+    sql = text("""
+        WITH kw_history_earners AS (
+            SELECT DISTINCT keyword
+            FROM (
+                SELECT keyword, revenue FROM keyword_report
+                UNION ALL
+                SELECT keyword, revenue FROM manual_keyword_report
+            ) s
+            WHERE COALESCE(revenue, 0) > 0
         )
         SELECT
-            l.listing_id,
-            COALESCE(lr.title, l.title)            AS title,
-            COALESCE(lr.product, l.category)       AS product,
-            lr.period,
-            lr.reference_date,
-            lr.ctr,
-            lr.cr,
-            lr.roas,
-            COALESCE(l.url, 'https://www.etsy.com/listing/' || l.listing_id) AS url,
-            lr.no_vm,
-            lr.views,
-            lr.clicks,
-            lr.orders,
-            lr.revenue,
-            lr.spend,
-            sr.action                              AS scenario_action,
-            sr.case_name                           AS scenario_label,
-            sr.cause                               AS scenario_cause,
-            sr.fix_listing                         AS scenario_fix_listing,
-            sr.fix_ads                             AS scenario_fix_ads,
-            refs.references                        AS "references",
-            kw.keywords                            AS keywords
-        FROM listings l
-        LEFT JOIN lr ON lr.listing_id = l.listing_id
-        LEFT JOIN scenarios_rules sr
-            ON  sr.roas_band = lr.roas_band
-            AND sr.cr_level  = lr.cr_level
-            AND sr.ctr_level = lr.ctr_level
+            e.listing_id,
+            e.title,
+            e.product,
+            e.period,
+            e.reference_date,
+            e.ctr,
+            e.cr,
+            e.roas,
+            e.url,
+            e.no_vm,
+            e.views,
+            e.clicks,
+            e.orders,
+            e.revenue,
+            e.spend,
+            e.cpc,
+            e.cpp,
+            e.scenario_action,
+            e.scenario_label,
+            e.scenario_cause,
+            e.scenario_fix_listing,
+            e.scenario_fix_ads,
+            refs.references AS "references",
+            kw.keywords     AS keywords,
+            hist.history    AS history
+        FROM listings_int_ext e
         LEFT JOIN LATERAL (
             SELECT json_agg(
                 json_build_object(
@@ -222,30 +192,51 @@ async def get_dashboard_listings(db: AsyncSession, market_db: AsyncSession) -> l
                 ) ORDER BY re.ref_rank
             ) AS "references"
             FROM references_engine re
-            WHERE re.listing_id = l.listing_id
+            WHERE re.listing_id = e.listing_id
         ) refs ON true
         LEFT JOIN LATERAL (
             SELECT json_agg(
                 json_build_object(
-                    'keyword',          kr.keyword,
-                    'currently_status', kr.relevant,
-                    'views',            kr.views,
-                    'clicks',           kr.clicks,
-                    'orders',           kr.orders,
-                    'revenue',          kr.revenue,
-                    'spend',            kr.spend,
-                    'roas',             kr.roas,
-                    'click_rate',       kr.click_rate
-                ) ORDER BY COALESCE(kr.orders, 0) DESC, COALESCE(kr.clicks, 0) DESC
+                    'keyword',              k.keyword,
+                    'currently_status',     k.currently_status,
+                    'period',               k.period,
+                    'views',                k.views,
+                    'clicks',               k.clicks,
+                    'orders',               k.orders,
+                    'revenue',              k.revenue,
+                    'spend',                k.spend,
+                    'roas',                 k.roas,
+                    'click_rate',           k.click_rate,
+                    'cpc',                  k.cpc,
+                    'cpp',                  k.cpp,
+                    'history_has_revenue',  (he.keyword IS NOT NULL)
+                ) ORDER BY COALESCE(k.orders, 0) DESC, COALESCE(k.clicks, 0) DESC, k.keyword ASC
             ) AS keywords
-            FROM keyword_report kr
-            WHERE kr.listing_id = l.listing_id
-              AND kr.import_time = (
-                  SELECT MAX(import_time) FROM keyword_report
-                  WHERE listing_id = l.listing_id
-              )
+            FROM keywords k
+            LEFT JOIN kw_history_earners he ON he.keyword = k.keyword
+            WHERE k.listing_id = e.listing_id
         ) kw ON true
-        ORDER BY l.listing_id ASC, lr.period ASC
+        LEFT JOIN LATERAL (
+            SELECT json_agg(
+                json_build_object(
+                    'history_id',     h.listing_id || ':' || h.period,
+                    'period',         h.period,
+                    'views',          h.views,
+                    'clicks',         h.clicks,
+                    'orders',         h.orders,
+                    'revenue',        h.revenue,
+                    'spend',          h.spend,
+                    'roas',           h.roas,
+                    'cpc',            h.cpc,
+                    'cpp',            h.cpp,
+                    'source',         h.source,
+                    'reference_date', h.reference_date
+                ) ORDER BY h.period DESC
+            ) AS history
+            FROM listings_int_hist h
+            WHERE h.listing_id = e.listing_id
+        ) hist ON true
+        ORDER BY e.listing_id ASC, e.period ASC
     """)
     result = await db.execute(sql)
     rows = [dict(r) for r in result.mappings().all()]

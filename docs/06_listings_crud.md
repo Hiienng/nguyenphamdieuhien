@@ -1,7 +1,7 @@
 # Flow 06 — Listings CRUD
 
 Feature: quản lý catalog nội bộ (`listings`) và lưu output AI optimization (`optimized_title` / `optimized_tags` / `optimized_description`).
-UI: (chưa gắn vào index.html — endpoint dùng cho backfill & Listing Manager tương lai).
+UI: (chưa gắn vào EtseeMate.html — endpoint dùng cho backfill & Listing Manager tương lai).
 
 ## Sequence — các thao tác CRUD
 

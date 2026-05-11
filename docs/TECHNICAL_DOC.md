@@ -10,7 +10,7 @@
 ```
 Frontend (Vanilla HTML/CSS/JS)           Backend (FastAPI)              Storage
 ──────────────────────────────           ───────────────────            ───────
-index.html                   ── fetch ──> /api/v1/listings              Postgres (Neon)
+EtseeMate.html                   ── fetch ──> /api/v1/listings              Postgres (Neon)
   · Performance Hub          ── fetch ──> /api/v1/performance             · listings
   · Research Hub             ── fetch ──> /api/v1/internal                · listing_report
   · Internal Import          ── fetch ──> /api/v1/market                  · keyword_report
@@ -28,7 +28,7 @@ data/crawler/output/         <── write ── data/crawler/*                
 
 | Layer | Path | Nội dung |
 |-------|------|----------|
-| Frontend | `index.html`, `frontend/` | UI, charts, fetch API |
+| Frontend | `EtseeMate.html`, `frontend/` | UI, charts, fetch API |
 | Backend API | `backend/app/api/routes/` | Route handlers, FastAPI |
 | Service | `backend/app/services/` | Business logic |
 | Model | `backend/app/models/` | SQLAlchemy ORM |
@@ -340,7 +340,7 @@ cd data/crawler
 python crawl_weekly.py
 ```
 
-Frontend được serve bằng FastAPI static (`backend/app/main.py`) — truy cập `/` load `index.html`.
+Frontend được serve bằng FastAPI static (`backend/app/main.py`) — truy cập `/` load `EtseeMate.html`.
 
 ---
 

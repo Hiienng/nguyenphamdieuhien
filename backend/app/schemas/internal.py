@@ -49,13 +49,13 @@ class ExtractResponse(BaseModel):
     keyword_report: list[KeywordReportRow] = []
     progress: int = 0
     total_files: int = 0
+    failed_files: list[str] = []
 
 
 # ── Confirm request / response ───────────────────────────
 class ConfirmRequest(BaseModel):
     batch_id: str
     no_vm: str | None = None
-    importer: str | None = None
     listing_report: list[ListingReportRow]
     keyword_report: list[KeywordReportRow]
 
@@ -82,3 +82,4 @@ class BatchHistoryItem(BaseModel):
     confirmed_at: datetime | None = None
     note: str | None = None
     error_message: str | None = None
+    failed_files: list[str] = []

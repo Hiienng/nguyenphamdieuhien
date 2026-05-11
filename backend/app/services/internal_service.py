@@ -1,25 +1,39 @@
+from __future__ import annotations
+
 """
 Internal Ads Data Pipeline — business logic.
 
 Handles: upload → extract → confirm → discard → rollback → history → snapshot.
 """
+import asyncio
 import json
-import shutil
+import logging
+import os
 import struct
 from datetime import datetime, timezone
 from pathlib import Path
 
+from sqlalchemy.orm.attributes import flag_modified
+
+logger = logging.getLogger(__name__)
+
 from sqlalchemy import delete, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from ..core.database import AsyncSessionLocal
 
 from ..models.import_batch import ImportBatch
 from ..models.listing_report import ListingReport
 from ..models.keyword_report import KeywordReport
+from ..models.manual_listing_report import ManualListingReport
+from ..models.manual_keyword_report import ManualKeywordReport
 
 # ── Image validation constants ──────────────────────────────────────────────
 MIN_IMAGE_SIZE = 10 * 1024       # 10 KB — smaller is likely corrupt or icon
 MAX_IMAGE_SIZE = 20 * 1024 * 1024  # 20 MB
 MIN_DIMENSION = 200              # px — screenshots should be at least 200×200
+
+# Temp storage path for uploaded files (instead of ImageKit during upload)
+_TEMP_UPLOAD_DIR = Path("/tmp/etsy_uploads")
 
 # Magic bytes for supported formats
 _MAGIC = {
@@ -28,15 +42,30 @@ _MAGIC = {
     b"RIFF": "webp",  # WebP starts with RIFF....WEBP
 }
 
-# Base paths relative to project root
-_PROJECT_ROOT = Path(__file__).resolve().parents[3]  # backend/app/services -> project root
-RAW_DIR = _PROJECT_ROOT / "data" / "raw" / "internal"
-SNAPSHOT_DIR = _PROJECT_ROOT / "data" / "processed" / "snapshots"
+# All persistent data lives in DB / ImageKit. No filesystem dependency.
+
+VISION_QUOTA_MESSAGE = (
+    "He thong da het quota Vision API. Vui long doi Gemini key hoac nap them credit Hugging Face roi thu lai."
+)
 
 
 def _now_batch_id() -> str:
     """Generate batch_id as YYYYMMDD_HHMM."""
-    return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M")
+    return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+
+
+def _is_quota_message(message: str | None) -> bool:
+    msg = (message or "").lower()
+    return "het quota vision api" in msg or ("quota" in msg and "huggingface" in msg and "gemini" in msg)
+
+
+def _summarize_error_message(message: str | None) -> str | None:
+    if not message:
+        return message
+    compact = " ".join(str(message).split())
+    if _is_quota_message(compact):
+        return VISION_QUOTA_MESSAGE
+    return compact[:240]
 
 
 # ── Image validation ─────────────────────────────────────────────────────────
@@ -127,68 +156,74 @@ async def validate_image(filename: str, content: bytes) -> str | None:
     return None
 
 
-# ── Upload ───────────────────────────────────────────────────────────────────
+# ── Save uploaded files to temp storage (fast, returns immediately) ─────────
 
 async def save_uploaded_files(
     file_contents: list[tuple],
     db: AsyncSession,
-) -> tuple[str, int, Path]:
+) -> tuple[str, int, list[dict]]:
     """
-    Save pre-validated image files to data/raw/internal/{batch_id}/.
-    Create import_batch record with status=uploaded.
-
-    Args:
-        file_contents: list of (UploadFile, bytes) tuples — content already read & validated.
-
-    Returns (batch_id, file_count, batch_dir).
+    Save uploaded images to a local temp directory and record in DB.
+    Returns (batch_id, file_count, image_files_placeholder).
+    ImageKit upload happens later during extraction.
     """
     batch_id = _now_batch_id()
-    batch_dir = RAW_DIR / batch_id
-    batch_dir.mkdir(parents=True, exist_ok=True)
 
-    count = 0
-    for f, content in file_contents:
-        dest = batch_dir / f.filename
-        dest.write_bytes(content)
-        count += 1
-
+    # 1. Create batch record (status=uploading)
     batch = ImportBatch(
         batch_id=batch_id,
-        status="uploaded",
-        file_count=count,
-        total_files=count,
+        status="uploading",
+        file_count=len(file_contents),
+        total_files=len(file_contents),
     )
     db.add(batch)
-    await db.flush()
+    await db.commit()
 
-    return batch_id, count, batch_dir
+    # 2. Save files to temp directory
+    batch_dir = _TEMP_UPLOAD_DIR / batch_id
+    batch_dir.mkdir(parents=True, exist_ok=True)
+
+    image_files_meta = []
+    for f, content in file_contents:
+        safe_name = f.filename.replace("/", "_").replace("..", "_")
+        file_path = batch_dir / safe_name
+        file_path.write_bytes(content)
+        image_files_meta.append({
+            "name": f.filename,
+            "temp_path": str(file_path),
+        })
+
+    # 3. Update batch: store file metadata, mark as uploaded
+    batch.image_files = image_files_meta
+    batch.status = "uploaded"
+    await db.commit()
+
+    logger.info("Uploaded %d files to temp dir %s (batch=%s)", len(file_contents), batch_dir, batch_id)
+    return batch_id, len(image_files_meta), image_files_meta
 
 
 # ── Extract ──────────────────────────────────────────────────────────────────
 
-async def run_extraction(batch_id: str, db: AsyncSession) -> dict:
+async def run_extraction(batch_id: str, db: AsyncSession = None) -> dict:
+    print(f"!!! BACKGROUND EXTRACTION TRIGGERED FOR BATCH: {batch_id} !!!")
     """
-    Run Claude Vision extraction on all images in the batch.
-    Updates progress in import_batch. Saves preview JSON.
-    Returns {listing_report, keyword_report}.
-
-    On failure: resets status to "uploaded" with error_message so the user
-    can retry instead of the batch being stuck at "extracting" forever.
+    Run extraction for all images in the batch.
+    1. Upload temp files to ImageKit (if still pending)
+    2. Extract data using Claude Vision
+    3. Update DB status and progress
+    Returns preview JSON.
     """
-    from .internal_extractor import extract_batch
+    if db is None:
+        async with AsyncSessionLocal() as session:
+            return await _run_extraction_impl(batch_id, session)
+    else:
+        return await _run_extraction_impl(batch_id, db)
 
-    batch_dir = RAW_DIR / batch_id
-    if not batch_dir.exists():
-        raise FileNotFoundError(f"Batch dir not found: {batch_dir}")
 
-    image_paths = sorted(
-        str(p) for p in batch_dir.iterdir()
-        if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp")
-    )
-    if not image_paths:
-        raise ValueError("No images found in batch directory")
+async def _run_extraction_impl(batch_id: str, db: AsyncSession) -> dict:
+    from .internal_extractor import extract_batch_streaming, _merge_results
+    from . import imagekit_service
 
-    # Update status to extracting
     result = await db.execute(
         select(ImportBatch).where(ImportBatch.batch_id == batch_id)
     )
@@ -196,47 +231,156 @@ async def run_extraction(batch_id: str, db: AsyncSession) -> dict:
     if not batch:
         raise ValueError(f"Batch {batch_id} not found")
 
-    batch.status = "extracting"
-    batch.total_files = len(image_paths)
-    batch.progress = 0
-    batch.error_message = None
-    await db.flush()
+    file_metas = batch.image_files or []
+    if not file_metas:
+        raise ValueError(f"Batch {batch_id} has no images")
 
-    # Progress callback updates DB
-    async def on_progress(done: int, total: int):
-        batch.progress = done
-        await db.flush()
+    # Step 1: Upload temp files to ImageKit (with error handling)
+    batch.status = "to_imagekit"  # keep under 16 chars — DB column is VARCHAR(16)
+    await db.commit()
+
+    uploaded_to_ik = []
+    try:
+        for meta in file_metas:
+            temp_path = meta.get("temp_path")
+            if temp_path and os.path.exists(temp_path):
+                with open(temp_path, "rb") as fh:
+                    content = fh.read()
+                ik_result = await imagekit_service.upload_image(meta["name"], content, batch_id)
+                uploaded_to_ik.append(ik_result)
+            else:
+                # Fallback: try to read from DB (legacy flow)
+                uploaded_to_ik.append(meta)
+
+        # Store ImageKit URLs
+        batch.image_files = uploaded_to_ik
+        batch.status = "extracting"
+        batch.progress = 0
+        batch.total_files = len(uploaded_to_ik)
+        await db.commit()
+    except Exception as e:
+        logger.error("ImageKit upload failed for batch %s: %s", batch_id, e)
+        batch.status = "failed"
+        batch.error_message = f"ImageKit upload failed: {e}"
+        await db.commit()
+        return {"batch_id": batch_id, "listing_report": [], "keyword_report": [], "failed_files": [m.get("name","") for m in file_metas], "successful_files": [], "streaming": False}
+
+    # Step 2: Fetch images from ImageKit for extraction
+    images: list[tuple[str, bytes]] = []
+    for info in uploaded_to_ik:
+        url = info.get("url")
+        if url:
+            try:
+                content = await imagekit_service.fetch_image_bytes(url)
+                images.append((info["name"], content))
+            except Exception as e:
+                logger.warning("Failed to fetch image bytes for %s: %s", info.get("name", "unknown"), e)
+        else:
+            logger.warning("Skipping file without URL: %s", info.get("name", "unknown"))
+    
+    if not images:
+        logger.error("No images could be fetched for extraction (batch=%s)", batch_id)
+        batch.status = "failed"
+        batch.error_message = "All images failed to fetch from storage"
+        await db.commit()
+        return {"batch_id": batch_id, "listing_report": [], "keyword_report": [], "failed_files": [m.get("name","") for m in file_metas], "successful_files": [], "streaming": False}
+
+    results: list[dict | None] = [None] * len(images)
+    extraction_errors: dict[str, str] = {}
+    logger.info("Starting extraction for batch %s (%d images)", batch_id, len(images))
+
+    def _build_preview(streaming: bool, upto_idx: int | None = None) -> dict:
+        current_lr, current_kr = _merge_results(results)
+        if streaming and upto_idx is not None:
+            processed = [i for i in range(len(images)) if i <= upto_idx]
+        else:
+            processed = list(range(len(images)))
+        failed = [images[i][0] for i in processed if results[i] is None]
+        successful = [images[i][0] for i in processed if results[i] is not None]
+        errors = {
+            images[i][0]: _summarize_error_message(
+                extraction_errors.get(images[i][0], "Extraction returned no data")
+            )
+            for i in processed
+            if results[i] is None
+        }
+        quota_exhausted = bool(failed) and all(_is_quota_message(errors.get(name)) for name in failed)
+        return {
+            "batch_id": batch_id,
+            "listing_report": current_lr,
+            "keyword_report": current_kr,
+            "failed_files": failed,
+            "successful_files": successful,
+            "extraction_errors": errors,
+            "quota_exhausted": quota_exhausted,
+            "streaming": streaming,
+        }
+
+    async def on_result(idx: int, result: dict | None, error_message: str | None = None):
+        results[idx] = result
+        filename = images[idx][0]
+        if result is None:
+            extraction_errors[filename] = _summarize_error_message(
+                error_message or "Extraction returned no data"
+            )
+        else:
+            extraction_errors.pop(filename, None)
+        try:
+            partial = _build_preview(streaming=True, upto_idx=idx)
+            batch.preview_data = partial
+            flag_modified(batch, "preview_data")
+            batch.progress = sum(
+                1 for i, r in enumerate(results) if r is not None or (i <= idx and r is None)
+            )
+            batch.listing_count = len(partial["listing_report"])
+            batch.keyword_count = len(partial["keyword_report"])
+            await db.commit()
+        except Exception as e:
+            logger.error("Partial merge failed: %s", e)
 
     try:
-        listing_rows, keyword_rows = await extract_batch(
-            image_paths, on_progress=on_progress
-        )
+        await extract_batch_streaming(images, on_result=on_result)
     except Exception as e:
-        # Recovery: reset status so user can retry
-        batch.status = "uploaded"
-        batch.error_message = f"Extraction failed: {e}"
-        batch.progress = 0
-        await db.flush()
-        raise ValueError(f"Extraction failed (batch reset to uploaded): {e}") from e
+        logger.error("CRITICAL EXTRACTION ERROR: %s", e)
+        batch.status = "failed"
+        batch.error_message = f"Streaming Extraction failed: {e}"
+        await db.commit()
+        raise
 
-    # Save preview JSON to batch dir
-    preview = {
-        "batch_id": batch_id,
-        "listing_report": listing_rows,
-        "keyword_report": keyword_rows,
-    }
-    preview_path = batch_dir / "preview.json"
-    preview_path.write_text(json.dumps(preview, ensure_ascii=False, default=str))
+    final_preview = _build_preview(streaming=False)
+    batch.preview_data = final_preview
+    flag_modified(batch, "preview_data")
+    batch.status = "extracted" if final_preview["successful_files"] else "failed"
+    if not final_preview["successful_files"]:
+        first_error = next(iter(final_preview.get("extraction_errors", {}).values()), "All images failed extraction")
+        batch.error_message = _summarize_error_message(first_error)
+    batch.progress = len(images)
+    batch.listing_count = len(final_preview["listing_report"])
+    batch.keyword_count = len(final_preview["keyword_report"])
+    await db.commit()
 
-    # Update batch
-    batch.status = "extracted"
-    batch.listing_count = len(listing_rows)
-    batch.keyword_count = len(keyword_rows)
-    batch.progress = len(image_paths)
-    batch.error_message = None
-    await db.flush()
+    # Cleanup temp files (best-effort)
+    try:
+        batch_dir = _TEMP_UPLOAD_DIR / batch_id
+        if batch_dir.exists():
+            import shutil
+            shutil.rmtree(batch_dir, ignore_errors=True)
+    except Exception:
+        pass
 
-    return preview
+    return final_preview
+
+
+async def get_batch_preview(batch_id: str) -> dict:
+    """Return preview JSON stored on the batch row."""
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(ImportBatch).where(ImportBatch.batch_id == batch_id)
+        )
+        batch = result.scalar_one_or_none()
+        if not batch or not batch.preview_data:
+            raise FileNotFoundError(f"Preview not found for batch: {batch_id}")
+        return batch.preview_data
 
 
 # ── Confirm ──────────────────────────────────────────────────────────────────
@@ -246,7 +390,6 @@ async def confirm_import(
     listing_report: list[dict],
     keyword_report: list[dict],
     no_vm: str | None,
-    importer: str | None,
     db: AsyncSession,
 ) -> dict:
     """
@@ -267,36 +410,18 @@ async def confirm_import(
         raise ValueError(f"Batch {batch_id} status is {batch.status}, expected extracted")
 
     now = datetime.now(timezone.utc)
+    importer = batch_id
 
-    # 1. Deduplicate: delete old records with same listing_id + period
-    if listing_report:
-        listing_ids = list({r["listing_id"] for r in listing_report})
-        periods = list({r["period"] for r in listing_report})
-        await db.execute(
-            text(
-                "DELETE FROM listing_report "
-                "WHERE listing_id = ANY(:lids) AND period = ANY(:periods)"
-            ),
-            {"lids": listing_ids, "periods": periods},
-        )
+    # Deduplication logic removed: Data will always be recorded and distinguished by import_time.
+    # User requested to never automatically delete data from the tables.
 
-    if keyword_report:
-        kw_listing_ids = list({r["listing_id"] for r in keyword_report})
-        kw_periods = list({r.get("period", "") for r in keyword_report})
-        await db.execute(
-            text(
-                "DELETE FROM keyword_report "
-                "WHERE listing_id = ANY(:lids) AND period = ANY(:periods)"
-            ),
-            {"lids": kw_listing_ids, "periods": kw_periods},
-        )
 
     # 2. Insert new records — apply no_vm + importer + import_time to all rows
     vm = no_vm.strip() if no_vm else None
 
     lr_count = 0
     for row in listing_report:
-        db.add(ListingReport(
+        db.add(ManualListingReport(
             listing_id=row["listing_id"],
             title=row.get("title"),
             no_vm=vm or row.get("no_vm"),
@@ -314,12 +439,13 @@ async def confirm_import(
             roas=row.get("roas", 0),
             import_time=now,
             importer=importer,
+            batch_id=batch_id,
         ))
         lr_count += 1
 
     kw_count = 0
     for row in keyword_report:
-        db.add(KeywordReport(
+        db.add(ManualKeywordReport(
             listing_id=row["listing_id"],
             keyword=row["keyword"],
             no_vm=vm or row.get("no_vm"),
@@ -334,35 +460,39 @@ async def confirm_import(
             views=row.get("views", 0),
             import_time=now,
             importer=importer,
+            batch_id=batch_id,
         ))
         kw_count += 1
 
-    await db.flush()
+    await db.commit()
 
-    # 3. Save snapshot
-    SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    # 3. Persist snapshot in DB column
+    prev = batch.preview_data or {}
     snapshot = {
         "batch_id": batch_id,
         "confirmed_at": now.isoformat(),
         "no_vm": vm,
         "importer": importer,
+        "successful_files": prev.get("successful_files", []),
+        "failed_files": prev.get("failed_files", []),
         "listing_report": listing_report,
         "keyword_report": keyword_report,
     }
-    snapshot_path = SNAPSHOT_DIR / f"{batch_id}.json"
-    snapshot_path.write_text(json.dumps(snapshot, ensure_ascii=False, default=str))
+    batch.snapshot_data = snapshot
 
-    # 4. Delete raw images
-    batch_dir = RAW_DIR / batch_id
-    if batch_dir.exists():
-        shutil.rmtree(batch_dir)
+    # 4. Delete uploaded images from ImageKit (best-effort, never block confirm)
+    from . import imagekit_service
+    file_ids = [info.get("fileId") for info in (batch.image_files or []) if info.get("fileId")]
+    await imagekit_service.delete_files(file_ids)
+    batch.image_files = []
+    batch.preview_data = None
 
     # 5. Update batch
     batch.status = "confirmed"
     batch.listing_count = lr_count
     batch.keyword_count = kw_count
     batch.confirmed_at = now
-    await db.flush()
+    await db.commit()
 
     return {"imported": True, "rows": {"listing": lr_count, "keyword": kw_count}}
 
@@ -370,7 +500,7 @@ async def confirm_import(
 # ── Discard ──────────────────────────────────────────────────────────────────
 
 async def discard_batch(batch_id: str, db: AsyncSession) -> None:
-    """Cancel a pending batch: delete raw images, mark discarded."""
+    """Cancel a pending batch: delete ImageKit assets + preview, mark discarded."""
     result = await db.execute(
         select(ImportBatch).where(ImportBatch.batch_id == batch_id)
     )
@@ -378,12 +508,24 @@ async def discard_batch(batch_id: str, db: AsyncSession) -> None:
     if not batch:
         raise ValueError(f"Batch {batch_id} not found")
 
-    batch_dir = RAW_DIR / batch_id
-    if batch_dir.exists():
-        shutil.rmtree(batch_dir)
+    # Delete ImageKit files
+    from . import imagekit_service
+    file_ids = [info.get("fileId") for info in (batch.image_files or []) if info.get("fileId")]
+    await imagekit_service.delete_files(file_ids)
 
+    # Cleanup temp files
+    try:
+        batch_dir = _TEMP_UPLOAD_DIR / batch_id
+        if batch_dir.exists():
+            import shutil
+            shutil.rmtree(batch_dir, ignore_errors=True)
+    except Exception:
+        pass
+
+    batch.image_files = []
+    batch.preview_data = None
     batch.status = "discarded"
-    await db.flush()
+    await db.commit()
 
 
 # ── Rollback ─────────────────────────────────────────────────────────────────
@@ -403,14 +545,14 @@ async def rollback_batch(batch_id: str, db: AsyncSession) -> None:
 
     # Delete rows matching the exact import_time (= batch.confirmed_at)
     await db.execute(
-        delete(ListingReport).where(ListingReport.import_time == batch.confirmed_at)
+        delete(ManualListingReport).where(ManualListingReport.import_time == batch.confirmed_at)
     )
     await db.execute(
-        delete(KeywordReport).where(KeywordReport.import_time == batch.confirmed_at)
+        delete(ManualKeywordReport).where(ManualKeywordReport.import_time == batch.confirmed_at)
     )
 
     batch.status = "rolled_back"
-    await db.flush()
+    await db.commit()
 
 
 # ── History ──────────────────────────────────────────────────────────────────
@@ -423,8 +565,16 @@ async def get_history(db: AsyncSession, limit: int = 20) -> list[dict]:
         .limit(limit)
     )
     batches = result.scalars().all()
-    return [
-        {
+    items = []
+    for b in batches:
+        failed_files: list[str] = []
+        successful_files: list[str] = []
+        if b.preview_data:
+            failed_files = b.preview_data.get("failed_files", []) or []
+            successful_files = b.preview_data.get("successful_files", []) or []
+        elif b.snapshot_data:
+            successful_files = b.snapshot_data.get("successful_files", []) or []
+        items.append({
             "batch_id": b.batch_id,
             "status": b.status,
             "file_count": b.file_count or 0,
@@ -434,16 +584,21 @@ async def get_history(db: AsyncSession, limit: int = 20) -> list[dict]:
             "confirmed_at": b.confirmed_at,
             "note": b.note,
             "error_message": b.error_message,
-        }
-        for b in batches
-    ]
+            "failed_files": failed_files,
+            "successful_files": successful_files,
+        })
+    return items
 
 
 # ── Snapshot ─────────────────────────────────────────────────────────────────
 
-def get_snapshot(batch_id: str) -> dict | None:
-    """Read the snapshot JSON for a confirmed/rolled_back batch."""
-    path = SNAPSHOT_DIR / f"{batch_id}.json"
-    if not path.exists():
-        return None
-    return json.loads(path.read_text())
+async def get_snapshot(batch_id: str) -> dict | None:
+    """Read the snapshot for a confirmed/rolled_back batch from DB."""
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(ImportBatch).where(ImportBatch.batch_id == batch_id)
+        )
+        batch = result.scalar_one_or_none()
+        if not batch:
+            return None
+        return batch.snapshot_data

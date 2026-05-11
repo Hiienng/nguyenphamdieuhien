@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StarshipMath & EtseeMate</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --parchment: #f5f4ed;
+      --ivory: #faf9f5;
+      --white: #ffffff;
+      --warm-sand: #e8e6dc;
+      --dark-surface: #30302e;
+      --deep-dark: #141413;
+
+      --near-black: #141413;
+      --charcoal: #4d4c48;
+      --olive: #5e5d59;
+      --stone: #87867f;
+      --dark-warm: #3d3d3a;
+      --warm-silver: #b0aea5;
+
+      --terracotta: #c96442;
+      --coral: #d97757;
+      --muted-green: #66725f;
+
+      --border-cream: #f0eee6;
+      --border-warm: #e8e6dc;
+      --ring-warm: #d1cfc5;
+      --ring-deep: #c2c0b6;
+      --parchment-glass: rgba(245, 244, 237, 0.94);
+      --shadow-soft: rgba(0, 0, 0, 0.05);
+
+      --font-serif: Georgia, "Times New Roman", serif;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--parchment);
+      color: var(--near-black);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 64px;
+      padding: 0 40px;
+      background: var(--parchment-glass);
+      border-bottom: 1px solid var(--border-cream);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      font-family: var(--font-serif);
+      font-size: 1.08rem;
+      font-weight: 500;
+      line-height: 1.2;
+    }
+
+    .brand span {
+      color: var(--terracotta);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      list-style: none;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+      padding: 0 12px;
+      border-radius: 8px;
+      color: var(--olive);
+      font-size: 0.94rem;
+      font-weight: 500;
+      transition: background 0.18s ease, color 0.18s ease;
+    }
+
+    .nav-link:hover {
+      background: var(--warm-sand);
+      color: var(--near-black);
+    }
+
+    .language-switch {
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+      padding: 3px;
+      border: 1px solid var(--border-warm);
+      border-radius: 10px;
+      background: var(--ivory);
+      box-shadow: var(--ring-warm) 0 0 0 1px;
+    }
+
+    .language-option {
+      min-height: 32px;
+      padding: 0 10px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--stone);
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+
+    .language-option.active {
+      background: var(--terracotta);
+      color: var(--ivory);
+    }
+
+    .container {
+      width: min(1120px, calc(100% - 48px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+      gap: 56px;
+      align-items: center;
+      min-height: calc(100vh - 64px);
+      padding: 84px 0 72px;
+    }
+
+    .overline {
+      margin-bottom: 18px;
+      color: var(--stone);
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      max-width: 760px;
+      color: var(--near-black);
+      font-family: var(--font-serif);
+      font-size: clamp(2.6rem, 6vw, 4rem);
+      font-weight: 500;
+      letter-spacing: 0;
+      line-height: 1.12;
+    }
+
+    .hero-copy {
+      max-width: 620px;
+      margin-top: 22px;
+      color: var(--olive);
+      font-size: 1.18rem;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 34px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 10px;
+      font-size: 0.96rem;
+      font-weight: 600;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button-primary {
+      background: var(--terracotta);
+      color: var(--ivory);
+      box-shadow: var(--terracotta) 0 0 0 1px;
+    }
+
+    .button-secondary {
+      background: var(--warm-sand);
+      color: var(--charcoal);
+      box-shadow: var(--ring-warm) 0 0 0 1px;
+    }
+
+    .visual-panel {
+      position: relative;
+      min-height: 500px;
+    }
+
+    .project-stack {
+      position: relative;
+      display: grid;
+      gap: 18px;
+    }
+
+    .mini-card {
+      overflow: hidden;
+      border: 1px solid var(--border-cream);
+      border-radius: 16px;
+      background: var(--ivory);
+      box-shadow: var(--shadow-soft) 0 4px 24px;
+    }
+
+    .mini-card:nth-child(2) {
+      margin-left: 42px;
+    }
+
+    .mini-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border-cream);
+      color: var(--charcoal);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .status {
+      color: var(--stone);
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .illustration {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: var(--ivory);
+    }
+
+    .section {
+      padding: 84px 0;
+      border-top: 1px solid var(--border-warm);
+    }
+
+    .section-title {
+      max-width: 740px;
+      margin-bottom: 34px;
+      font-family: var(--font-serif);
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      font-weight: 500;
+      line-height: 1.18;
+    }
+
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .project-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 560px;
+      overflow: hidden;
+      border: 1px solid var(--border-cream);
+      border-radius: 16px;
+      background: var(--ivory);
+      box-shadow: var(--shadow-soft) 0 4px 24px;
+    }
+
+    .project-media {
+      min-height: 260px;
+      border-bottom: 1px solid var(--border-cream);
+      background: var(--white);
+    }
+
+    .project-body {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      padding: 30px;
+    }
+
+    .project-kicker {
+      margin-bottom: 12px;
+      color: var(--terracotta);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12px;
+      text-transform: uppercase;
+    }
+
+    .project-title {
+      margin-bottom: 12px;
+      font-family: var(--font-serif);
+      font-size: 2rem;
+      font-weight: 500;
+      line-height: 1.16;
+    }
+
+    .project-text {
+      color: var(--olive);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    .feature-list {
+      display: grid;
+      gap: 12px;
+      margin: 24px 0 28px;
+      list-style: none;
+    }
+
+    .feature-list li {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 10px;
+      color: var(--charcoal);
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+
+    .feature-list li::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      margin-top: 8px;
+      border-radius: 50%;
+      background: var(--terracotta);
+      box-shadow: var(--ring-warm) 0 0 0 4px;
+    }
+
+    .project-footer {
+      margin-top: auto;
+    }
+
+    .disabled-note {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 14px;
+      border-radius: 10px;
+      background: var(--warm-sand);
+      color: var(--stone);
+      font-size: 0.94rem;
+      font-weight: 600;
+      box-shadow: var(--ring-warm) 0 0 0 1px;
+    }
+
+    .dark-band {
+      margin-top: 36px;
+      padding: 78px 0;
+      background: var(--deep-dark);
+      color: var(--ivory);
+    }
+
+    .dark-content {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(280px, 1.05fr);
+      gap: 44px;
+      align-items: center;
+    }
+
+    .dark-content h2 {
+      font-family: var(--font-serif);
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 500;
+      line-height: 1.18;
+    }
+
+    .dark-content p {
+      margin-top: 18px;
+      color: var(--warm-silver);
+      font-size: 1.05rem;
+      line-height: 1.7;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      min-height: 128px;
+      padding: 22px;
+      border: 1px solid var(--dark-surface);
+      border-radius: 12px;
+      background: var(--dark-surface);
+    }
+
+    .metric strong {
+      display: block;
+      margin-bottom: 8px;
+      font-family: var(--font-serif);
+      font-size: 2rem;
+      font-weight: 500;
+      line-height: 1;
+    }
+
+    .metric span {
+      color: var(--warm-silver);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    .footer {
+      padding: 32px 0;
+      color: var(--stone);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 880px) {
+      .nav {
+        padding: 0 24px;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .nav-actions {
+        gap: 0;
+      }
+
+      .hero,
+      .dark-content {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        min-height: auto;
+        padding-top: 68px;
+      }
+
+      .visual-panel {
+        min-height: auto;
+      }
+
+      .mini-card:nth-child(2) {
+        margin-left: 0;
+      }
+
+      .project-grid,
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .container {
+        width: min(100% - 32px, 1120px);
+      }
+
+      .hero {
+        padding: 48px 0 54px;
+      }
+
+      .hero-copy {
+        font-size: 1.02rem;
+      }
+
+      .section {
+        padding: 58px 0;
+      }
+
+      .project-card {
+        min-height: auto;
+      }
+
+      .project-media {
+        min-height: 210px;
+      }
+
+      .project-body {
+        padding: 24px;
+      }
+
+      .hero-actions,
+      .project-footer {
+        display: grid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="nav" aria-label="Findatasolution project navigation">
+    <a class="brand" href="index.html">Findatasolution<span>.</span>online</a>
+    <div class="nav-actions">
+      <nav>
+        <ul class="nav-links">
+          <li><a class="nav-link" href="#projects" data-i18n="navProjects">Dự án</a></li>
+          <li><a class="nav-link" href="EtseeMate.html" data-i18n="navEtseeMate">Mở EtseeMate</a></li>
+        </ul>
+      </nav>
+      <div class="language-switch" aria-label="Chọn ngôn ngữ">
+        <button class="language-option active" type="button" data-lang="vi">Tiếng Việt</button>
+        <button class="language-option" type="button" data-lang="en">English</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="projects" class="container section">
+      <div class="project-grid">
+        <article class="project-card">
+          <div class="project-media" aria-hidden="true">
+            <svg class="illustration" viewBox="0 0 560 320" role="img">
+              <rect width="560" height="320" fill="var(--white)"></rect>
+              <circle cx="272" cy="160" r="92" fill="none" stroke="var(--border-warm)" stroke-width="20"></circle>
+              <circle cx="272" cy="160" r="34" fill="var(--terracotta)"></circle>
+              <path d="M126 232 C192 92, 314 64, 454 94" fill="none" stroke="var(--dark-surface)" stroke-width="9" stroke-linecap="round"></path>
+              <path d="M444 74 L500 98 L450 130 Z" fill="var(--terracotta)"></path>
+              <text x="72" y="92" fill="var(--near-black)" font-family="Georgia, serif" font-size="42">Math</text>
+              <text x="72" y="132" fill="var(--olive)" font-family="system-ui, sans-serif" font-size="20">practice missions</text>
+            </svg>
+          </div>
+          <div class="project-body">
+            <p class="project-kicker">StarshipMath</p>
+            <h3 class="project-title" data-i18n="starshipTitle">Học toán qua các nhiệm vụ ngắn, sáng và có tiến trình.</h3>
+            <p class="project-text" data-i18n="starshipCopy">
+              StarshipMath tập trung vào trải nghiệm học toán thân thiện:
+              mỗi bài tập là một trạm dừng nhỏ, giúp người học luyện tập đều
+              mà không cảm thấy khó khăn như một bảng bài tập dài.
+            </p>
+            <ul class="feature-list">
+              <li data-i18n="starshipFeature1">Bài học theo chặng, phù hợp cho việc ôn tập mỗi ngày.</li>
+              <li data-i18n="starshipFeature2">Không khí vui, gọn, dễ tạo động lực tiếp tục học.</li>
+              <li data-i18n="starshipFeature3">Phù hợp để mở rộng thành ứng dụng học tập có gamification.</li>
+            </ul>
+            <div class="project-footer">
+              <a class="button button-primary" href="starshipmath.html" data-i18n="enterStarshipMath">Vào StarshipMath</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="project-card">
+          <div class="project-media" aria-hidden="true">
+            <svg class="illustration" viewBox="0 0 560 320" role="img">
+              <rect width="560" height="320" fill="var(--white)"></rect>
+              <rect x="70" y="58" width="420" height="206" rx="20" fill="var(--ivory)" stroke="var(--border-warm)" stroke-width="2"></rect>
+              <rect x="106" y="92" width="122" height="18" rx="9" fill="var(--dark-surface)"></rect>
+              <rect x="106" y="126" width="180" height="14" rx="7" fill="var(--border-warm)"></rect>
+              <rect x="106" y="152" width="142" height="14" rx="7" fill="var(--border-warm)"></rect>
+              <rect x="106" y="196" width="70" height="38" rx="8" fill="var(--terracotta)"></rect>
+              <rect x="194" y="180" width="70" height="54" rx="8" fill="var(--muted-green)"></rect>
+              <rect x="282" y="142" width="70" height="92" rx="8" fill="var(--dark-surface)"></rect>
+              <path d="M104 248 C168 206, 228 230, 286 172 C342 116, 398 122, 456 88" fill="none" stroke="var(--terracotta)" stroke-width="7" stroke-linecap="round"></path>
+            </svg>
+          </div>
+          <div class="project-body">
+            <p class="project-kicker">EtseeMate</p>
+            <h3 class="project-title" data-i18n="EtseeMateTitle">Trợ lý phân tích và tối ưu listing cho người bán Etsy.</h3>
+            <p class="project-text" data-i18n="EtseeMateCopy">
+              EtseeMate gồm các hub về performance, research, listing improvement
+              và scale-up vào một nơi, giúp chủ shop ra quyết định dựa trên dữ liệu
+              thay vì cảm tính.
+            </p>
+            <ul class="feature-list">
+              <li data-i18n="EtseeMateFeature1">Theo dõi chỉ số shop và phát hiện listing cần ưu tiên.</li>
+              <li data-i18n="EtseeMateFeature2">Hỗ trợ nghiên cứu keyword, title, tag và cơ hội thị trường.</li>
+              <li data-i18n="EtseeMateFeature3">Kết nối workflow nội bộ để nhập, đọc và cải thiện listing nhanh hơn.</li>
+            </ul>
+            <div class="project-footer">
+              <a class="button button-primary" href="EtseeMate.html" data-i18n="enterEtseeMate">Vào EtseeMate</a>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="container footer">
+    <span data-i18n="footer">2026 Nguyen Pham Dieu Hien.</span>
+  </footer>
+  <script>
+    const translations = {
+      vi: {
+        navProjects: "Dự án",
+        navEtseeMate: "Mở EtseeMate",
+        heroOverline: "Hai sản phẩm nhỏ, một hướng đi rõ ràng",
+        // heroTitle: "Công cụ học tập và vận hành được làm cho người dùng thật.",
+        heroCopy: "StarshipMath giúp việc học toán có cảm giác như một chuyến bay nhỏ. EtseeMate giúp shop Etsy đọc dữ liệu, soi cơ hội và cải thiện listing bằng một quy trình gọn gàng hơn.",
+        openEtseeMate: "Mở EtseeMate",
+        viewProjects: "Xem 2 dự án",
+        // projectsTitle: "Hai dự án phục vụ hai nhóm nhu cầu khác nhau.",
+        starshipTitle: "Học toán qua các nhiệm vụ ngắn, sáng và có tiến trình.",
+        starshipCopy: "StarshipMath tập trung vào trải nghiệm học toán thân thiện: mỗi bài tập là một trạm dừng nhỏ, giúp người học luyện tập đều mà không cảm thấy khó khăn như một bảng bài tập dài.",
+        starshipFeature1: "Bài học theo chặng, phù hợp cho việc ôn tập mỗi ngày.",
+        starshipFeature2: "Không khí vui, gọn, dễ tạo động lực tiếp tục học.",
+        starshipFeature3: "Phù hợp để mở rộng thành ứng dụng học tập có gamification.",
+        comingSoon: "Đang giới thiệu",
+        EtseeMateTitle: "Trợ lý phân tích và tối ưu listing cho người bán Etsy.",
+        EtseeMateCopy: "EtseeMate gồm các hub về performance, research, listing improvement và scale-up vào một nơi, giúp chủ shop ra quyết định dựa trên dữ liệu thay vì cảm tính.",
+        EtseeMateFeature1: "Theo dõi chỉ số shop và phát hiện listing cần ưu tiên.",
+        EtseeMateFeature2: "Hỗ trợ nghiên cứu keyword, title, tag và cơ hội thị trường.",
+        EtseeMateFeature3: "Kết nối workflow nội bộ để nhập, đọc và cải thiện listing nhanh hơn.",
+        enterEtseeMate: "Vào EtseeMate",
+        directionTitle: "Mỗi dự án bắt đầu từ một workflow cụ thể, rồi lớn lên bằng dữ liệu.",
+        directionCopy: "StarshipMath ưu tiên cảm giác học tập nhẹ và có tiến bộ rõ. EtseeMate ưu tiên hệ thống vận hành shop: đọc dữ liệu, tìm cơ hội, đưa ra hành động.",
+        metric1: "sản phẩm độc lập trên cùng một miền triển khai",
+        metric2: "landing page để điều hướng rõ ràng từ trang chủ",
+        metric3: "hướng đến trợ lý thực dụng, không chỉ là trang giới thiệu",
+        footer: "2026 NguyenPhamDieuHien. StarshipMath và EtseeMate."
+      },
+      en: {
+        navProjects: "Projects",
+        navEtseeMate: "Open EtseeMate",
+        heroOverline: "Two focused products, one clear direction",
+        // heroTitle: "Learning and operations tools made for real users.",
+        heroCopy: "StarshipMath makes math practice feel like a small flight mission. EtseeMate helps Etsy shops read data, spot opportunities, and improve listings through a cleaner workflow.",
+        openEtseeMate: "Open EtseeMate",
+        viewProjects: "View 2 projects",
+        // projectsTitle: "Two projects serving two different needs.",
+        starshipTitle: "Learn math through short, bright missions with visible progress.",
+        starshipCopy: "StarshipMath focuses on a friendly math learning experience: each exercise becomes a small checkpoint, helping learners practice consistently without feeling buried under a long worksheet.",
+        starshipFeature1: "Lesson paths that fit daily review and steady practice.",
+        starshipFeature2: "A light, playful rhythm that helps learners keep going.",
+        starshipFeature3: "Ready to grow into a gamified learning application.",
+        comingSoon: "Introduction",
+        EtseeMateTitle: "Analytics and listing optimization assistant for Etsy sellers.",
+        EtseeMateCopy: "EtseeMate brings performance, research, listing improvement, and scale-up hubs into one place so shop owners can make decisions from data instead of guesswork.",
+        EtseeMateFeature1: "Track shop metrics and surface priority listings.",
+        EtseeMateFeature2: "Support keyword, title, tag, and market opportunity research.",
+        EtseeMateFeature3: "Connect internal workflows to import, read, and improve listings faster.",
+        enterEtseeMate: "Enter EtseeMate",
+        directionTitle: "Each project starts from a concrete workflow, then grows through data.",
+        directionCopy: "StarshipMath prioritizes light learning and visible progress. EtseeMate prioritizes shop operations: reading data, finding opportunities, and turning them into action.",
+        metric1: "independent products on the same deployment domain",
+        metric2: "landing page that clearly routes from the homepage",
+        metric3: "practical assistants, not just presentation pages",
+        footer: "2026 NguyenPhamDieuHien. StarshipMath and EtseeMate."
+      }
+    };
+
+    function setLanguage(lang) {
+      const dictionary = translations[lang] || translations.vi;
+      document.documentElement.lang = lang;
+      document.querySelectorAll("[data-i18n]").forEach((node) => {
+        const key = node.dataset.i18n;
+        if (dictionary[key]) node.textContent = dictionary[key];
+      });
+      document.querySelectorAll(".language-option").forEach((button) => {
+        button.classList.toggle("active", button.dataset.lang === lang);
+      });
+    }
+
+    document.querySelectorAll(".language-option").forEach((button) => {
+      button.addEventListener("click", () => setLanguage(button.dataset.lang));
+    });
+  </script>
+</body>
+</html>

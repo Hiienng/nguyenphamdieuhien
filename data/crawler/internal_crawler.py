@@ -15,7 +15,7 @@ import argparse
 import json
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, date, timezone
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
@@ -37,6 +37,70 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 DATABASE_URL   = os.environ.get("DATABASE_URL", "")
 
 IMAGE_EXTS  = {".jpg", ".jpeg", ".png", ".webp"}
+
+# ── Period normalisation (ISO 8601) ────────────────────────────────────────────
+
+_MONTH_ABBR = {
+    "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+    "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+}
+
+
+def _parse_date_part(s: str, year_hint: int | None = None) -> date | None:
+    s = s.strip()
+    m = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", s)
+    if m:
+        return date(int(m[1]), int(m[2]), int(m[3]))
+    m = re.fullmatch(r"(\d{4})/(\d{2})/(\d{2})", s)
+    if m:
+        return date(int(m[1]), int(m[2]), int(m[3]))
+    m = re.fullmatch(r"(\d{1,2})/(\d{1,2})/(\d{4})", s)
+    if m:
+        return date(int(m[3]), int(m[1]), int(m[2]))
+    m = re.fullmatch(r"(\d{1,2})/(\d{1,2})/(\d{2})", s)
+    if m:
+        return date(2000 + int(m[3]), int(m[2]), int(m[1]))
+    m = re.fullmatch(r"([A-Za-z]{3})\s+(\d{1,2})(?:\s+(\d{4}))?", s)
+    if m:
+        mon = _MONTH_ABBR.get(m[1].lower())
+        if mon:
+            yr = int(m[3]) if m[3] else (year_hint or datetime.now().year)
+            return date(yr, mon, int(m[2]))
+    return None
+
+
+def normalize_period(raw: str) -> str:
+    """Normalise any period string to ISO 8601: YYYY-MM-DD/YYYY-MM-DD or YYYY-MM-DD."""
+    raw = raw.strip()
+    if not raw or raw == "custom_default":
+        return raw
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}/\d{4}-\d{2}-\d{2}", raw):
+        return raw
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw):
+        return raw
+    year_hint = datetime.now().year
+    m = re.fullmatch(r"(\d{1,2}/\d{1,2}/\d{4})-(\d{4}/\d{2}/\d{2})", raw)
+    if m:
+        d1 = _parse_date_part(m[1], year_hint)
+        d2 = _parse_date_part(m[2], year_hint)
+        if d1 and d2:
+            return f"{d1.isoformat()}/{d2.isoformat()}"
+    m = re.fullmatch(r"(\d{4}/\d{2}/\d{2})-(\d{4}/\d{2}/\d{2})", raw)
+    if m:
+        d1 = _parse_date_part(m[1], year_hint)
+        d2 = _parse_date_part(m[2], year_hint)
+        if d1 and d2:
+            return f"{d1.isoformat()}/{d2.isoformat()}"
+    if " - " in raw:
+        parts = raw.split(" - ", 1)
+        d1 = _parse_date_part(parts[0], year_hint)
+        d2 = _parse_date_part(parts[1], year_hint)
+        if d1 and d2:
+            return f"{d1.isoformat()}/{d2.isoformat()}"
+    d = _parse_date_part(raw, year_hint)
+    if d:
+        return d.isoformat()
+    return raw
 
 # ── Extraction prompt ──────────────────────────────────────────────────────────
 
@@ -171,7 +235,7 @@ def upsert_listing_reports(records: list[dict], no_vm: str) -> int:
 
     for r in records:
         lid    = str(r.get("listing_id", "")).strip()
-        period = str(r.get("period", "")).strip()
+        period = normalize_period(str(r.get("period", "")).strip())
         if not lid or not period:
             continue
 

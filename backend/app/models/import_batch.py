@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Integer, Text, DateTime
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from ..core.database import Base
 
@@ -17,3 +18,9 @@ class ImportBatch(Base):
     confirmed_at = Column(DateTime(timezone=True), nullable=True)
     note = Column(Text, nullable=True)
     error_message = Column(Text, nullable=True)
+    # ImageKit-hosted screenshots: list of {"name": str, "url": str, "fileId": str}
+    image_files = Column(JSONB, nullable=True)
+    # Extraction preview persisted in DB (no filesystem dependency)
+    preview_data = Column(JSONB, nullable=True)
+    # Final snapshot after confirm
+    snapshot_data = Column(JSONB, nullable=True)
