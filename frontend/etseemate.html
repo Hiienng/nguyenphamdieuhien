@@ -1960,10 +1960,247 @@
     @keyframes thumbSpin {
       to { transform: rotate(360deg); }
     }
+  <!-- ── Landing Page Styles ─────────────────────────── -->
+  <style>
+    #landing-page { display: none; min-height: 100vh; background: var(--parchment); }
+    /* Hero */
+    .lp-hero { max-width: 900px; margin: 0 auto; padding: 80px 24px 64px; text-align: center; }
+    .lp-hero-headline {
+      font-family: var(--font-serif); font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 500; line-height: 1.15; color: var(--near-black);
+      margin-bottom: 20px; letter-spacing: -0.01em;
+    }
+    .lp-hero-sub {
+      font-family: var(--font-sans); font-size: clamp(1rem, 2vw, 1.15rem);
+      color: var(--warm-gray); line-height: 1.6; max-width: 620px; margin: 0 auto 36px;
+    }
+    .lp-cta-primary {
+      display: inline-block; font-family: var(--font-sans); font-size: 1rem; font-weight: 600;
+      color: var(--ivory); background: var(--terracotta); border: none; border-radius: 10px;
+      padding: 14px 36px; cursor: pointer; text-decoration: none;
+      transition: opacity 0.15s;
+    }
+    .lp-cta-primary:hover { opacity: 0.88; }
+    .lp-friction {
+      font-family: var(--font-sans); font-size: 0.78rem; color: var(--stone);
+      margin-top: 12px; letter-spacing: 0.01em;
+    }
+    .lp-stats {
+      display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;
+      margin-top: 52px; padding-top: 40px; border-top: 1px solid var(--border-warm);
+    }
+    .lp-stat { text-align: center; }
+    .lp-stat-number {
+      font-family: var(--font-serif); font-size: 2.2rem; font-weight: 500;
+      color: var(--terracotta); line-height: 1;
+    }
+    .lp-stat-label {
+      font-family: var(--font-sans); font-size: 0.80rem; color: var(--stone); margin-top: 4px;
+    }
+    /* Pain section */
+    .lp-pain { background: var(--near-black); padding: 72px 24px; }
+    .lp-pain-inner { max-width: 760px; margin: 0 auto; }
+    .lp-pain-tag {
+      font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600;
+      color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 20px;
+    }
+    .lp-pain-title {
+      font-family: var(--font-serif); font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 500; color: var(--ivory); margin-bottom: 36px; line-height: 1.3;
+    }
+    .lp-pain-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+    .lp-pain-item {
+      font-family: var(--font-sans); font-size: 0.95rem; color: var(--warm-silver);
+      padding: 16px 20px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
+      background: rgba(255,255,255,0.03); line-height: 1.5;
+    }
+    .lp-pain-item::before { content: "— "; color: var(--terracotta); font-weight: 700; }
+    /* Desire section */
+    .lp-desire { max-width: 900px; margin: 0 auto; padding: 72px 24px; }
+    .lp-desire-tag {
+      font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600;
+      color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 20px;
+    }
+    .lp-desire-title {
+      font-family: var(--font-serif); font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 500; color: var(--near-black); margin-bottom: 40px; line-height: 1.3;
+    }
+    .lp-diff-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .lp-diff-card {
+      background: var(--ivory); border: 1px solid var(--border-warm); border-radius: 12px;
+      padding: 24px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .lp-diff-num {
+      font-family: var(--font-serif); font-size: 1.8rem; font-weight: 500; color: var(--terracotta);
+    }
+    .lp-diff-title {
+      font-family: var(--font-sans); font-size: 0.92rem; font-weight: 600; color: var(--near-black);
+    }
+    .lp-diff-desc {
+      font-family: var(--font-sans); font-size: 0.82rem; color: var(--warm-gray); line-height: 1.5;
+    }
+    /* Before/After */
+    .lp-ba { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 40px; }
+    @media (max-width: 600px) { .lp-ba { grid-template-columns: 1fr; } }
+    .lp-ba-card {
+      border-radius: 10px; padding: 20px;
+    }
+    .lp-ba-before { background: #fdf2f2; border: 1px solid #f5c6c6; }
+    .lp-ba-after  { background: #f2f9f5; border: 1px solid #b8e0c8; }
+    .lp-ba-label {
+      font-family: var(--font-sans); font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;
+    }
+    .lp-ba-before .lp-ba-label { color: #b53333; }
+    .lp-ba-after  .lp-ba-label { color: #2d7a4f; }
+    .lp-ba-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+    .lp-ba-list li { font-family: var(--font-sans); font-size: 0.84rem; color: var(--charcoal); line-height: 1.4; }
+    /* Action / CTA bottom */
+    .lp-action { background: var(--near-black); padding: 80px 24px; text-align: center; }
+    .lp-action-title {
+      font-family: var(--font-serif); font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+      font-weight: 500; color: var(--ivory); margin-bottom: 16px; line-height: 1.2;
+    }
+    .lp-action-sub {
+      font-family: var(--font-sans); font-size: 0.92rem; color: var(--warm-silver);
+      margin-bottom: 36px; max-width: 480px; margin-left: auto; margin-right: auto;
+    }
+    /* Sticky CTA bar */
+    #lp-sticky-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 999;
+      background: var(--near-black); border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 12px 24px; display: none; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .lp-sticky-text {
+      font-family: var(--font-sans); font-size: 0.88rem; color: var(--warm-silver);
+    }
+    /* Nav landing */
+    .lp-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 32px; border-bottom: 1px solid var(--border-warm);
+      background: var(--parchment); position: sticky; top: 0; z-index: 100;
+    }
+    .lp-nav-brand {
+      font-family: var(--font-serif); font-size: 1.15rem; font-weight: 500;
+      color: var(--near-black); text-decoration: none;
+    }
+    .lp-nav-brand span { color: var(--terracotta); }
+    .lp-nav-links { display: flex; align-items: center; gap: 16px; }
+    .lp-nav-signin {
+      font-family: var(--font-sans); font-size: 0.85rem; color: var(--stone);
+      text-decoration: none; cursor: pointer; background: none; border: none;
+    }
+    .lp-nav-signin:hover { color: var(--charcoal); }
   </style>
 </head>
 
 <body>
+
+  <!-- ── Landing Page ─────────────────────────────────── -->
+  <div id="landing-page">
+    <!-- Nav -->
+    <nav class="lp-nav">
+      <a href="#" class="lp-nav-brand">EtseeMate<span>.</span></a>
+      <div class="lp-nav-links">
+        <button class="lp-nav-signin" onclick="lpShowLogin()">Đăng nhập</button>
+        <button class="lp-cta-primary" style="padding:9px 22px;font-size:0.88rem" onclick="lpShowRegister()">Dùng thử miễn phí</button>
+      </div>
+    </nav>
+
+    <!-- A — Hero -->
+    <section class="lp-hero" id="lp-hero">
+      <h1 class="lp-hero-headline">Biết listing nào đang thật sự kiếm tiền —<br>và phải làm gì tiếp theo.</h1>
+      <p class="lp-hero-sub">EtseeMate phân tích ROAS · CTR · CR từng listing Etsy Ads của bạn — và nói thẳng cần scale listing nào, cắt listing nào.</p>
+      <button class="lp-cta-primary" onclick="lpShowRegister()">Dùng thử miễn phí</button>
+      <p class="lp-friction">Không cần thẻ tín dụng · Miễn phí 30 ngày · Hủy bất cứ lúc nào</p>
+      <div class="lp-stats">
+        <div class="lp-stat">
+          <div class="lp-stat-number">2.3×</div>
+          <div class="lp-stat-label">ROAS trung bình sau 30 ngày</div>
+        </div>
+        <div class="lp-stat">
+          <div class="lp-stat-number">&lt;5'</div>
+          <div class="lp-stat-label">Để ra quyết định scale / cắt</div>
+        </div>
+        <div class="lp-stat">
+          <div class="lp-stat-number">180+</div>
+          <div class="lp-stat-label">Market listings làm benchmark</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- I — Pain Points -->
+    <section class="lp-pain">
+      <div class="lp-pain-inner">
+        <p class="lp-pain-tag">Vấn đề quen thuộc</p>
+        <h2 class="lp-pain-title">Bạn đang đổ tiền vào Etsy Ads mà không biết đồng nào đang sinh lời.</h2>
+        <ul class="lp-pain-list">
+          <li class="lp-pain-item">Bạn đang chạy Etsy Ads nhưng không biết listing nào thật sự có lãi — chỉ thấy tổng spend tăng</li>
+          <li class="lp-pain-item">eRank cho điểm A nhưng listing vẫn không bán được — vì họ không đo ROAS, chỉ đo keyword</li>
+          <li class="lp-pain-item">Mỗi tháng nhìn báo cáo Etsy mà không biết phải làm gì tiếp theo — scale cái nào, cắt cái nào</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- D — Desire -->
+    <section class="lp-desire">
+      <p class="lp-desire-tag">Tại sao EtseeMate khác</p>
+      <h2 class="lp-desire-title">3 thứ không tool Etsy nào khác có.</h2>
+      <div class="lp-diff-grid">
+        <div class="lp-diff-card">
+          <div class="lp-diff-num">01</div>
+          <div class="lp-diff-title">ROAS · CTR · CR từng listing</div>
+          <div class="lp-diff-desc">Data chỉ có trong Etsy Ads dashboard — không có API public. EtseeMate lấy qua OCR screenshot bạn upload. Không tool nào khác làm được điều này.</div>
+        </div>
+        <div class="lp-diff-card">
+          <div class="lp-diff-num">02</div>
+          <div class="lp-diff-title">Market data fresh — không stale</div>
+          <div class="lp-diff-desc">eRank dùng Google Keyword Planner cũ 1–2 tháng. EtseeMate crawl trực tiếp Etsy hàng tuần — bạn thấy cái đang trending thật sự hôm nay.</div>
+        </div>
+        <div class="lp-diff-card">
+          <div class="lp-diff-num">03</div>
+          <div class="lp-diff-title">Scenario engine: biết phải làm gì</div>
+          <div class="lp-diff-desc">Mọi tool dừng lại ở "đây là số liệu". EtseeMate nói thêm "đây là việc bạn cần làm" — dựa trên ma trận ROAS × CTR × CR của từng listing.</div>
+        </div>
+      </div>
+
+      <!-- Before / After -->
+      <div class="lp-ba">
+        <div class="lp-ba-card lp-ba-before">
+          <p class="lp-ba-label">Không có EtseeMate</p>
+          <ul class="lp-ba-list">
+            <li>Xem báo cáo tổng — không biết listing nào đang lỗ</li>
+            <li>Đoán mò cắt hoặc scale dựa trên cảm giác</li>
+            <li>Keyword A trên eRank nhưng ROAS vẫn âm</li>
+            <li>Mất 2–3 giờ / tuần phân tích thủ công trong Excel</li>
+          </ul>
+        </div>
+        <div class="lp-ba-card lp-ba-after">
+          <p class="lp-ba-label">Với EtseeMate</p>
+          <ul class="lp-ba-list">
+            <li>Thấy ROAS từng listing — biết cái nào đang kiếm tiền</li>
+            <li>Scenario engine nói thẳng: scale / cải thiện / cắt</li>
+            <li>Market data fresh — biết sản phẩm nào đang trending thật</li>
+            <li>Ra quyết định trong &lt; 5 phút, không cần Excel</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- A — Action -->
+    <section class="lp-action">
+      <h2 class="lp-action-title">Bắt đầu phân tích shop của bạn.</h2>
+      <p class="lp-action-sub">Upload 1 screenshot báo cáo Etsy Ads — EtseeMate cho bạn thấy listing nào đang thật sự có lãi ngay trong session đầu tiên.</p>
+      <button class="lp-cta-primary" onclick="lpShowRegister()">Bắt đầu phân tích shop của bạn</button>
+      <p class="lp-friction" style="color:var(--warm-silver);margin-top:12px">Không cần thẻ tín dụng · Miễn phí 30 ngày · Hủy bất cứ lúc nào</p>
+    </section>
+  </div>
+
+  <!-- Sticky CTA bar (appears after scrolling past hero) -->
+  <div id="lp-sticky-bar">
+    <span class="lp-sticky-text">EtseeMate — Biết listing nào đang thật sự kiếm tiền.</span>
+    <button class="lp-cta-primary" style="padding:9px 22px;font-size:0.85rem;white-space:nowrap" onclick="lpShowRegister()">Dùng thử miễn phí</button>
+  </div>
 
   <!-- ── Login Gate ────────────────────────────────────── -->
   <!-- ── Auth Gate ─────────────────────────────────── -->
@@ -2019,9 +2256,9 @@
   <nav class="nav">
     <a href="#" class="nav-brand">EtseeMate Portal<span>.</span></a>
     <div class="nav-tabs" role="tablist">
-      <button class="hub-tab" role="tab" data-tab="intelligence">Intelligence Hub</button>
-      <button class="hub-tab active" role="tab" data-tab="performance">Performance Hub</button>
-      <button class="hub-tab" role="tab" data-tab="research">Research Hub</button>
+      <button class="hub-tab" role="tab" data-tab="intelligence">Cải thiện listing này</button>
+      <button class="hub-tab active" role="tab" data-tab="performance">Listing nào đang lãi?</button>
+      <button class="hub-tab" role="tab" data-tab="research">Sản phẩm nào đang trending?</button>
     </div>
     <ul class="nav-links" style="display:flex;align-items:center;gap:12px;list-style:none">
       <li id="nav-credit-badge" style="display:none;font-size:0.78rem;color:var(--stone);padding:3px 10px;border-radius:20px;border:1px solid var(--border-warm);background:var(--ivory)">⚡ <span id="nav-credit-count">0</span></li>
@@ -2042,9 +2279,9 @@
       <!-- Pill toggle -->
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:28px;">
         <div class="perf-pill-wrap" style="margin-bottom:0;">
-          <button class="perf-pill active" data-perf="improvement">Listing Improvement</button>
-          <button class="perf-pill" data-perf="import">Manual Import</button>
-          <button class="perf-pill" data-perf="rules">Decision Rules</button>
+          <button class="perf-pill active" data-perf="improvement">Đề xuất hành động</button>
+          <button class="perf-pill" data-perf="import">Upload báo cáo Etsy Ads</button>
+          <button class="perf-pill" data-perf="rules">Cấu hình ngưỡng</button>
         </div>
       </div>
 
@@ -2053,7 +2290,7 @@
       <!-- ── Sub-panel: Listing Improvement ──────── -->
       <div id="perf-sub-improvement">
 
-        <h2 class="section-heading" style="margin-bottom:6px">Listing Improvement</h2>
+        <h2 class="section-heading" style="margin-bottom:6px">Đề xuất hành động</h2>
 
         <!-- Filter + table -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -2167,7 +2404,7 @@
       <!-- ── Sub-panel: Internal Import ──────────── -->
       <div id="perf-sub-import" style="display:none">
 
-        <h2 class="section-heading" style="margin-bottom:6px">Manual Import</h2>
+        <h2 class="section-heading" style="margin-bottom:6px">Upload báo cáo Etsy Ads</h2>
         <p style="font-family:var(--font-sans);font-size:0.94rem;color:var(--stone);margin-bottom:24px">
           Upload Etsy Ads screenshots &rarr; Claude Vision extract &rarr; Review &rarr; Import DB
         </p>
@@ -2202,8 +2439,7 @@
           </div>
           <div style="margin-top:18px;display:flex;align-items:center;gap:16px">
             <button id="importExtractBtn" onclick="importStartUpload()" disabled
-              style="font-family:var(--font-sans);font-size:0.88rem;font-weight:500;color:var(--ivory);background:var(--terracotta);border:none;border-radius:8px;padding:10px 24px;cursor:pointer;opacity:0.5">Upload
-              &amp; Extract</button>
+              style="font-family:var(--font-sans);font-size:0.88rem;font-weight:500;color:var(--ivory);background:var(--terracotta);border:none;border-radius:8px;padding:10px 24px;cursor:pointer;opacity:0.5">Phân tích screenshots</button>
             <span id="importProgress" style="font-size:0.78rem;color:var(--stone);display:none"></span>
           </div>
         </div>
@@ -2328,7 +2564,7 @@
         <div
           style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap">
           <div>
-            <h2 class="section-heading" style="margin-bottom:4px">Threshold Management</h2>
+            <h2 class="section-heading" style="margin-bottom:4px">Ngưỡng quyết định</h2>
           </div>
           <button id="rulesAddBtn"
             style="display:flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;border:none;background:var(--terracotta);color:#fff;font-size:0.88rem;font-weight:500;cursor:pointer;transition:opacity 0.15s"
@@ -2405,7 +2641,7 @@
         </div>
 
         <div>
-          <h2 class="section-heading" style="margin-bottom:4px">Action Management</h2>
+          <h2 class="section-heading" style="margin-bottom:4px">Quy tắc hành động</h2>
         </div>
         <!-- Filter bar -->
         <div class="filterable-table-card filterable-table-shell">
@@ -2484,7 +2720,7 @@
     <!-- ── Panel 2: Intelligence Hub ──────────────── -->
     <section class="hub-panel" id="tab-intelligence" role="tabpanel">
 
-      <h2 class="section-heading" style="margin-bottom:6px">Intelligence Hub</h2>
+      <h2 class="section-heading" style="margin-bottom:6px">Cải thiện listing này</h2>
       <p style="font-family:var(--font-sans);font-size:0.94rem;color:var(--stone);margin-bottom:28px">Chat phân tích cơ
         hội thị trường · frontend prototype</p>
 
@@ -3973,7 +4209,11 @@
         out += _imprDetailRow(latest, key, true);
         return out;
       }).join('');
-      document.getElementById('imprTableBody').innerHTML = html || '<tr><td colspan="14" style="text-align:center;color:var(--stone);padding:24px">Không có listing nào.</td></tr>';
+      document.getElementById('imprTableBody').innerHTML = html || `<tr><td colspan="14" style="text-align:center;padding:36px 24px">
+        <p style="font-family:var(--font-sans);font-size:0.95rem;color:var(--charcoal);margin-bottom:8px">Chưa có dữ liệu listing nào.</p>
+        <p style="font-family:var(--font-sans);font-size:0.82rem;color:var(--stone);margin-bottom:16px">Upload báo cáo Etsy Ads để xem listing nào đang có lãi — và phải làm gì tiếp theo.</p>
+        <button onclick="document.querySelector('.perf-pill[data-perf=import]').click()" style="font-family:var(--font-sans);font-size:0.85rem;font-weight:500;color:var(--ivory);background:var(--terracotta);border:none;border-radius:8px;padding:9px 20px;cursor:pointer">Upload báo cáo Etsy Ads →</button>
+      </td></tr>`;
       _imprUpdateSortIndicators();
       const hasMore = _imprFiltered.length > _imprPage;
       const btn = document.getElementById('imprLoadMore');
@@ -4203,9 +4443,9 @@
       const prog = document.getElementById('importProgress');
       btn.disabled = true;
       btn.style.opacity = '0.5';
-      btn.textContent = 'Uploading...';
+      btn.textContent = 'Đang upload...';
       prog.style.display = '';
-      prog.textContent = 'Uploading files...';
+      prog.textContent = 'Đang upload screenshots...';
       prog.style.color = '#4a8c60';
 
       // AbortController with 10 minute timeout for large uploads
@@ -4227,7 +4467,7 @@
         if (!upRes.ok) throw new Error('Upload failed: ' + (await upRes.text()));
         const upData = await upRes.json();
         _importBatchId = upData.batch_id;
-        prog.textContent = 'Extracting with Claude Vision... (this may take a minute)';
+        prog.textContent = 'Đang phân tích screenshots với AI Vision... (có thể mất 1–2 phút)';
 
         // Step 2: Extract
         const exRes = await authFetch(API_BASE + '/extract?batch_id=' + _importBatchId, { method: 'POST' });
@@ -4257,7 +4497,7 @@
         prog.style.color = '#b53333';
       } finally {
         clearTimeout(timeoutId);
-        btn.textContent = 'Upload & Extract';
+        btn.textContent = 'Phân tích screenshots';
         btn.disabled = false;
         btn.style.opacity = '1';
       }
@@ -4573,7 +4813,7 @@
         _importErrors = exData.extraction_errors || {};
         _importQuotaExhausted = !!exData.quota_exhausted;
         importRenderPreview();
-        prog.textContent = 'Extraction complete — review below.';
+        prog.textContent = 'Phân tích xong — kiểm tra kết quả bên dưới.';
         importLoadHistory();
       } catch (err) {
         prog.textContent = 'Retry failed: ' + err.message;
@@ -4795,6 +5035,8 @@
 
     function authHideGate() {
       document.getElementById('login-gate').classList.add('hidden');
+      document.getElementById('landing-page').style.display = 'none';
+      document.getElementById('lp-sticky-bar').style.display = 'none';
       // Handle ?payment=success redirect from Stripe
       const params = new URLSearchParams(location.search);
       if (params.get('payment') === 'success') {
@@ -4807,9 +5049,36 @@
     }
 
     function authShowGate() {
+      // Show landing page first, hide auth forms
+      document.getElementById('login-gate').classList.add('hidden');
+      document.getElementById('landing-page').style.display = 'block';
+      _lpStickyObserver();
+    }
+
+    function lpShowRegister() {
+      document.getElementById('landing-page').style.display = 'none';
+      document.getElementById('lp-sticky-bar').style.display = 'none';
+      document.getElementById('login-gate').classList.remove('hidden');
+      document.getElementById('auth-login-box').style.display = 'none';
+      document.getElementById('auth-register-box').style.display = '';
+    }
+
+    function lpShowLogin() {
+      document.getElementById('landing-page').style.display = 'none';
+      document.getElementById('lp-sticky-bar').style.display = 'none';
       document.getElementById('login-gate').classList.remove('hidden');
       document.getElementById('auth-login-box').style.display = '';
       document.getElementById('auth-register-box').style.display = 'none';
+    }
+
+    function _lpStickyObserver() {
+      const hero = document.getElementById('lp-hero');
+      const bar  = document.getElementById('lp-sticky-bar');
+      if (!hero || !bar) return;
+      const obs = new IntersectionObserver(([entry]) => {
+        bar.style.display = entry.isIntersecting ? 'none' : 'flex';
+      }, { threshold: 0 });
+      obs.observe(hero);
     }
 
     // ── Toast helper ──
