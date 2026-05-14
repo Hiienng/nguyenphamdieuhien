@@ -10,10 +10,11 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import NotSupportedError
 from .core.config import get_settings
 from .core.database import create_tables, AsyncSessionLocal, engine
-from .api.routes import listings, market, performance, internal, references, scenarios, thresholds
+from .api.routes import listings, market, performance, internal, references, scenarios, thresholds, intelligence
 from .models import scenario   # noqa: F401 — registers scenarios_rules with Base
 from .models import threshold  # noqa: F401 — registers threshold_configs with Base
 from .models import import_batch, listing_report, keyword_report, manual_listing_report, manual_keyword_report  # noqa: F401 — register with Base
+from .models import thumbnail_knowledge  # noqa: F401 — registers thumbnail_knowledge with Base
 from .services import performance_service, reporting_etl, crawler_ops
 
 logger = logging.getLogger(__name__)
@@ -81,6 +82,7 @@ app.include_router(internal.router, prefix="/api/v1")
 app.include_router(references.router, prefix="/api/v1")
 app.include_router(scenarios.router,   prefix="/api/v1")
 app.include_router(thresholds.router,  prefix="/api/v1")
+app.include_router(intelligence.router, prefix="/api/v1/intelligence", tags=["intelligence"])
 
 
 @app.get("/favicon.ico")

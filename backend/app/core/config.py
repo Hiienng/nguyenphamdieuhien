@@ -19,10 +19,14 @@ class Settings(BaseSettings):
     # Market data DB (etsy_star_engine output)
     ETSY_MARKET_DB: str = ""
 
-    # AI Vision — Gemini (primary) + HuggingFace Router (fallback)
-    GEMINI_API_KEY: str = ""
-    GEMINI_API_KEY_2: str = ""
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    # Claude / Anthropic
+    ANTHROPIC_API_KEY: str = ""
+    CLAUDE_MODEL: str = "claude-sonnet-4-6"
+
+    # AI Vision — Gemini paid (primary) + free (fallback)
+    GEMINI_API_KEY_paid: str = ""
+    GEMINI_API_KEY_free: str = ""
+    GEMINI_MODEL: str = "gemini-2.5-flash-lite"  # cheapest vision model available
     HUGGINGFACE_API_KEY: str = ""
     # Use a router-supported vision model with an explicit provider suffix.
     HF_MODEL: str = "zai-org/GLM-4.5V"
@@ -73,5 +77,5 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     s = Settings()
-    print(f"DEBUG: Settings loaded. Gemini Key present: {bool(s.GEMINI_API_KEY)}")
+    print(f"DEBUG: Settings loaded. Gemini paid key present: {bool(s.GEMINI_API_KEY_paid)}")
     return s

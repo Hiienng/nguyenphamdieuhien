@@ -40,6 +40,11 @@
       --ring-warm: #d1cfc5;
       --ring-deep: #c2c0b6;
 
+      --status-good: #3d9e5a;
+      --status-ok: #c28a00;
+      --status-bad: #c94040;
+      --error-crimson: #b53333;
+
       --font-serif: Georgia, 'Times New Roman', serif;
       --font-sans: system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
       --font-mono: 'Courier New', Courier, monospace;
@@ -1584,6 +1589,338 @@
     .login-brand span {
       color: var(--terracotta);
     }
+
+    /* ─── Thumbnail Evaluation ───────────────────────────────── */
+    .thumb-eval-card {
+      background: var(--ivory);
+      border: 1px solid var(--border-cream);
+      border-radius: 12px;
+      padding: 22px 24px;
+      box-shadow: rgba(0,0,0,0.05) 0px 4px 24px;
+      margin-bottom: 28px;
+    }
+
+    .thumb-eval-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .thumb-eval-header-title {
+      font-family: var(--font-serif);
+      font-size: 1.04rem;
+      font-weight: 500;
+      color: var(--near-black);
+      flex: 1;
+      white-space: nowrap;
+    }
+
+    .thumb-category-select {
+      font-family: var(--font-sans);
+      font-size: 0.83rem;
+      color: var(--charcoal);
+      border: 1px solid var(--border-warm);
+      border-radius: 8px;
+      padding: 6px 10px;
+      background: var(--parchment);
+      cursor: pointer;
+      outline: none;
+    }
+
+    .thumb-category-select:focus {
+      border-color: var(--ring-deep);
+    }
+
+    .thumb-gen-btn {
+      font-family: var(--font-sans);
+      font-size: 0.80rem;
+      color: var(--stone);
+      border: 1px solid var(--border-warm);
+      border-radius: 8px;
+      padding: 6px 12px;
+      background: var(--parchment);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .thumb-gen-btn:hover {
+      border-color: var(--ring-deep);
+      color: var(--near-black);
+    }
+
+    .thumb-knowledge-status {
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      color: var(--stone);
+      margin-bottom: 16px;
+    }
+
+    .thumb-eval-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    @media (max-width: 680px) {
+      .thumb-eval-body {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .thumb-upload-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .thumb-upload-zone {
+      border: 2px dashed var(--ring-warm);
+      border-radius: 10px;
+      background: var(--parchment);
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      text-align: center;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .thumb-upload-zone:hover,
+    .thumb-upload-zone.dragover {
+      border-color: var(--terracotta);
+      background: var(--border-cream);
+    }
+
+    .thumb-upload-zone-text {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      color: var(--charcoal);
+      pointer-events: none;
+    }
+
+    .thumb-upload-zone-icon {
+      font-size: 2rem;
+      margin-bottom: 8px;
+      pointer-events: none;
+    }
+
+    .thumb-upload-preview {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .thumb-upload-preview.visible {
+      display: block;
+    }
+
+    .thumb-eval-btn {
+      font-family: var(--font-sans);
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--ivory);
+      background: var(--terracotta);
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: opacity 0.15s;
+      width: 100%;
+    }
+
+    .thumb-eval-btn:hover:not(:disabled) {
+      opacity: 0.88;
+    }
+
+    .thumb-eval-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .thumb-results {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .thumb-results.visible {
+      display: flex;
+    }
+
+    .thumb-overall-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+
+    .thumb-overall-label {
+      font-family: var(--font-sans);
+      font-size: 0.83rem;
+      font-weight: 500;
+      color: var(--stone);
+      white-space: nowrap;
+    }
+
+    .thumb-overall-score {
+      font-family: var(--font-serif);
+      font-size: 1.3rem;
+      font-weight: 500;
+      color: var(--near-black);
+      white-space: nowrap;
+    }
+
+    .thumb-score-bar-wrap {
+      flex: 1;
+      background: var(--border-warm);
+      border-radius: 6px;
+      height: 8px;
+      overflow: hidden;
+    }
+
+    .thumb-score-bar {
+      height: 100%;
+      border-radius: 6px;
+      background: var(--terracotta);
+      transition: width 0.5s ease;
+    }
+
+    .thumb-divider {
+      border: none;
+      border-top: 1px solid var(--border-cream);
+      margin: 2px 0;
+    }
+
+    .thumb-criteria-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .thumb-criterion-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-sans);
+      font-size: 0.80rem;
+      padding: 4px 0;
+    }
+
+    .thumb-criterion-icon {
+      font-size: 0.85rem;
+      width: 16px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .thumb-criterion-label {
+      flex: 1;
+      color: var(--charcoal);
+    }
+
+    .thumb-criterion-score {
+      font-weight: 600;
+      min-width: 28px;
+      text-align: right;
+    }
+
+    .thumb-criterion-row.good .thumb-criterion-icon { color: var(--status-good); }
+    .thumb-criterion-row.good .thumb-criterion-score { color: var(--status-good); }
+    .thumb-criterion-row.ok .thumb-criterion-icon  { color: var(--status-ok); }
+    .thumb-criterion-row.ok .thumb-criterion-score  { color: var(--status-ok); }
+    .thumb-criterion-row.bad .thumb-criterion-icon { color: var(--status-bad); }
+    .thumb-criterion-row.bad .thumb-criterion-score { color: var(--status-bad); }
+
+    .thumb-criterion-comment {
+      display: none;
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      color: var(--stone);
+      margin-left: 24px;
+      margin-top: -2px;
+      margin-bottom: 2px;
+    }
+
+    .thumb-criterion-row:hover + .thumb-criterion-comment,
+    .thumb-criterion-comment:hover {
+      display: block;
+    }
+
+    .thumb-section-label {
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--stone);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+
+    .thumb-strengths-list,
+    .thumb-suggestions-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .thumb-strengths-list li,
+    .thumb-suggestions-list li {
+      font-family: var(--font-sans);
+      font-size: 0.80rem;
+      color: var(--charcoal);
+      padding: 5px 8px;
+      border-radius: 6px;
+      background: var(--parchment);
+    }
+
+    .thumb-strengths-list li::before {
+      content: "✓ ";
+      color: var(--status-good);
+      font-weight: 600;
+    }
+
+    .thumb-suggestions-list li::before {
+      content: "· ";
+      color: var(--terracotta);
+      font-weight: 700;
+    }
+
+    .thumb-spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: var(--ivory);
+      border-radius: 50%;
+      animation: thumbSpin 0.7s linear infinite;
+    }
+
+    @keyframes thumbSpin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 
@@ -2077,6 +2414,89 @@
       <p style="font-family:var(--font-sans);font-size:0.94rem;color:var(--stone);margin-bottom:28px">Chat phân tích cơ
         hội thị trường · frontend prototype</p>
 
+      <!-- ── Thumbnail Evaluation Card ─────────────────────── -->
+      <div class="thumb-eval-card" id="thumbEvalCard">
+        <div class="thumb-eval-header">
+          <span class="thumb-eval-header-title">Thumbnail Evaluation</span>
+          <select class="thumb-category-select" id="thumbCategory" onchange="thumbLoadKnowledgeStatus()">
+            <option value="onesie">onesie</option>
+            <option value="blanket">blanket</option>
+            <option value="sweater">sweater</option>
+            <option value="crown">crown</option>
+            <option value="other">other</option>
+          </select>
+          <button class="thumb-gen-btn" type="button" onclick="thumbGenerateKnowledge()">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+              <path d="M11 6.5a4.5 4.5 0 1 1-1.32-3.18M11 2v3H8" stroke="currentColor" stroke-width="1.3"
+                stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Generate Knowledge
+          </button>
+        </div>
+        <p class="thumb-knowledge-status" id="thumbKnowledgeStatus">Knowledge: đang tải...</p>
+
+        <div class="thumb-eval-body">
+          <!-- Left: upload -->
+          <div class="thumb-upload-col">
+            <div class="thumb-upload-zone" id="thumbDropZone"
+                 onclick="document.getElementById('thumbFileInput').click()"
+                 ondragover="thumbDragOver(event)"
+                 ondragleave="thumbDragLeave(event)"
+                 ondrop="thumbHandleDrop(event)"
+                 role="button" aria-label="Upload thumbnail image" tabindex="0"
+                 onkeydown="if(event.key==='Enter'||event.key===' ')document.getElementById('thumbFileInput').click()">
+              <img class="thumb-upload-preview" id="thumbPreviewImg" src="" alt="Preview">
+              <div id="thumbUploadPlaceholder">
+                <div class="thumb-upload-zone-icon">🖼️</div>
+                <p class="thumb-upload-zone-text">Drop image here<br><span style="font-size:0.76rem;color:var(--warm-silver)">or click to upload</span></p>
+              </div>
+            </div>
+            <input type="file" id="thumbFileInput" accept="image/*" style="display:none"
+                   onchange="thumbHandleFileSelect(event)">
+            <button class="thumb-eval-btn" id="thumbEvalBtn" type="button" onclick="thumbEvaluate()" disabled>
+              <span id="thumbBtnLabel">Evaluate Thumbnail</span>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Right: results -->
+          <div class="thumb-results" id="thumbResults">
+            <!-- Overall -->
+            <div>
+              <div class="thumb-overall-row">
+                <span class="thumb-overall-label">Overall</span>
+                <span class="thumb-overall-score" id="thumbOverallScore">—</span>
+                <div class="thumb-score-bar-wrap">
+                  <div class="thumb-score-bar" id="thumbScoreBar" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <hr class="thumb-divider">
+
+            <!-- Criteria -->
+            <div class="thumb-criteria-list" id="thumbCriteriaList"></div>
+
+            <hr class="thumb-divider">
+
+            <!-- Strengths -->
+            <div id="thumbStrengthsSection" style="display:none">
+              <p class="thumb-section-label">Strengths</p>
+              <ul class="thumb-strengths-list" id="thumbStrengthsList"></ul>
+            </div>
+
+            <!-- Suggestions -->
+            <div id="thumbSuggestionsSection" style="display:none">
+              <p class="thumb-section-label" style="margin-top:8px">Suggestions</p>
+              <ul class="thumb-suggestions-list" id="thumbSuggestionsList"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /Thumbnail Evaluation -->
+
       <div class="intel-chat-layout">
         <section class="intel-chat-shell" aria-label="Intelligence chat area">
           <div class="intel-chat-head">
@@ -2483,6 +2903,265 @@
     }
 
     intelRenderMessages();
+  </script>
+
+  <!-- ── Thumbnail Evaluation JS ───────────────────────────────── -->
+  <script>
+    const MOCK_EVAL_RESPONSE = {
+      product_type: "onesie",
+      target_audience: "new_mom_gift",
+      overall: 7.2,
+      scores: {
+        resolution_sharpness:      { score: 9.0, comment: "Ảnh sắc nét, đủ độ phân giải" },
+        visual_clarity:            { score: 8.0, comment: "Composition rõ ràng, không rối" },
+        background_quality:        { score: 7.0, comment: "Background trắng, sạch" },
+        product_focus:             { score: 8.0, comment: "Product chiếm ~70% frame" },
+        text_overlay_readability:  { score: 6.0, comment: "Font hơi nhỏ trên mobile" },
+        theme_mood_consistency:    { score: 7.0, comment: "Tone pastel nhất quán" },
+        color_palette_fit:         { score: 6.0, comment: "Màu chưa đủ ấm cho baby niche" },
+        target_audience_fit:       { score: 7.0, comment: "Phù hợp new mom gift segment" },
+        lifestyle_context:         { score: 5.0, comment: "Thiếu lifestyle context" }
+      },
+      strengths: ["Ảnh sắc nét", "Product focus tốt", "Background sạch"],
+      suggestions: [
+        "Thêm warm tones (cream/blush) để appeal baby niche hơn",
+        "Tăng font size text overlay",
+        "Thêm lifestyle prop (bàn tay mẹ, decor nhỏ)"
+      ]
+    };
+
+    const CRITERION_LABELS = {
+      resolution_sharpness:     "Resolution & Sharpness",
+      visual_clarity:           "Visual Clarity",
+      background_quality:       "Background Quality",
+      product_focus:            "Product Focus",
+      text_overlay_readability: "Text Overlay",
+      theme_mood_consistency:   "Theme & Mood",
+      color_palette_fit:        "Color Palette",
+      target_audience_fit:      "Target Audience Fit",
+      lifestyle_context:        "Lifestyle Context"
+    };
+
+    let thumbSelectedFile = null;
+
+    function thumbDragOver(e) {
+      e.preventDefault();
+      document.getElementById('thumbDropZone').classList.add('dragover');
+    }
+
+    function thumbDragLeave(e) {
+      document.getElementById('thumbDropZone').classList.remove('dragover');
+    }
+
+    function thumbHandleDrop(e) {
+      e.preventDefault();
+      document.getElementById('thumbDropZone').classList.remove('dragover');
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        thumbPreviewImage(file);
+      }
+    }
+
+    function thumbHandleFileSelect(e) {
+      const file = e.target.files && e.target.files[0];
+      if (file) thumbPreviewImage(file);
+    }
+
+    function thumbPreviewImage(file) {
+      thumbSelectedFile = file;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const img = document.getElementById('thumbPreviewImg');
+        img.src = ev.target.result;
+        img.classList.add('visible');
+        document.getElementById('thumbUploadPlaceholder').style.display = 'none';
+        document.getElementById('thumbEvalBtn').disabled = false;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function thumbSetBtnLoading(loading) {
+      const btn = document.getElementById('thumbEvalBtn');
+      const label = document.getElementById('thumbBtnLabel');
+      btn.disabled = loading;
+      if (loading) {
+        label.textContent = 'Evaluating...';
+        const spinner = document.createElement('span');
+        spinner.className = 'thumb-spinner';
+        spinner.id = 'thumbSpinner';
+        btn.appendChild(spinner);
+      } else {
+        label.textContent = 'Evaluate Thumbnail';
+        const spinner = document.getElementById('thumbSpinner');
+        if (spinner) spinner.remove();
+        // Re-enable only if file selected
+        btn.disabled = !thumbSelectedFile;
+      }
+    }
+
+    async function thumbEvaluate() {
+      if (!thumbSelectedFile) return;
+
+      // Clear previous results before new evaluation
+      document.getElementById('thumbResults').classList.remove('visible');
+      document.getElementById('thumbCriteriaList').innerHTML = '';
+      document.getElementById('thumbStrengthsList').innerHTML = '';
+      document.getElementById('thumbSuggestionsList').innerHTML = '';
+      document.getElementById('thumbStrengthsSection').style.display = 'none';
+      document.getElementById('thumbSuggestionsSection').style.display = 'none';
+
+      thumbSetBtnLoading(true);
+
+      let data;
+      try {
+        const product_type = document.getElementById('thumbCategory').value;
+        const formData = new FormData();
+        formData.append('image', thumbSelectedFile);
+        formData.append('product_type', product_type);
+
+        const res = await fetch('/api/v1/intelligence/thumbnail-eval', {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          throw new Error(errBody.detail || 'API error ' + res.status);
+        }
+        data = await res.json();
+      } catch (err) {
+        console.error('[thumbEvaluate] API failed:', err.message);
+        // Show error in UI instead of silent mock fallback
+        thumbSetBtnLoading(false);
+        alert('Evaluation failed: ' + err.message);
+        return;
+      } finally {
+        thumbSetBtnLoading(false);
+      }
+
+      thumbRenderResults(data);
+    }
+
+    function thumbRenderResults(data) {
+      // Overall score
+      const overall = typeof data.overall === 'number' ? data.overall : 0;
+      document.getElementById('thumbOverallScore').textContent = overall.toFixed(1) + '/10';
+      document.getElementById('thumbScoreBar').style.width = (overall * 10) + '%';
+
+      // Criteria
+      const list = document.getElementById('thumbCriteriaList');
+      list.innerHTML = '';
+      const scores = data.scores || {};
+      Object.entries(CRITERION_LABELS).forEach(([key, label]) => {
+        const item = scores[key];
+        if (!item) return;
+        const score = typeof item.score === 'number' ? item.score : parseFloat(item.score);
+        const cls = score >= 8 ? 'good' : score >= 6 ? 'ok' : 'bad';
+        const icon = score >= 8 ? '✓' : score >= 6 ? '△' : '✗';
+
+        const row = document.createElement('div');
+        row.className = 'thumb-criterion-row ' + cls;
+        row.innerHTML = `
+          <span class="thumb-criterion-icon">${icon}</span>
+          <span class="thumb-criterion-label">${label}</span>
+          <span class="thumb-criterion-score">${score.toFixed(1)}</span>
+        `;
+        list.appendChild(row);
+
+        if (item.comment) {
+          const comment = document.createElement('div');
+          comment.className = 'thumb-criterion-comment';
+          comment.textContent = item.comment;
+          list.appendChild(comment);
+          // Toggle comment on row click
+          row.style.cursor = 'pointer';
+          row.addEventListener('click', () => {
+            comment.style.display = comment.style.display === 'block' ? 'none' : 'block';
+          });
+        }
+      });
+
+      // Strengths
+      const strengthsSection = document.getElementById('thumbStrengthsSection');
+      const strengthsList = document.getElementById('thumbStrengthsList');
+      if (data.strengths && data.strengths.length) {
+        strengthsList.innerHTML = data.strengths.map(s => `<li>${s}</li>`).join('');
+        strengthsSection.style.display = 'block';
+      } else {
+        strengthsSection.style.display = 'none';
+      }
+
+      // Suggestions
+      const suggestionsSection = document.getElementById('thumbSuggestionsSection');
+      const suggestionsList = document.getElementById('thumbSuggestionsList');
+      if (data.suggestions && data.suggestions.length) {
+        suggestionsList.innerHTML = data.suggestions.map(s => `<li>${s}</li>`).join('');
+        suggestionsSection.style.display = 'block';
+      } else {
+        suggestionsSection.style.display = 'none';
+      }
+
+      document.getElementById('thumbResults').classList.add('visible');
+    }
+
+    async function thumbGenerateKnowledge() {
+      const category = document.getElementById('thumbCategory').value;
+      const confirmed = confirm(
+        `Generate knowledge cho category "${category}"?\n\nThao tác này sẽ gọi Claude API (tốn credits). Tiếp tục?`
+      );
+      if (!confirmed) return;
+
+      const btn = document.querySelector('.thumb-gen-btn');
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      document.getElementById('thumbKnowledgeStatus').textContent = 'Generating knowledge...';
+
+      try {
+        const res = await fetch('/api/v1/intelligence/thumbnail-knowledge/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category })
+        });
+        if (!res.ok) throw new Error('API error ' + res.status);
+        const data = await res.json();
+        document.getElementById('thumbKnowledgeStatus').textContent =
+          `Knowledge: ${category} × ${data.target_audience || '—'} (${data.generated_at || new Date().toISOString().slice(0,10)})`;
+      } catch (err) {
+        console.warn('[thumbGenerateKnowledge] failed:', err.message);
+        document.getElementById('thumbKnowledgeStatus').textContent =
+          `Knowledge: generation failed — ${err.message}`;
+      } finally {
+        btn.disabled = false;
+        btn.style.opacity = '';
+      }
+    }
+
+    async function thumbLoadKnowledgeStatus() {
+      const category = document.getElementById('thumbCategory').value;
+      document.getElementById('thumbKnowledgeStatus').textContent = 'Knowledge: đang tải...';
+      try {
+        const res = await fetch(`/api/v1/intelligence/thumbnail-knowledge?category=${encodeURIComponent(category)}`);
+        if (res.status === 404) {
+          document.getElementById('thumbKnowledgeStatus').textContent =
+            `Knowledge: chưa có cho "${category}" — nhấn Generate Knowledge để tạo`;
+          return;
+        }
+        if (!res.ok) throw new Error('API error ' + res.status);
+        const data = await res.json();
+        const date = data.generated_at ? data.generated_at.slice(0,10) : '—';
+        const audience = data.target_audience || '—';
+        document.getElementById('thumbKnowledgeStatus').textContent =
+          `Knowledge: ${category} × ${audience}  (${date})`;
+      } catch (err) {
+        console.warn('[thumbLoadKnowledgeStatus] failed:', err.message);
+        document.getElementById('thumbKnowledgeStatus').textContent =
+          `Knowledge: không thể tải (${err.message})`;
+      }
+    }
+
+    // Load knowledge status on page init
+    document.addEventListener('DOMContentLoaded', function() {
+      thumbLoadKnowledgeStatus();
+    });
   </script>
 
   <!-- ── Charts / Intelligence / Research JS removed — now in standalone report files ── -->

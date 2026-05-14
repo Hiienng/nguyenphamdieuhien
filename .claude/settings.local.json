@@ -4,7 +4,7 @@
       "Bash(node generate-pages.js:*)",
       "Bash(ls:*)",
       "Bash(cat:*)",
-      "Bash(for file in chapter*.html index.html)",
+      "Bash(for file in chapter*.html EtseeMate.html)",
       "Bash(do sed -i 's|<link rel=\"\"stylesheet\"\" href=\"\"styles.css\"\">|<link rel=\"\"stylesheet\"\" href=\"\"styles.css\"\">\\\\n  <link rel=\"\"stylesheet\"\" href=\"\"custom-styles.css\"\">|' \"$file\")",
       "Bash(done)",
       "Bash(do sed -i 's|<link rel=\"\"stylesheet\"\" href=\"\"custom-styles.css\"\">|<link rel=\"\"stylesheet\"\" href=\"\"custom-styles.css\"\">\\\\n  <link rel=\"\"stylesheet\"\" href=\"\"nav-styles.css\"\">|' \"$file\")",
