@@ -1,11 +1,12 @@
 """
 vision_service.py — Thumbnail Knowledge Generation & Evaluation
 
-Uses Gemini 2.0 Flash for vision tasks (cheap, supports image URL + base64):
-  1. generate_knowledge(): crawl top trending market listings → extract visual patterns
-  2. evaluate_thumbnail(): score a seller's thumbnail against learned patterns
+Uses Gemini 2.5 Flash Lite for vision tasks (cheapest available):
+  1. _extract_features(): extract rich visual features from a single image
+  2. generate_knowledge(): crawl trending market listings → extract features → aggregate patterns
+  3. evaluate_thumbnail(): score a thumbnail against knowledge base + return extracted features
 
-Key rotation: GEMINI_API_KEY (primary) → GEMINI_API_KEY_2 (fallback on quota error).
+Key rotation: GEMINI_API_KEY_paid (primary) → GEMINI_API_KEY_free (fallback on quota error).
 """
 from __future__ import annotations
 
@@ -21,7 +22,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.config import get_settings
-from ..schemas.vision_schema import CriterionScore, ThumbnailEvalResponse
+from ..schemas.vision_schema import CriterionScore, ThumbnailEvalResponse, ThumbnailFeatures
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,144 @@ def _extract_json(text_content: str) -> Any:
     raise ValueError(f"No valid JSON found in response: {text_content[:300]}")
 
 
+_FEATURE_PROMPT = """You are an expert Etsy product image analyst.
+Analyze this thumbnail image and extract all visual features.
+Return ONLY a valid JSON object with these exact keys (no markdown fences):
+
+{
+  "subject": "<what the main product/subject is, e.g. 'personalized baby onesie'>",
+  "subject_colors": ["#hex1", "#hex2"],
+  "subject_color_names": ["color name1", "color name2"],
+  "background_color": "#hex",
+  "background_color_name": "<color name>",
+  "background_type": "<white_studio|lifestyle|gradient|texture|outdoor|flat_lay|other>",
+  "background_description": "<brief description>",
+  "theme": "<overall theme, e.g. 'minimalist newborn gift'>",
+  "fabric_material": "<material if visible, e.g. 'cotton', 'fleece', 'none'>",
+  "decoration_object": "<decoration/text on product, e.g. 'name Jason', 'dinosaur patch', 'none'>",
+  "decoration_technique": "<embroidery|print|heat_transfer|applique|none>",
+  "decoration_colors": ["#hex1"],
+  "seasonal_type": "<christmas|halloween|easter|valentines|non_seasonal>",
+  "lifestyle_props": ["prop1", "prop2"],
+  "text_overlay": true or false,
+  "text_overlay_content": "<text if present, else null>",
+  "composition": "<centered|flat_lay|close_up|editorial|angled|hanging>",
+  "overall_mood": "<warm|minimal|playful|elegant|rustic|vibrant|etc.>"
+}"""
+
+
+async def _extract_features_from_url(image_url: str, product_type: str | None = None) -> ThumbnailFeatures:
+    """Extract rich visual features from an image URL."""
+    prompt = _FEATURE_PROMPT
+    if product_type:
+        prompt = f"Product type context: {product_type}\n\n{prompt}"
+    contents = [f"{prompt}\n\nImage URL: {image_url}"]
+    try:
+        raw = await _generate_with_fallback(contents)
+        data = _extract_json(raw)
+    except Exception as exc:
+        logger.warning("Feature extraction failed for %s: %s", image_url, exc)
+        return ThumbnailFeatures(source="market", image_url=image_url, product_type=product_type)
+    return _parse_features(data, source="market", image_url=image_url, product_type=product_type)
+
+
+async def _extract_features_from_bytes(
+    image_bytes: bytes,
+    image_media_type: str,
+    product_type: str | None = None,
+) -> ThumbnailFeatures:
+    """Extract rich visual features from raw image bytes."""
+    prompt = _FEATURE_PROMPT
+    if product_type:
+        prompt = f"Product type context: {product_type}\n\n{prompt}"
+    image_part = {"mime_type": image_media_type, "data": image_bytes}
+    try:
+        raw = await _generate_with_fallback([prompt, image_part])
+        data = _extract_json(raw)
+    except Exception as exc:
+        logger.warning("Feature extraction from bytes failed: %s", exc)
+        return ThumbnailFeatures(source="user", product_type=product_type)
+    return _parse_features(data, source="user", product_type=product_type)
+
+
+def _parse_features(data: dict, source: str, image_url: str | None = None, product_type: str | None = None) -> ThumbnailFeatures:
+    return ThumbnailFeatures(
+        source=source,
+        image_url=image_url,
+        product_type=product_type,
+        subject=data.get("subject"),
+        subject_colors=data.get("subject_colors") or [],
+        subject_color_names=data.get("subject_color_names") or [],
+        background_color=data.get("background_color"),
+        background_color_name=data.get("background_color_name"),
+        background_type=data.get("background_type"),
+        background_description=data.get("background_description"),
+        theme=data.get("theme"),
+        fabric_material=data.get("fabric_material"),
+        decoration_object=data.get("decoration_object"),
+        decoration_technique=data.get("decoration_technique"),
+        decoration_colors=data.get("decoration_colors") or [],
+        seasonal_type=data.get("seasonal_type"),
+        lifestyle_props=data.get("lifestyle_props") or [],
+        text_overlay=bool(data.get("text_overlay", False)),
+        text_overlay_content=data.get("text_overlay_content"),
+        composition=data.get("composition"),
+        overall_mood=data.get("overall_mood"),
+    )
+
+
+async def _save_features(features: ThumbnailFeatures, badge: str | None, internal_db: AsyncSession) -> None:
+    """Persist a ThumbnailFeatures record to the thumbnail_features table."""
+    await internal_db.execute(
+        text("""
+            INSERT INTO thumbnail_features (
+                source, listing_id, image_url, product_type, badge,
+                subject, subject_colors, subject_color_names,
+                background_color, background_color_name, background_type, background_description,
+                theme, fabric_material,
+                decoration_object, decoration_technique, decoration_colors,
+                seasonal_type, lifestyle_props,
+                text_overlay, text_overlay_content, composition, overall_mood,
+                extracted_at
+            ) VALUES (
+                :source, :listing_id, :image_url, :product_type, :badge,
+                :subject, CAST(:subject_colors AS jsonb), CAST(:subject_color_names AS jsonb),
+                :background_color, :background_color_name, :background_type, :background_description,
+                :theme, :fabric_material,
+                :decoration_object, :decoration_technique, CAST(:decoration_colors AS jsonb),
+                :seasonal_type, CAST(:lifestyle_props AS jsonb),
+                :text_overlay, :text_overlay_content, :composition, :overall_mood,
+                NOW()
+            )
+        """),
+        {
+            "source": features.source,
+            "listing_id": features.listing_id,
+            "image_url": features.image_url,
+            "product_type": features.product_type,
+            "badge": badge,
+            "subject": features.subject,
+            "subject_colors": json.dumps(features.subject_colors),
+            "subject_color_names": json.dumps(features.subject_color_names),
+            "background_color": features.background_color,
+            "background_color_name": features.background_color_name,
+            "background_type": features.background_type,
+            "background_description": features.background_description,
+            "theme": features.theme,
+            "fabric_material": features.fabric_material,
+            "decoration_object": features.decoration_object,
+            "decoration_technique": features.decoration_technique,
+            "decoration_colors": json.dumps(features.decoration_colors),
+            "seasonal_type": features.seasonal_type,
+            "lifestyle_props": json.dumps(features.lifestyle_props),
+            "text_overlay": features.text_overlay,
+            "text_overlay_content": features.text_overlay_content,
+            "composition": features.composition,
+            "overall_mood": features.overall_mood,
+        },
+    )
+
+
 # ---------------------------------------------------------------------------
 # Function 1: Generate Knowledge
 # ---------------------------------------------------------------------------
@@ -141,9 +280,23 @@ async def generate_knowledge(
         )
 
     image_urls = [r.image_url for r in rows]
+    badges = [r.badge or "" for r in rows]
     titles = [r.title or "" for r in rows]
 
-    # ── Step 2: Detect target_audience segments (text-only call) ────────────
+    # ── Step 2: Extract rich features per image (Tier 1) ────────────────────
+    all_features: list[ThumbnailFeatures] = []
+    for url, badge in zip(image_urls, badges):
+        feat = await _extract_features_from_url(url, product_type=product_type)
+        feat.badge = badge
+        all_features.append(feat)
+        try:
+            await _save_features(feat, badge=badge, internal_db=internal_db)
+        except Exception as exc:
+            logger.warning("Failed to save features for %s: %s", url, exc)
+    if all_features:
+        await internal_db.commit()
+
+    # ── Step 3: Detect target_audience segments from titles (text-only) ─────
     titles_formatted = "\n".join(f"- {t}" for t in titles if t)
     segment_prompt = (
         "You are an Etsy market analyst. Given the following product listing titles, "
@@ -161,59 +314,46 @@ async def generate_knowledge(
     except Exception:
         segments = ["general"]
 
-    # ── Step 3: For each segment, call Gemini Vision to extract patterns ─────
+    # ── Step 4: Aggregate features per segment → patterns (Tier 2) ──────────
     upserted = []
     for seg_idx, segment in enumerate(segments):
-        seg_urls = [u for i, u in enumerate(image_urls) if i % len(segments) == seg_idx]
-        if not seg_urls:
-            seg_urls = image_urls
+        seg_features = [f for i, f in enumerate(all_features) if i % len(segments) == seg_idx]
+        if not seg_features:
+            seg_features = all_features
+        seg_urls = [f.image_url for f in seg_features if f.image_url]
 
-        vision_prompt = (
-            f"You are analyzing Etsy product thumbnail images for product type: '{product_type}', "
-            f"targeting audience segment: '{segment}'.\n\n"
-            "Carefully observe ALL the images and extract dominant visual patterns. "
-            "Return ONLY a valid JSON object with these exact keys:\n"
-            "{\n"
-            '  "dominant_colors": ["color1", "color2", ...],\n'
-            '  "bg_style": "white|lifestyle|gradient|texture|studio|outdoor|...",\n'
-            '  "text_overlay": true or false,\n'
-            '  "composition": "centered|flat_lay|close_up|editorial|...",\n'
-            '  "mood": "warm|minimal|playful|elegant|rustic|...",\n'
-            '  "common_props": ["prop1", "prop2", ...],\n'
-            '  "ta_signals": ["signal1", "signal2", ...],\n'
-            f'  "sample_count": {len(seg_urls[:5])}\n'
-            "}\nNo extra text, no markdown fences — JSON only."
-        )
+        # Aggregate patterns from extracted features
+        all_colors = [c for f in seg_features for c in (f.subject_colors or [])]
+        all_bg_types = [f.background_type for f in seg_features if f.background_type]
+        all_themes = [f.theme for f in seg_features if f.theme]
+        all_moods = [f.overall_mood for f in seg_features if f.overall_mood]
+        all_compositions = [f.composition for f in seg_features if f.composition]
+        all_props = [p for f in seg_features for p in (f.lifestyle_props or [])]
+        all_seasonal = [f.seasonal_type for f in seg_features if f.seasonal_type and f.seasonal_type != "non_seasonal"]
 
-        # Gemini: pass image URLs directly as Part objects
-        import google.generativeai.types as genai_types
-        contents: list = [vision_prompt]
-        for url in seg_urls[:5]:
-            contents.append({"mime_type": "image/jpeg", "uri": url} if url.startswith("http") else url)
+        def most_common(lst: list, top_n: int = 3) -> list:
+            from collections import Counter
+            return [v for v, _ in Counter(lst).most_common(top_n)]
 
-        # For URL images use the simpler approach: include URLs inline in prompt
-        url_list = "\n".join(seg_urls[:5])
-        contents_with_urls: list = [
-            f"{vision_prompt}\n\nImage URLs to analyze:\n{url_list}"
-        ]
+        patterns = {
+            "dominant_colors": most_common(all_colors, 5),
+            "bg_style": most_common(all_bg_types, 1)[0] if all_bg_types else "unknown",
+            "text_overlay": sum(1 for f in seg_features if f.text_overlay) > len(seg_features) / 2,
+            "composition": most_common(all_compositions, 1)[0] if all_compositions else "unknown",
+            "mood": most_common(all_moods, 2),
+            "common_props": most_common(all_props, 5),
+            "ta_signals": most_common(all_themes, 3),
+            "seasonal_types": most_common(all_seasonal, 3),
+            "decoration_techniques": most_common(
+                [f.decoration_technique for f in seg_features if f.decoration_technique and f.decoration_technique != "none"], 3
+            ),
+            "fabric_materials": most_common(
+                [f.fabric_material for f in seg_features if f.fabric_material and f.fabric_material != "none"], 3
+            ),
+            "sample_count": len(seg_features),
+        }
 
-        try:
-            patterns_raw = await _generate_with_fallback(contents_with_urls)
-            patterns: dict = _extract_json(patterns_raw)
-        except Exception as exc:
-            logger.warning("Vision call failed for segment '%s': %s", segment, exc)
-            patterns = {
-                "dominant_colors": [],
-                "bg_style": "unknown",
-                "text_overlay": False,
-                "composition": "unknown",
-                "mood": "unknown",
-                "common_props": [],
-                "ta_signals": [],
-                "sample_count": 0,
-            }
-
-        # ── Step 4: Upsert into thumbnail_knowledge ──────────────────────────
+        # ── Step 5: Upsert into thumbnail_knowledge ──────────────────────────
         await internal_db.execute(
             text("""
                 INSERT INTO thumbnail_knowledge
@@ -232,14 +372,15 @@ async def generate_knowledge(
                 "ta": segment,
                 "patterns": json.dumps(patterns),
                 "sample_urls": json.dumps(seg_urls[:5]),
-                "sample_count": len(seg_urls[:5]),
+                "sample_count": len(seg_features),
             },
         )
         await internal_db.commit()
-        upserted.append({"target_audience": segment, "patterns": patterns, "sample_count": len(seg_urls[:5])})
+        upserted.append({"target_audience": segment, "patterns": patterns, "sample_count": len(seg_features)})
 
     return {
         "product_type": product_type,
+        "images_processed": len(all_features),
         "segments_processed": len(upserted),
         "segments": [u["target_audience"] for u in upserted],
         "details": upserted,
@@ -280,14 +421,31 @@ async def evaluate_thumbnail(
     )
     segments_list = [row.target_audience for row in knowledge_rows]
 
-    # ── Step 2: Build Gemini multimodal request (base64 inline image) ─────
+    # ── Step 2: Extract rich features from image (Tier 1) ─────────────────
+    features = await _extract_features_from_bytes(image_bytes, image_media_type, product_type)
+
+    # ── Step 3: Build Gemini scoring prompt using features + knowledge ─────
     criteria_str = "\n".join(f"- {c}" for c in RUBRIC_CRITERIA)
+    features_summary = json.dumps({
+        "subject": features.subject,
+        "subject_colors": features.subject_colors,
+        "background_type": features.background_type,
+        "theme": features.theme,
+        "composition": features.composition,
+        "seasonal_type": features.seasonal_type,
+        "text_overlay": features.text_overlay,
+        "overall_mood": features.overall_mood,
+        "decoration_technique": features.decoration_technique,
+        "fabric_material": features.fabric_material,
+    }, indent=2)
 
     eval_prompt = (
         f"You are an expert Etsy thumbnail evaluator for product type: '{product_type}'.\n\n"
+        "## Extracted Image Features\n"
+        f"{features_summary}\n\n"
         "## Step 1 — Detect Target Audience\n"
         f"Available segments: {segments_list}\n"
-        "Look at the image and pick the closest matching segment, or 'general' if none fit.\n\n"
+        "Pick the closest matching segment, or 'general' if none fit.\n\n"
         "## Step 2 — Score 9 criteria (1-10 each)\n"
         "Use the knowledge base patterns below as benchmark.\n\n"
         f"## Knowledge Base\n{knowledge_context}\n\n"
@@ -312,11 +470,9 @@ async def evaluate_thumbnail(
         "}"
     )
 
-    # Gemini inline image part
-    image_part = {"mime_type": image_media_type, "data": image_bytes}
-
+    # Send prompt-only (features already extracted above)
     try:
-        raw = await _generate_with_fallback([eval_prompt, image_part])
+        raw = await _generate_with_fallback([eval_prompt])
     except Exception as exc:
         logger.error("Gemini evaluate call failed: %s", exc)
         raise HTTPException(status_code=502, detail=f"Gemini vision call failed: {exc}")
@@ -327,7 +483,7 @@ async def evaluate_thumbnail(
         logger.error("Failed to parse evaluation response: %s | raw: %s", exc, raw[:500])
         raise HTTPException(status_code=502, detail="Gemini returned invalid JSON during evaluation.")
 
-    # ── Step 3: Parse into ThumbnailEvalResponse ──────────────────────────
+    # ── Step 4: Parse into ThumbnailEvalResponse ──────────────────────────
     scores_raw = data.get("scores", {})
     scores: dict[str, CriterionScore] = {}
     for criterion in RUBRIC_CRITERIA:
@@ -346,4 +502,5 @@ async def evaluate_thumbnail(
         scores=scores,
         strengths=data.get("strengths", []),
         suggestions=data.get("suggestions", []),
+        features=features,
     )

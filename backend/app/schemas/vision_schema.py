@@ -7,6 +7,52 @@ from pydantic import BaseModel, Field
 
 
 # ---------------------------------------------------------------------------
+# Rich Thumbnail Feature Extraction
+# ---------------------------------------------------------------------------
+
+class ThumbnailFeatures(BaseModel):
+    """Rich visual features extracted from a single thumbnail image."""
+    # Source
+    source: str = "user"          # 'market' | 'user'
+    listing_id: str | None = None
+    image_url: str | None = None
+    product_type: str | None = None
+    badge: str | None = None
+
+    # Subject
+    subject: str | None = None
+    subject_colors: list[str] = Field(default_factory=list)       # hex codes
+    subject_color_names: list[str] = Field(default_factory=list)  # color names
+
+    # Background
+    background_color: str | None = None        # hex
+    background_color_name: str | None = None
+    background_type: str | None = None         # white_studio | lifestyle | gradient | texture | outdoor
+    background_description: str | None = None
+
+    # Theme & Style
+    theme: str | None = None
+    fabric_material: str | None = None
+
+    # Decoration
+    decoration_object: str | None = None
+    decoration_technique: str | None = None    # embroidery | print | heat_transfer | none
+    decoration_colors: list[str] = Field(default_factory=list)
+
+    # Seasonal & Context
+    seasonal_type: str | None = None           # christmas | halloween | easter | valentines | non_seasonal
+    lifestyle_props: list[str] = Field(default_factory=list)
+
+    # Composition & Mood
+    text_overlay: bool = False
+    text_overlay_content: str | None = None
+    composition: str | None = None             # centered | flat_lay | close_up | editorial
+    overall_mood: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+# ---------------------------------------------------------------------------
 # Knowledge Generation
 # ---------------------------------------------------------------------------
 
@@ -48,3 +94,4 @@ class ThumbnailEvalResponse(BaseModel):
     scores: dict[str, CriterionScore]
     strengths: list[str]
     suggestions: list[str]
+    features: ThumbnailFeatures | None = None   # rich extracted features

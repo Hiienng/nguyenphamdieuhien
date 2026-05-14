@@ -1908,6 +1908,45 @@
       font-weight: 700;
     }
 
+    /* Features grid */
+    .thumb-features-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 12px;
+      margin-top: 4px;
+    }
+    .thumb-feature-item {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .thumb-feature-label {
+      font-family: var(--font-sans);
+      font-size: 0.68rem;
+      color: var(--warm-gray);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .thumb-feature-value {
+      font-family: var(--font-sans);
+      font-size: 0.80rem;
+      color: var(--charcoal);
+    }
+    .thumb-feature-colors {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+    .thumb-color-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      border: 1px solid rgba(0,0,0,0.12);
+      display: inline-block;
+      title: attr(data-color);
+    }
+
     .thumb-spinner {
       display: inline-block;
       width: 14px;
@@ -1927,20 +1966,56 @@
 <body>
 
   <!-- ── Login Gate ────────────────────────────────────── -->
+  <!-- ── Auth Gate ─────────────────────────────────── -->
   <div id="login-gate">
-    <div class="login-box">
-      <p class="login-brand">Findatasolution<span>.</span></p>
+    <!-- Login form -->
+    <div id="auth-login-box" class="login-box">
+      <p class="login-brand">EtseeMate<span>.</span></p>
       <div>
-        <h1 class="login-heading">Private access</h1>
-        <!-- <p class="login-sub">Enter your access token to continue.</p> -->
+        <h1 class="login-heading">Sign in</h1>
       </div>
       <div class="login-field">
-        <label class="login-label" for="token-input">Access Token</label>
-        <input id="token-input" class="login-input" type="password" placeholder="Paste token here" autocomplete="off"
-          spellcheck="false" />
-        <p id="login-error" class="login-error">Invalid token. Please try again.</p>
+        <label class="login-label" for="auth-email">Email</label>
+        <input id="auth-email" class="login-input" type="email" placeholder="you@example.com" autocomplete="email" />
       </div>
-      <button id="login-btn" class="login-btn">Enter</button>
+      <div class="login-field">
+        <label class="login-label" for="auth-password">Password</label>
+        <input id="auth-password" class="login-input" type="password" placeholder="••••••••" autocomplete="current-password" />
+        <p id="login-error" class="login-error"></p>
+      </div>
+      <button id="login-btn" class="login-btn">Sign in</button>
+      <p style="font-size:0.85rem;color:var(--stone);text-align:center">
+        No account? <a href="#" id="goto-register" style="color:var(--terracotta);text-decoration:none">Create one</a>
+      </p>
+    </div>
+
+    <!-- Register form (hidden by default) -->
+    <div id="auth-register-box" class="login-box" style="display:none">
+      <p class="login-brand">EtseeMate<span>.</span></p>
+      <div>
+        <h1 class="login-heading">Create account</h1>
+      </div>
+      <div class="login-field">
+        <label class="login-label" for="reg-name">Full name</label>
+        <input id="reg-name" class="login-input" type="text" placeholder="Your name" autocomplete="name" />
+      </div>
+      <div class="login-field">
+        <label class="login-label" for="reg-email">Email</label>
+        <input id="reg-email" class="login-input" type="email" placeholder="you@example.com" autocomplete="email" />
+      </div>
+      <div class="login-field">
+        <label class="login-label" for="reg-password">Password</label>
+        <input id="reg-password" class="login-input" type="password" placeholder="Min 8 characters" autocomplete="new-password" />
+      </div>
+      <div class="login-field">
+        <label class="login-label" for="reg-confirm">Confirm password</label>
+        <input id="reg-confirm" class="login-input" type="password" placeholder="Repeat password" autocomplete="new-password" />
+        <p id="register-error" class="login-error"></p>
+      </div>
+      <button id="register-btn" class="login-btn">Create account</button>
+      <p style="font-size:0.85rem;color:var(--stone);text-align:center">
+        Already have an account? <a href="#" id="goto-login" style="color:var(--terracotta);text-decoration:none">Sign in</a>
+      </p>
     </div>
   </div>
 
@@ -1952,10 +2027,13 @@
       <button class="hub-tab active" role="tab" data-tab="performance">Performance Hub</button>
       <button class="hub-tab" role="tab" data-tab="research">Research Hub</button>
     </div>
-    <ul class="nav-links">
+    <ul class="nav-links" style="display:flex;align-items:center;gap:12px;list-style:none">
+      <li id="nav-credit-badge" style="display:none;font-size:0.78rem;color:var(--stone);padding:3px 10px;border-radius:20px;border:1px solid var(--border-warm);background:var(--ivory)">⚡ <span id="nav-credit-count">0</span></li>
+      <li id="nav-sub-badge" style="display:none;font-size:0.75rem;font-weight:600;padding:3px 10px;border-radius:20px;letter-spacing:0.04em"></li>
+      <li id="nav-user-name" style="display:none;font-size:0.82rem;color:var(--charcoal)"></li>
       <li><a href="docs.html" style="font-size:0.80rem;color:var(--stone);text-decoration:none;padding:0 4px"
           onmouseover="this.style.color='var(--charcoal)'" onmouseout="this.style.color='var(--stone)'">Docs</a></li>
-      <li><a href="mailto:" class="nav-cta">Sign out</a></li>
+      <li><a href="#" id="nav-signout" class="nav-cta" onclick="authLogout();return false">Sign out</a></li>
     </ul>
   </nav>
 
@@ -2492,6 +2570,13 @@
               <p class="thumb-section-label" style="margin-top:8px">Suggestions</p>
               <ul class="thumb-suggestions-list" id="thumbSuggestionsList"></ul>
             </div>
+
+            <!-- Extracted Features -->
+            <div id="thumbFeaturesSection" style="display:none">
+              <hr class="thumb-divider">
+              <p class="thumb-section-label" style="margin-top:8px">Extracted Features</p>
+              <div class="thumb-features-grid" id="thumbFeaturesGrid"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -2779,8 +2864,14 @@
     const panels = document.querySelectorAll('.hub-panel');
 
     tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
+      tab.addEventListener('click', async () => {
         const target = tab.dataset.tab;
+
+        // Performance Hub requires active subscription
+        if (target === 'performance') {
+          const allowed = await showSubscriptionPaywall();
+          if (!allowed) return;
+        }
 
         tabs.forEach(t => t.classList.remove('active'));
         panels.forEach(p => p.classList.remove('active'));
@@ -3002,6 +3093,12 @@
     async function thumbEvaluate() {
       if (!thumbSelectedFile) return;
 
+      // Check credit balance before evaluating
+      if (!_currentUser || (_currentUser.credit_balance || 0) < 1) {
+        await showDepositModal();
+        return;
+      }
+
       // Clear previous results before new evaluation
       document.getElementById('thumbResults').classList.remove('visible');
       document.getElementById('thumbCriteriaList').innerHTML = '';
@@ -3009,6 +3106,8 @@
       document.getElementById('thumbSuggestionsList').innerHTML = '';
       document.getElementById('thumbStrengthsSection').style.display = 'none';
       document.getElementById('thumbSuggestionsSection').style.display = 'none';
+      document.getElementById('thumbFeaturesSection').style.display = 'none';
+      document.getElementById('thumbFeaturesGrid').innerHTML = '';
 
       thumbSetBtnLoading(true);
 
@@ -3019,10 +3118,12 @@
         formData.append('image', thumbSelectedFile);
         formData.append('product_type', product_type);
 
-        const res = await fetch('/api/v1/intelligence/thumbnail-eval', {
+        const res = await authFetch('/api/v1/intelligence/thumbnail-eval', {
           method: 'POST',
           body: formData
         });
+        // Refresh user credits after successful eval
+        if (res.ok) authLoadUser();
         if (!res.ok) {
           const errBody = await res.json().catch(() => ({}));
           throw new Error(errBody.detail || 'API error ' + res.status);
@@ -3100,6 +3201,50 @@
         suggestionsSection.style.display = 'none';
       }
 
+      // Extracted Features
+      const featSection = document.getElementById('thumbFeaturesSection');
+      const featGrid = document.getElementById('thumbFeaturesGrid');
+      const f = data.features;
+      if (f) {
+        featGrid.innerHTML = '';
+        const addItem = (label, value) => {
+          if (!value && value !== false) return;
+          const el = document.createElement('div');
+          el.className = 'thumb-feature-item';
+          el.innerHTML = `<span class="thumb-feature-label">${label}</span><span class="thumb-feature-value">${value}</span>`;
+          featGrid.appendChild(el);
+        };
+        const addColors = (label, hexArr, nameArr) => {
+          if (!hexArr || !hexArr.length) return;
+          const el = document.createElement('div');
+          el.className = 'thumb-feature-item';
+          const swatches = hexArr.map((hex, i) => {
+            const name = (nameArr && nameArr[i]) ? nameArr[i] : hex;
+            return `<span class="thumb-color-swatch" style="background:${hex}" title="${name}"></span>`;
+          }).join('');
+          el.innerHTML = `<span class="thumb-feature-label">${label}</span><div class="thumb-feature-colors">${swatches}</div>`;
+          featGrid.appendChild(el);
+        };
+
+        addItem('Subject', f.subject);
+        addColors('Subject Colors', f.subject_colors, f.subject_color_names);
+        addItem('Background', f.background_type ? `${f.background_type}${f.background_color_name ? ' · ' + f.background_color_name : ''}` : null);
+        addItem('Theme', f.theme);
+        addItem('Mood', f.overall_mood);
+        addItem('Composition', f.composition);
+        addItem('Fabric', f.fabric_material && f.fabric_material !== 'none' ? f.fabric_material : null);
+        addItem('Decoration', f.decoration_object && f.decoration_object !== 'none' ? f.decoration_object : null);
+        addItem('Technique', f.decoration_technique && f.decoration_technique !== 'none' ? f.decoration_technique : null);
+        addColors('Decoration Colors', f.decoration_colors, null);
+        addItem('Seasonal', f.seasonal_type);
+        if (f.lifestyle_props && f.lifestyle_props.length) addItem('Props', f.lifestyle_props.join(', '));
+        addItem('Text Overlay', f.text_overlay ? (f.text_overlay_content || 'Yes') : null);
+
+        featSection.style.display = featGrid.children.length ? 'block' : 'none';
+      } else {
+        featSection.style.display = 'none';
+      }
+
       document.getElementById('thumbResults').classList.add('visible');
     }
 
@@ -3116,7 +3261,7 @@
       document.getElementById('thumbKnowledgeStatus').textContent = 'Generating knowledge...';
 
       try {
-        const res = await fetch('/api/v1/intelligence/thumbnail-knowledge/generate', {
+        const res = await authFetch('/api/v1/intelligence/thumbnail-knowledge/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ category })
@@ -3139,7 +3284,7 @@
       const category = document.getElementById('thumbCategory').value;
       document.getElementById('thumbKnowledgeStatus').textContent = 'Knowledge: đang tải...';
       try {
-        const res = await fetch(`/api/v1/intelligence/thumbnail-knowledge?category=${encodeURIComponent(category)}`);
+        const res = await authFetch(`/api/v1/intelligence/thumbnail-knowledge?category=${encodeURIComponent(category)}`);
         if (res.status === 404) {
           document.getElementById('thumbKnowledgeStatus').textContent =
             `Knowledge: chưa có cho "${category}" — nhấn Generate Knowledge để tạo`;
@@ -3220,7 +3365,7 @@
 
     async function loadListingsDashboard() {
       try {
-        const res = await fetch('/api/v1/performance/listings');
+        const res = await authFetch('/api/v1/performance/listings');
         if (res.ok) {
           LISTINGS = await res.json();
           renderImprTable();
@@ -3870,7 +4015,7 @@
       btn.disabled = true;
       let finalLabel = 'Tải lại';
       try {
-        const res = await fetch('/api/v1/performance/refresh', { method: 'POST' });
+        const res = await authFetch('/api/v1/performance/refresh', { method: 'POST' });
         const payload = await res.json().catch(() => ({}));
         if (!res.ok) {
           console.warn('[imprReload] refresh error', payload);
@@ -4081,7 +4226,7 @@
             await new Promise(r => setTimeout(r, 0));
           }
         }
-        const upRes = await fetch(API_BASE + '/upload', { method: 'POST', body: fd, signal: controller.signal });
+        const upRes = await authFetch(API_BASE + '/upload', { method: 'POST', body: fd, signal: controller.signal });
         clearTimeout(timeoutId);
         if (!upRes.ok) throw new Error('Upload failed: ' + (await upRes.text()));
         const upData = await upRes.json();
@@ -4089,7 +4234,7 @@
         prog.textContent = 'Extracting with Claude Vision... (this may take a minute)';
 
         // Step 2: Extract
-        const exRes = await fetch(API_BASE + '/extract?batch_id=' + _importBatchId, { method: 'POST' });
+        const exRes = await authFetch(API_BASE + '/extract?batch_id=' + _importBatchId, { method: 'POST' });
         if (!exRes.ok) throw new Error('Extract failed: ' + (await exRes.text()));
         const exData = await exRes.json();
 
@@ -4127,7 +4272,7 @@
       let _pollPrevPct = -1;  // track last fetched progress to avoid repeated empty preview calls
       const pollInterval = setInterval(async () => {
         try {
-          const res = await fetch('/api/v1/internal/status?batch_id=' + batchId);
+          const res = await authFetch('/api/v1/internal/status?batch_id=' + batchId);
           if (!res.ok) return;
           const data = await res.json();
           console.log("Polling batch status:", data);
@@ -4167,7 +4312,7 @@
 
     async function importLoadPreviewForBatch(batchId) {
       try {
-        const res = await fetch(API_BASE + '/preview?batch_id=' + batchId);
+        const res = await authFetch(API_BASE + '/preview?batch_id=' + batchId);
         console.log('[IMPORT] preview fetch status', res.status, 'for', batchId);
         if (!res.ok) return;
         const data = await res.json();
@@ -4370,7 +4515,7 @@
         return;
       }
       try {
-        const res = await fetch(API_BASE + '/confirm', {
+        const res = await authFetch(API_BASE + '/confirm', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ batch_id: _importBatchId, no_vm: vmCode, listing_report: _importLR, keyword_report: _importKW }),
@@ -4390,7 +4535,7 @@
       if (!_importBatchId) return;
       if (!confirm('Discard this batch? Raw images will be deleted.')) return;
       try {
-        await fetch(API_BASE + '/discard?batch_id=' + _importBatchId, { method: 'POST' });
+        await authFetch(API_BASE + '/discard?batch_id=' + _importBatchId, { method: 'POST' });
         importReset();
         importLoadHistory();
       } catch (err) {
@@ -4402,7 +4547,7 @@
     async function importRollback(batchId) {
       if (!confirm('Rollback batch ' + batchId + '? DB rows will be deleted.')) return;
       try {
-        const res = await fetch(API_BASE + '/rollback?batch_id=' + batchId, { method: 'POST' });
+        const res = await authFetch(API_BASE + '/rollback?batch_id=' + batchId, { method: 'POST' });
         if (!res.ok) throw new Error(await res.text());
         importLoadHistory();
       } catch (err) {
@@ -4417,7 +4562,7 @@
       prog.style.color = '';
       prog.textContent = 'Retrying extraction for ' + batchId + '...';
       try {
-        const res = await fetch(API_BASE + '/extract?batch_id=' + batchId, { method: 'POST' });
+        const res = await authFetch(API_BASE + '/extract?batch_id=' + batchId, { method: 'POST' });
         if (!res.ok) throw new Error(await res.text());
         const exData = await res.json();
         _importBatchId = batchId;
@@ -4444,7 +4589,7 @@
     async function importDiscardHistory(batchId) {
       if (!confirm('Discard batch ' + batchId + '? Raw images will be deleted.')) return;
       try {
-        const res = await fetch(API_BASE + '/discard?batch_id=' + batchId, { method: 'POST' });
+        const res = await authFetch(API_BASE + '/discard?batch_id=' + batchId, { method: 'POST' });
         if (!res.ok) throw new Error(await res.text());
         importLoadHistory();
       } catch (err) {
@@ -4455,7 +4600,7 @@
     // ── Load History ──────────────────────────────────
     async function importLoadHistory() {
       try {
-        const res = await fetch(API_BASE + '/history');
+        const res = await authFetch(API_BASE + '/history');
         if (!res.ok) throw new Error('Failed to load history');
         const items = await res.json();
         const body = document.getElementById('importHistoryBody');
@@ -4544,62 +4689,254 @@
 
   <!-- ── Auth Script ───────────────────────────────── -->
   <script>
-    // SHA-256 hash of the access token (raw token is never stored in source)
-    const TOKEN_HASH = 'da30c992efec65cd449911c6906d744c80049a67291f926f1edfef8b932f2baa';
-    const STORAGE_KEY = 'hien_auth_v1';
+    // ── Auth state (in-memory only, never persisted to localStorage) ──
+    let _accessToken = null;
+    let _currentUser = null;
 
-    const gate = document.getElementById('login-gate');
-    const btn = document.getElementById('login-btn');
-    const input = document.getElementById('token-input');
-    const err = document.getElementById('login-error');
-
-    async function sha256(str) {
-      const buf = await crypto.subtle.digest(
-        'SHA-256',
-        new TextEncoder().encode(str)
-      );
-      return Array.from(new Uint8Array(buf))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
+    function getAuthHeaders() {
+      return _accessToken ? { 'Authorization': 'Bearer ' + _accessToken } : {};
     }
 
-    async function tryUnlock(token) {
-      btn.disabled = true;
-      const hash = await sha256(token.trim());
-      if (hash === TOKEN_HASH) {
-        localStorage.setItem(STORAGE_KEY, hash);
-        gate.classList.add('hidden');
-      } else {
-        input.classList.add('error');
-        err.classList.add('visible');
-        btn.disabled = false;
-        input.focus();
+    async function authFetch(url, opts = {}) {
+      opts.headers = Object.assign({}, opts.headers || {}, getAuthHeaders());
+      let res = await fetch(url, opts);
+      if (res.status === 401 && _accessToken) {
+        // Try to refresh
+        const refreshed = await authRefresh();
+        if (refreshed) {
+          opts.headers = Object.assign({}, opts.headers || {}, getAuthHeaders());
+          res = await fetch(url, opts);
+        }
       }
+      return res;
     }
 
-    // Check session storage on load
-    (async () => {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved === TOKEN_HASH) {
-        gate.classList.add('hidden');
+    async function authRefresh() {
+      try {
+        const res = await fetch('/api/v1/auth/refresh', { method: 'POST', credentials: 'include' });
+        if (!res.ok) { authShowGate(); return false; }
+        const data = await res.json();
+        _accessToken = data.access_token;
+        return true;
+      } catch { return false; }
+    }
+
+    async function authLogin(email, password) {
+      const res = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Login failed');
+      }
+      const data = await res.json();
+      _accessToken = data.access_token;
+      await authLoadUser();
+      authHideGate();
+    }
+
+    async function authRegister(fullName, email, password) {
+      const res = await fetch('/api/v1/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password, full_name: fullName }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Registration failed');
+      }
+      const data = await res.json();
+      _accessToken = data.access_token;
+      await authLoadUser();
+      authHideGate();
+    }
+
+    async function authLogout() {
+      await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
+      _accessToken = null;
+      _currentUser = null;
+      authUpdateNav(null);
+      authShowGate();
+    }
+
+    async function authLoadUser() {
+      try {
+        const res = await authFetch('/api/v1/auth/me');
+        if (!res.ok) return;
+        _currentUser = await res.json();
+        authUpdateNav(_currentUser);
+      } catch {}
+    }
+
+    function authUpdateNav(user) {
+      const creditBadge = document.getElementById('nav-credit-badge');
+      const subBadge = document.getElementById('nav-sub-badge');
+      const userName = document.getElementById('nav-user-name');
+      const creditCount = document.getElementById('nav-credit-count');
+      if (!user) {
+        if (creditBadge) creditBadge.style.display = 'none';
+        if (subBadge) subBadge.style.display = 'none';
+        if (userName) userName.style.display = 'none';
         return;
       }
-      input.focus();
+      if (userName) { userName.textContent = user.full_name || user.email; userName.style.display = ''; }
+      if (creditBadge && creditCount) {
+        creditCount.textContent = user.credit_balance || 0;
+        creditBadge.style.display = '';
+      }
+      if (subBadge) {
+        const hasSub = user.subscription && user.subscription.status === 'active';
+        subBadge.textContent = hasSub ? 'PRO' : 'Free';
+        subBadge.style.background = hasSub ? '#e6f4eb' : 'var(--warm-sand)';
+        subBadge.style.color = hasSub ? 'var(--status-good)' : 'var(--stone)';
+        subBadge.style.display = '';
+      }
+    }
+
+    function authHideGate() {
+      document.getElementById('login-gate').classList.add('hidden');
+      // Handle ?payment=success redirect from Stripe
+      const params = new URLSearchParams(location.search);
+      if (params.get('payment') === 'success') {
+        const type = params.get('type');
+        const msg = type === 'credits' ? '✓ Credits added to your account!' : '✓ Subscription activated!';
+        showToast(msg, 'success');
+        history.replaceState({}, '', location.pathname);
+        authLoadUser();
+      }
+    }
+
+    function authShowGate() {
+      document.getElementById('login-gate').classList.remove('hidden');
+      document.getElementById('auth-login-box').style.display = '';
+      document.getElementById('auth-register-box').style.display = 'none';
+    }
+
+    // ── Toast helper ──
+    function showToast(msg, type = 'info') {
+      const t = document.createElement('div');
+      t.textContent = msg;
+      t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 20px;border-radius:10px;font-size:0.88rem;font-family:var(--font-sans);box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.3s;
+        background:${type === 'success' ? '#e6f4eb' : type === 'error' ? '#fdecea' : 'var(--ivory)'};
+        color:${type === 'success' ? 'var(--status-good)' : type === 'error' ? '#b53333' : 'var(--charcoal)'};
+        border:1px solid ${type === 'success' ? '#b8dfca' : type === 'error' ? '#f5c6c6' : 'var(--border-warm)'}`;
+      document.body.appendChild(t);
+      setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3500);
+    }
+
+    // ── Paywall helpers ──
+    async function showSubscriptionPaywall() {
+      if (_currentUser && _currentUser.is_admin) return true; // admin bypass
+      if (_currentUser && _currentUser.subscription && _currentUser.subscription.status === 'active') return true;
+      document.body.insertAdjacentHTML('beforeend', `
+        <div id="paywall-modal" style="position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;background:rgba(20,20,19,0.55)" onclick="if(event.target===this)document.getElementById('paywall-modal').remove()">
+          <div style="background:var(--white);border-radius:16px;width:440px;max-width:94vw;box-shadow:0 8px 40px rgba(0,0,0,0.18);padding:36px 32px">
+            <h2 style="font-family:var(--font-serif);font-size:1.5rem;font-weight:500;margin-bottom:8px;color:var(--near-black)">Unlock Performance Hub</h2>
+            <p style="font-size:0.92rem;color:var(--charcoal);margin-bottom:24px;line-height:1.6">Get full access to all performance analytics, listing improvement insights, and decision rules for <strong>$9.9/month</strong>.</p>
+            <button onclick="paywallSubscribe()" style="width:100%;padding:13px;border-radius:12px;border:none;background:var(--terracotta);color:#fff;font-size:1rem;font-weight:600;cursor:pointer;margin-bottom:12px">Subscribe $9.9/month</button>
+            <p style="text-align:center;font-size:0.83rem;color:var(--stone)">Or <a href="#" onclick="document.getElementById('paywall-modal').remove();showDepositModal();return false" style="color:var(--terracotta);text-decoration:none">deposit credits instead</a></p>
+          </div>
+        </div>`);
+      return false;
+    }
+
+    async function showDepositModal() {
+      const balance = _currentUser ? (_currentUser.credit_balance || 0) : 0;
+      document.body.insertAdjacentHTML('beforeend', `
+        <div id="deposit-modal" style="position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;background:rgba(20,20,19,0.55)" onclick="if(event.target===this)document.getElementById('deposit-modal').remove()">
+          <div style="background:var(--white);border-radius:16px;width:440px;max-width:94vw;box-shadow:0 8px 40px rgba(0,0,0,0.18);padding:36px 32px">
+            <h2 style="font-family:var(--font-serif);font-size:1.5rem;font-weight:500;margin-bottom:8px;color:var(--near-black)">You're out of credits</h2>
+            <p style="font-size:0.92rem;color:var(--charcoal);margin-bottom:8px;line-height:1.6">Get <strong>10 thumbnail scoring credits</strong> for <strong>$9.9</strong>.</p>
+            <p style="font-size:0.82rem;color:var(--stone);margin-bottom:24px">Current balance: ${balance} credits</p>
+            <button onclick="paywallDeposit()" style="width:100%;padding:13px;border-radius:12px;border:none;background:var(--terracotta);color:#fff;font-size:1rem;font-weight:600;cursor:pointer">Deposit $9.9 → 10 credits</button>
+          </div>
+        </div>`);
+    }
+
+    async function paywallSubscribe() {
+      try {
+        const res = await authFetch('/api/v1/billing/subscribe', { method: 'POST' });
+        if (!res.ok) throw new Error('Failed');
+        const { checkout_url } = await res.json();
+        window.location.href = checkout_url;
+      } catch { showToast('Could not start checkout. Try again.', 'error'); }
+    }
+
+    async function paywallDeposit() {
+      try {
+        const res = await authFetch('/api/v1/billing/deposit', { method: 'POST' });
+        if (!res.ok) throw new Error('Failed');
+        const { checkout_url } = await res.json();
+        window.location.href = checkout_url;
+      } catch { showToast('Could not start checkout. Try again.', 'error'); }
+    }
+
+    // ── Wire up login form ──
+    const gate = document.getElementById('login-gate');
+    const loginBtn = document.getElementById('login-btn');
+    const registerBtn = document.getElementById('register-btn');
+
+    loginBtn.addEventListener('click', async () => {
+      const email = document.getElementById('auth-email').value.trim();
+      const pass = document.getElementById('auth-password').value;
+      const errEl = document.getElementById('login-error');
+      errEl.style.display = 'none';
+      loginBtn.disabled = true; loginBtn.textContent = 'Signing in…';
+      try {
+        await authLogin(email, pass);
+      } catch (e) {
+        errEl.textContent = e.message; errEl.style.display = 'block';
+      } finally {
+        loginBtn.disabled = false; loginBtn.textContent = 'Sign in';
+      }
+    });
+    document.getElementById('auth-password').addEventListener('keydown', e => { if (e.key === 'Enter') loginBtn.click(); });
+
+    registerBtn.addEventListener('click', async () => {
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const pass = document.getElementById('reg-password').value;
+      const confirm = document.getElementById('reg-confirm').value;
+      const errEl = document.getElementById('register-error');
+      errEl.style.display = 'none';
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'Valid email required'; errEl.style.display = 'block'; return; }
+      if (pass.length < 8) { errEl.textContent = 'Password must be at least 8 characters'; errEl.style.display = 'block'; return; }
+      if (pass !== confirm) { errEl.textContent = 'Passwords do not match'; errEl.style.display = 'block'; return; }
+      registerBtn.disabled = true; registerBtn.textContent = 'Creating account…';
+      try {
+        await authRegister(name, email, pass);
+      } catch (e) {
+        errEl.textContent = e.message; errEl.style.display = 'block';
+      } finally {
+        registerBtn.disabled = false; registerBtn.textContent = 'Create account';
+      }
+    });
+
+    document.getElementById('goto-register').addEventListener('click', e => {
+      e.preventDefault();
+      document.getElementById('auth-login-box').style.display = 'none';
+      document.getElementById('auth-register-box').style.display = '';
+    });
+    document.getElementById('goto-login').addEventListener('click', e => {
+      e.preventDefault();
+      document.getElementById('auth-register-box').style.display = 'none';
+      document.getElementById('auth-login-box').style.display = '';
+    });
+
+    // ── Boot: try refresh token on load ──
+    (async () => {
+      const ok = await authRefresh();
+      if (ok) {
+        await authLoadUser();
+        authHideGate();
+      } else {
+        authShowGate();
+      }
     })();
-
-    // Button click
-    btn.addEventListener('click', () => tryUnlock(input.value));
-
-    // Enter key
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') tryUnlock(input.value);
-    });
-
-    // Reset error state on typing
-    input.addEventListener('input', () => {
-      input.classList.remove('error');
-      err.classList.remove('visible');
-    });
   </script>
 
   <!-- ── Rules Manager JS ───────────────────────── -->
@@ -4634,7 +4971,7 @@
         const tbody = document.getElementById('rulesBody');
         if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="padding:32px;text-align:center;color:var(--stone);font-size:0.85rem">Đang tải…</td></tr>`;
         try {
-          const res = await fetch(API);
+          const res = await authFetch(API);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           rules = await res.json();
           window._rulesReady = true;
@@ -4650,7 +4987,7 @@
       /* ── Load threshold from DB ── */
       window.thrLoadFromDB = async function thrLoadFromDB() {
         try {
-          const res = await fetch(`${THR_API}/current`);
+          const res = await authFetch(`${THR_API}/current`);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const d = await res.json();
           _applyThr(d);
@@ -4692,7 +5029,7 @@
         btn.disabled = true;
         btn.textContent = 'Đang lưu…';
         try {
-          const res = await fetch(THR_API, {
+          const res = await authFetch(THR_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ roas_be: roas, cr_high: cr, ctr_high: ctr, note, created_by: 'user' }),
@@ -4713,7 +5050,7 @@
       /* ── History modal ── */
       window.thrShowHistory = async () => {
         try {
-          const res = await fetch(`${THR_API}/history`);
+          const res = await authFetch(`${THR_API}/history`);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const rows = await res.json();
           const body = rows.length === 0
@@ -5069,7 +5406,7 @@
       window.rulesConfirmDelete = async (id) => {
         document.getElementById('rulesDeleteModal').remove();
         try {
-          const res = await fetch(`${API}/${id}`, { method: 'DELETE' });
+          const res = await authFetch(`${API}/${id}`, { method: 'DELETE' });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           await rulesLoadFromDB();
         } catch (err) {
@@ -5094,7 +5431,7 @@
         btn.disabled = true;
         btn.textContent = 'Đang lưu…';
         try {
-          const res = await fetch(id ? `${API}/${id}` : API, {
+          const res = await authFetch(id ? `${API}/${id}` : API, {
             method: id ? 'PUT' : 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
