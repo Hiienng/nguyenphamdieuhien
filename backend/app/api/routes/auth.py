@@ -31,6 +31,7 @@ async def register(body: RegisterRequest, response: Response, db: AsyncSession =
         password_hash=hash_password(body.password),
     )
     db.add(user)
+    await db.flush()  # ensure user.id is persisted before FK reference
 
     credit = CreditAccount(id=str(uuid.uuid4()), user_id=user.id, balance=0)
     db.add(credit)
