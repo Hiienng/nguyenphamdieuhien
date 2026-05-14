@@ -1996,10 +1996,6 @@
         <h1 class="login-heading">Create account</h1>
       </div>
       <div class="login-field">
-        <label class="login-label" for="reg-name">Full name</label>
-        <input id="reg-name" class="login-input" type="text" placeholder="Your name" autocomplete="name" />
-      </div>
-      <div class="login-field">
         <label class="login-label" for="reg-email">Email</label>
         <input id="reg-email" class="login-input" type="email" placeholder="you@example.com" autocomplete="email" />
       </div>
@@ -4738,12 +4734,12 @@
       authHideGate();
     }
 
-    async function authRegister(fullName, email, password) {
+    async function authRegister(email, password) {
       const res = await fetch('/api/v1/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, password, full_name: fullName }),
+        body: JSON.stringify({ email, password }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -4783,7 +4779,7 @@
         if (userName) userName.style.display = 'none';
         return;
       }
-      if (userName) { userName.textContent = user.full_name || user.email; userName.style.display = ''; }
+      if (userName) { userName.textContent = user.email; userName.style.display = ''; }
       if (creditBadge && creditCount) {
         creditCount.textContent = user.credit_balance || 0;
         creditBadge.style.display = '';
@@ -4897,7 +4893,6 @@
     document.getElementById('auth-password').addEventListener('keydown', e => { if (e.key === 'Enter') loginBtn.click(); });
 
     registerBtn.addEventListener('click', async () => {
-      const name = document.getElementById('reg-name').value.trim();
       const email = document.getElementById('reg-email').value.trim();
       const pass = document.getElementById('reg-password').value;
       const confirm = document.getElementById('reg-confirm').value;
@@ -4908,7 +4903,7 @@
       if (pass !== confirm) { errEl.textContent = 'Passwords do not match'; errEl.style.display = 'block'; return; }
       registerBtn.disabled = true; registerBtn.textContent = 'Creating account…';
       try {
-        await authRegister(name, email, pass);
+        await authRegister(email, pass);
       } catch (e) {
         errEl.textContent = e.message; errEl.style.display = 'block';
       } finally {
