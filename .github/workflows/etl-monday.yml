@@ -1,11 +1,15 @@
 name: ETL internal listing
 # table listing_report → table listings
-
+#
+# DISABLED 2026-05-15: ETL logic đã được merge inline vào confirm_import flow
+# (backend/app/services/internal_service.py :: sync_listings_from_report).
+# listings được sync ngay sau mỗi confirm — không cần chạy định kỳ nữa.
+# schedule trigger đã bị comment out; workflow_dispatch giữ lại để chạy thủ công nếu cần.
 
 on:
-  schedule:
-    # Mỗi thứ 2 lúc 07:00 UTC (14:00 giờ VN)
-    - cron: '0 7 * * 1'
+  # DISABLED — ETL now runs inline inside confirm_import (see internal_service.py)
+  # schedule:
+  #   - cron: '0 7 * * 1'
   workflow_dispatch:
 
 jobs:

@@ -122,10 +122,19 @@ _docs_dir = Path(__file__).resolve().parents[2] / "docs"
 if _docs_dir.exists():
     app.mount("/md-docs", StaticFiles(directory=str(_docs_dir)), name="docs")
 
-# Serve extension download at /extension/
-_ext_dir = Path(__file__).resolve().parents[2] / "extension-keyword-main"
-if _ext_dir.exists():
-    app.mount("/extension", StaticFiles(directory=str(_ext_dir)), name="extension")
+# Extension download — served with octet-stream so Chrome doesn't block .xpi
+_ext_xpi = Path(__file__).resolve().parents[2] / "extension-keyword-main" / "Archive.pxi"
+
+@app.get("/extension/download")
+async def download_extension():
+    if not _ext_xpi.exists():
+        from fastapi import HTTPException as _HTTPException
+        raise _HTTPException(404, "Extension file not found")
+    return FileResponse(
+        path=str(_ext_xpi),
+        media_type="application/octet-stream",
+        filename="EtseeMate-extension.xpi",
+    )
 
 # Serve frontend static files — must be AFTER API routes
 _frontend_dir = Path(__file__).resolve().parents[2] / "frontend"

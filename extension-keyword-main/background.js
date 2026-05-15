@@ -9,16 +9,7 @@ const MAX_AGE_DAYS = 30;
 const STORAGE_KEY = "getify_sessions";
 const DB_CONFIG_KEY = "getify_db_config";
 
-// --- AUTO-CLEAR ON NAVIGATION ---
-// Clear captured sessions whenever the user navigates to a new page (main frame only).
-chrome.webNavigation.onCommitted.addListener(
-  (details) => {
-    if (details.frameId !== 0) return;
-    if (details.transitionType === "reload") return;
-    chrome.storage.local.set({ [STORAGE_KEY]: [] });
-  },
-  { url: [{ hostContains: "etsy.com" }] }
-);
+// Note: webNavigation auto-clear listeners removed — Etsy Ads dashboard is a SPA and fires history events on filter/tab clicks, which was wiping captured rows before the user could push to DB. Manual Clear button + MAX_AGE_DAYS cleanup in handleCapture still apply.
 
 // --- MESSAGE HANDLER ---
 
@@ -46,10 +37,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ ok: true });
     return true;
   } else if (message.action === "INGEST_LISTING") {
-    handleIngestListing(message.rows, message.apiUrl, message.token, sendResponse);
+    handleIngestListing(message.rows, message.apiUrl, message.token, message.importer, sendResponse);
     return true;
   } else if (message.action === "INGEST_KEYWORD") {
-    handleIngestKeyword(message.rows, message.apiUrl, message.token, sendResponse);
+    handleIngestKeyword(message.rows, message.apiUrl, message.token, message.importer, sendResponse);
     return true;
   }
 });
@@ -148,6 +139,7 @@ async function handleSaveDbConfig(data, sendResponse) {
       [DB_CONFIG_KEY]: {
         apiUrl: (data.apiUrl || "").trim(),
         token: (data.token || "").trim(),
+        vmName: (data.vmName || "").trim(),
       },
     });
     sendResponse({ ok: true });
@@ -160,9 +152,13 @@ async function handleGetDbConfig(sendResponse) {
   try {
     const result = await chrome.storage.local.get(DB_CONFIG_KEY);
     const config = result[DB_CONFIG_KEY] || {};
-    sendResponse({ apiUrl: config.apiUrl || "", token: config.token || "" });
+    sendResponse({
+      apiUrl: config.apiUrl || "",
+      token: config.token || "",
+      vmName: config.vmName || "",
+    });
   } catch (e) {
-    sendResponse({ apiUrl: "", token: "" });
+    sendResponse({ apiUrl: "", token: "", vmName: "" });
   }
 }
 
@@ -170,7 +166,7 @@ async function handleGetDbConfig(sendResponse) {
 // BACKEND API INGEST — replaces direct Neon SQL
 // =====================================================================
 
-async function handleIngestListing(rows, apiUrl, token, sendResponse) {
+async function handleIngestListing(rows, apiUrl, token, importer, sendResponse) {
   try {
     if (!apiUrl || !token) {
       sendResponse({ ok: false, error: "API URL hoặc Token chưa được cấu hình." });
@@ -180,7 +176,7 @@ async function handleIngestListing(rows, apiUrl, token, sendResponse) {
       sendResponse({ ok: false, error: "No rows to insert." });
       return;
     }
-    const vmName = (typeof APP_CONFIG !== "undefined" && APP_CONFIG.VM_NAME) ? APP_CONFIG.VM_NAME : "extension";
+    const vmName = importer || "extension";
     const res = await fetch(apiUrl.replace(/\/+$/, "") + "/api/v1/internal/ingest/listing", {
       method: "POST",
       headers: {
@@ -201,7 +197,7 @@ async function handleIngestListing(rows, apiUrl, token, sendResponse) {
   }
 }
 
-async function handleIngestKeyword(rows, apiUrl, token, sendResponse) {
+async function handleIngestKeyword(rows, apiUrl, token, importer, sendResponse) {
   try {
     if (!apiUrl || !token) {
       sendResponse({ ok: false, error: "API URL hoặc Token chưa được cấu hình." });
@@ -211,7 +207,7 @@ async function handleIngestKeyword(rows, apiUrl, token, sendResponse) {
       sendResponse({ ok: false, error: "No rows to insert." });
       return;
     }
-    const vmName = (typeof APP_CONFIG !== "undefined" && APP_CONFIG.VM_NAME) ? APP_CONFIG.VM_NAME : "extension";
+    const vmName = importer || "extension";
     const res = await fetch(apiUrl.replace(/\/+$/, "") + "/api/v1/internal/ingest/keyword", {
       method: "POST",
       headers: {
@@ -253,20 +249,3 @@ chrome.runtime.onInstalled.addListener(() => {
   updateBadge(0);
 });
 
-// =====================================================================
-// NAVIGATION CACHE CLEARING
-// =====================================================================
-
-// Clear the cache and badge when navigating to a new URL on Etsy
-chrome.webNavigation.onBeforeNavigate.addListener((details) => {
-  if (details.frameId === 0) {
-    handleClearAll(() => {});
-  }
-}, {url: [{hostContains: 'etsy.com'}]});
-
-// Clear the cache and badge when SPA (client-side routing) navigates to a new URL on Etsy
-chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
-  if (details.frameId === 0) {
-    handleClearAll(() => {});
-  }
-}, {url: [{hostContains: 'etsy.com'}]});

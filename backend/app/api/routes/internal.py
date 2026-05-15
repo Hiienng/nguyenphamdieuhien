@@ -163,14 +163,6 @@ async def confirm_import(req: ConfirmRequest, db: AsyncSession = Depends(get_ten
     except Exception as exc:  # noqa: BLE001
         logger.warning("Post-import reporting rebuild failed for batch %s: %s", req.batch_id, exc)
 
-    # Enqueue listing_ids vừa import vào crawl_queue để Flow 2 (internal sweep)
-    # pick up trong lần chạy tiếp theo. Idempotent — duplicate sẽ bị ON CONFLICT skip.
-    try:
-        new_ids = list({r.listing_id for r in req.listing_report if getattr(r, "listing_id", None)})
-        await crawler_ops.enqueue_listings(db, new_ids, reason="new_listing")
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Enqueue crawl_queue failed for batch %s: %s", req.batch_id, exc)
-
     return ConfirmResponse(imported=result["imported"], rows=result["rows"])
 
 

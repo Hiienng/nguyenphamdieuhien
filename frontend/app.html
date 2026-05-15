@@ -2039,7 +2039,7 @@
                 <div style="min-width:24px;height:24px;border-radius:50%;background:var(--terracotta);color:#fff;font-family:var(--font-sans);font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">1</div>
                 <div style="flex:1">
                   <p style="font-family:var(--font-sans);font-size:0.85rem;font-weight:600;color:var(--charcoal);margin-bottom:6px">Download &amp; install the extension</p>
-                  <a href="/extension/Archive.xpi" download="EtseeMate-extension.xpi"
+                  <a href="/extension/download"
                     style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:var(--terracotta);color:#fff;font-family:var(--font-sans);font-size:0.82rem;font-weight:500;border-radius:7px;text-decoration:none;transition:opacity 0.15s"
                     onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
                     <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M3.5 6l3.5 3.5L10.5 6M2 12h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -3642,7 +3642,93 @@
       } else {
         _imprDetailSort[scope][groupKey] = { key, dir: key === 'period' ? 'desc' : 'asc' };
       }
-      _imprRenderRows();
+      // Only update tbody + thead icons — never touch the <details> wrapper so
+      // open/closed state is preserved and tooltip DOM survives.
+      const tbody = document.getElementById('impr-tbody-' + scope + '-' + groupKey);
+      const tbl   = document.getElementById('impr-tbl-'   + scope + '-' + groupKey);
+      if (!tbody || !tbl) { _imprRenderRows(); return; }
+
+      const group = _imprFiltered.find(g =>
+        ((g[0] || {}).listing_id || '').replace(/[^a-zA-Z0-9]/g, '') === groupKey
+      );
+      if (!group) { _imprRenderRows(); return; }
+      const d = group[0];
+      const sortState = _imprGetDetailSort(scope, groupKey, key, 'asc');
+
+      let rows, newBody;
+      if (scope === 'listing') {
+        rows = _imprSortRows(_imprListingRows(d), sortState, 'listing_id');
+        newBody = rows.map(r => {
+          const rowTone = r.is_internal ? '#fff7f4' : 'var(--parchment)';
+          const rowColor = r.is_internal ? 'var(--charcoal)' : 'var(--stone)';
+          const sideBorder = r.is_internal ? 'var(--terracotta)' : 'var(--border-cream)';
+          const ctrCell = r.ctr == null ? '—' : (Number(r.ctr) >= 1.5 ? `<span class="metric-chip chip-ok">${Number(r.ctr).toFixed(2)}%</span>` : `<span class="metric-chip chip-warn">${Number(r.ctr).toFixed(2)}%</span>`);
+          const crCell  = r.cr  == null ? '—' : (Number(r.cr)  >= 3   ? `<span class="metric-chip chip-ok">${Number(r.cr).toFixed(2)}%</span>`  : `<span class="metric-chip chip-warn">${Number(r.cr).toFixed(2)}%</span>`);
+          const roasCell= r.roas== null ? '—' : (Number(r.roas)>= 2   ? `<span class="metric-chip chip-ok">${_imprFmtRatio(r.roas)}</span>` : `<span class="metric-chip chip-neu">${_imprFmtRatio(r.roas)}</span>`);
+          return `<tr style="font-family:var(--font-sans);font-size:0.76rem;color:${rowColor};border-top:1px solid var(--border-cream);background:${rowTone}">
+            <td style="padding:4px 8px;border-left:3px solid ${sideBorder}">${r.url?`<a href="${r.url}" target="_blank" rel="noopener" style="font-family:var(--font-mono);font-size:0.76rem;color:${r.is_internal?'var(--terracotta)':'var(--stone)'};text-decoration:underline;${r.is_internal?'font-weight:600;':''}">${r.listing_id||'—'}</a>`:`<span style="font-family:var(--font-mono);font-size:0.76rem;${r.is_internal?'font-weight:600;':''}">${r.listing_id||'—'}</span>`}</td>
+            <td style="padding:4px 8px">${r.product?`<span class="metric-chip chip-neu" style="font-size:0.68rem">${_imprEsc(r.product)}</span>`:'—'}</td>
+            <td style="padding:4px 8px;text-align:right">${ctrCell}</td><td style="padding:4px 8px;text-align:right">${crCell}</td>
+            <td style="padding:4px 8px;text-align:right">${roasCell}</td>
+            <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtPrice(r.price)}</td>
+            <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtDiscount(r.discount)}</td>
+            <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtRating(r.rating)}</td>
+            <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtNum(r.review_count)}</td>
+            <td style="padding:4px 8px">${r.badge?`<span class="metric-chip chip-neu" style="font-size:0.68rem">${_imprEsc(r.badge)}</span>`:'—'}</td>
+            <td style="padding:4px 8px;text-align:center">${_imprFmtBool(r.free_shipping)}</td>
+            <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtNum(r.rank)}</td>
+          </tr>`;
+        }).join('');
+      } else if (scope === 'keywords') {
+        rows = _imprSortRows(Array.isArray(d?.keywords) ? d.keywords : [], sortState, 'keyword');
+        newBody = rows.map(k => {
+          const rowSuggestion = _imprKeywordSuggestionForRow(k);
+          const mismatch = rowSuggestion === 'off' && _imprNormalizeStatus(k.currently_status) !== 'off';
+          const rowBg = mismatch ? 'background:rgba(201,100,66,0.07);' : '';
+          const cpc = _imprMetricFromRow(k, 'cpc');
+          const cpp = _imprMetricFromRow(k, 'cpp');
+          return `<tr style="font-family:var(--font-sans);font-size:0.76rem;color:var(--charcoal);border-top:1px solid var(--border-cream);${rowBg}">
+            <td style="padding:4px 8px">${_imprEsc(k.keyword)}</td>
+            <td style="text-align:center;padding:4px 8px">${_imprFmtStatus(k.currently_status)}</td>
+            <td style="text-align:center;padding:4px 8px">${_imprFmtSuggestion(rowSuggestion)}</td>
+            <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtNum(k.views)}</td>
+            <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtNum(k.clicks)}</td>
+            <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtPct(k.click_rate)}</td>
+            <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtNum(k.orders)}</td>
+            <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtMoney(k.spend)}</td>
+            <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtMoney(cpc)}</td>
+            <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtMoney(cpp)}</td>
+            <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtMoney(k.revenue)}</td>
+            <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtRatio(k.roas)}</td>
+          </tr>`;
+        }).join('');
+      } else { // history
+        const history = Array.isArray(d.history) ? d.history : [];
+        rows = _imprSortRows(history, sortState, 'history_id');
+        newBody = rows.map(h => `<tr style="font-family:var(--font-sans);font-size:0.76rem;color:var(--charcoal);border-top:1px solid var(--border-cream)">
+          <td style="padding:4px 8px;font-family:var(--font-mono)">${_imprEsc(h.history_id||'—')}</td>
+          <td style="padding:4px 8px;font-family:var(--font-mono)">${_imprEsc(h.period||'—')}</td>
+          <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtNum(h.views)}</td>
+          <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtNum(h.clicks)}</td>
+          <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtNum(h.orders)}</td>
+          <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtMoney(h.revenue)}</td>
+          <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtMoney(h.spend)}</td>
+          <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtRatio(h.roas)}</td>
+          <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtMoney(h.cpc)}</td>
+          <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtMoney(h.cpp)}</td>
+          <td style="padding:4px 8px">${_imprEsc(h.source||'—')}</td>
+        </tr>`).join('');
+      }
+      tbody.innerHTML = newBody;
+      // Update sort icons in thead without touching tooltip spans
+      tbl.querySelectorAll('.impr-sort-icon').forEach(icon => {
+        const btn = icon.closest('button[onclick]');
+        if (!btn) return;
+        const match = btn.getAttribute('onclick').match(/imprDetailSort\('[^']+','[^']+','([^']+)'\)/);
+        if (!match) return;
+        const btnKey = match[1];
+        icon.textContent = btnKey === sortState.key ? (sortState.dir === 'asc' ? '↑' : '↓') : '↕';
+      });
     }
 
     function _imprMetricRow(d, opts) {
@@ -3674,7 +3760,7 @@
         ? `<td style="text-align:center;cursor:pointer;user-select:none" onclick="imprToggle('${groupKey}', this)" title="View scenario details + daily history"><span class="impr-caret" style="font-size:0.82rem;color:var(--terracotta);display:inline-block;transition:transform 0.15s">▸</span></td>`
         : `<td></td>`;
       const rowClass = isMain ? `impr-main-row` : `impr-sub-row impr-sub-${groupKey}`;
-      const rowAttrs = isMain ? '' : `style="display:none;background:var(--warm-sand)"`;
+      const rowAttrs = isMain ? `data-group-key="${groupKey}"` : `style="display:none;background:var(--warm-sand)"`;
 
       return `<tr class="${rowClass}" ${rowAttrs}>
         ${toggleCell}
@@ -3785,7 +3871,7 @@
           <span class="impr-help-pop" style="display:none;position:absolute;top:20px;right:0;z-index:50;width:340px;padding:10px 12px;background:var(--parchment);border:1px solid var(--border-cream);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);font-family:var(--font-sans);font-size:0.78rem;font-weight:400;color:var(--charcoal);letter-spacing:normal;text-transform:none;line-height:1.5">${mappingTip}</span>
         </span>`;
       const bodyHtml = `<div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse">${head}<tbody>${body}</tbody></table>
+          <table id="impr-tbl-listing-${groupKey}" style="width:100%;border-collapse:collapse">${head}<tbody id="impr-tbody-listing-${groupKey}">${body}</tbody></table>
         </div>`;
       return `<div style="margin-top:14px">${_imprFoldSection('Listing reference', bodyHtml, { metaHtml: meta })}</div>`;
     }
@@ -3799,16 +3885,18 @@
       const head = `<thead><tr style="font-family:var(--font-sans);font-size:0.70rem;color:var(--stone);text-transform:uppercase;letter-spacing:0.04em">
         <th style="text-align:left;padding:4px 8px;font-weight:600">${_imprMiniSortButton('keywords', groupKey, 'keyword', 'Keyword', 'left')}</th>
         <th style="text-align:center;padding:4px 8px;font-weight:600">${_imprMiniSortButton('keywords', groupKey, 'currently_status', 'Currently', 'center')}</th>
-        <th style="text-align:center;padding:4px 8px;font-weight:600;color:var(--terracotta);opacity:0.7;position:relative">
-          <span style="display:inline-flex;align-items:center;gap:5px;justify-content:center">Suggestion
-            <span onclick="event.preventDefault();event.stopPropagation();imprHelp(this)" aria-label="suggestion logic" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--stone);color:var(--stone);font-size:0.62rem;font-weight:700;cursor:pointer;user-select:none;text-transform:none">?</span>
-          </span>
-          <span class="impr-help-pop" style="display:none;position:absolute;top:24px;right:0;z-index:50;width:320px;padding:10px 12px;background:var(--parchment);border:1px solid var(--border-cream);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);font-family:var(--font-sans);font-size:0.76rem;font-weight:400;color:var(--charcoal);letter-spacing:normal;text-transform:none;line-height:1.5;text-align:left">
-            <b>Suggestion logic</b><br>
-            <span style="color:var(--terracotta);font-weight:600">on</span> &mdash; keyword has ever generated <b>revenue &gt; 0</b> on any listing, any period, across full system history (union of <code>keyword_report</code> ∪ <code>manual_keyword_report</code>).<br>
-            <span style="color:var(--terracotta);font-weight:600">off</span> &mdash; never generated any revenue.<br>
-            <br>
-            Recommendations based on full system history, independent of the currently displayed period.
+        <th style="text-align:center;padding:4px 8px;font-weight:600">
+          <span style="display:inline-flex;align-items:center;gap:5px;justify-content:center"><span style="color:var(--terracotta);opacity:0.7">Suggestion</span>
+            <span style="position:relative;display:inline-block">
+              <span onclick="event.preventDefault();event.stopPropagation();imprHelp(this)" aria-label="suggestion logic" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--stone);color:var(--stone);font-size:0.62rem;font-weight:700;cursor:pointer;user-select:none;text-transform:none">?</span>
+              <span class="impr-help-pop" style="display:none;position:absolute;top:20px;right:0;z-index:50;width:320px;padding:10px 12px;background:var(--parchment);border:1px solid var(--border-cream);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);font-family:var(--font-sans);font-size:0.76rem;font-weight:400;color:var(--charcoal);letter-spacing:normal;text-transform:none;line-height:1.5;text-align:left">
+                <b>Suggestion logic</b><br>
+                <span style="color:var(--terracotta);font-weight:600">on</span> &mdash; keyword has ever generated <b>revenue &gt; 0</b> on any listing, any period, across full system history (union of <code>keyword_report</code> ∪ <code>manual_keyword_report</code>).<br>
+                <span style="color:var(--terracotta);font-weight:600">off</span> &mdash; never generated any revenue.<br>
+                <br>
+                Recommendations based on full system history, independent of the currently displayed period.
+              </span>
+            </span>
           </span>
         </th>
         <th style="text-align:right;padding:4px 8px;font-weight:600">${_imprMiniSortButton('keywords', groupKey, 'views', 'Views', 'right')}</th>
@@ -3842,14 +3930,40 @@
         <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtRatio(k.roas)}</td>
       </tr>`;
       }).join('');
-      const bodyHtml = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">${head}<tbody>${body}</tbody></table></div>`;
+      const bodyHtml = `<div style="overflow-x:auto"><table id="impr-tbl-keywords-${groupKey}" style="width:100%;border-collapse:collapse">${head}<tbody id="impr-tbody-keywords-${groupKey}">${body}</tbody></table></div>`;
       return `<div style="margin-top:12px">${_imprFoldSection('Keywords · Period: ' + periodNote, bodyHtml)}</div>`;
+    }
+
+    function _imprHistoryDownloadCsv(groupKey) {
+      // groupKey = listing_id with non-alphanumeric stripped.
+      const src = LISTINGS.find(d =>
+        (d.listing_id || '').replace(/[^a-zA-Z0-9]/g, '') === groupKey &&
+        Array.isArray(d.history) && d.history.length
+      );
+      if (!src) return;
+      const cols = ['history_id', 'period', 'views', 'clicks', 'orders', 'revenue', 'spend', 'roas', 'cpc', 'cpp', 'source'];
+      const header = cols.join(',');
+      const csvRows = src.history.map(h =>
+        cols.map(c => {
+          const v = h[c] == null ? '' : String(h[c]);
+          return v.includes(',') || v.includes('"') || v.includes('\n') ? `"${v.replace(/"/g, '""')}"` : v;
+        }).join(',')
+      );
+      const csv = [header, ...csvRows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `history_${groupKey}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
     function _imprHistoryTable(history, groupKey) {
       if (!Array.isArray(history) || !history.length) return '';
       const sortState = _imprGetDetailSort('history', groupKey, 'period', 'desc');
       const rows = _imprSortRows(history, sortState, 'history_id');
+      const downloadBtn = `<button onclick="_imprHistoryDownloadCsv('${groupKey}')" style="font-family:var(--font-sans);font-size:0.68rem;font-weight:600;color:var(--stone);background:var(--warm-sand);border:1px solid var(--border-cream);border-radius:4px;padding:2px 8px;cursor:pointer;letter-spacing:0.02em" title="Download full history as CSV">↓ CSV</button>`;
       const head = `<thead><tr style="font-family:var(--font-sans);font-size:0.70rem;color:var(--stone);text-transform:uppercase;letter-spacing:0.04em">
         <th style="text-align:left;padding:4px 8px;font-weight:600">${_imprMiniSortButton('history', groupKey, 'history_id', 'History ID', 'left')}</th>
         <th style="text-align:left;padding:4px 8px;font-weight:600">${_imprMiniSortButton('history', groupKey, 'period', 'Date', 'left')}</th>
@@ -3876,8 +3990,8 @@
         <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtMoney(h.cpp)}</td>
         <td style="padding:4px 8px">${_imprEsc(h.source || '—')}</td>
       </tr>`).join('');
-      const bodyHtml = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">${head}<tbody>${body}</tbody></table></div>`;
-      return `<div style="margin-top:12px">${_imprFoldSection('History ID', bodyHtml)}</div>`;
+      const bodyHtml = `<div style="overflow-x:auto"><table id="impr-tbl-history-${groupKey}" style="width:100%;border-collapse:collapse">${head}<tbody id="impr-tbody-history-${groupKey}">${body}</tbody></table></div>`;
+      return `<div style="margin-top:12px">${_imprFoldSection('History · ' + history.length + ' records', bodyHtml, { metaHtml: downloadBtn })}</div>`;
     }
 
     // Toggle popover ? — đóng tất cả popover khác, mở cái được click.
@@ -3886,7 +4000,17 @@
       const isOpen = pop.style.display === 'block';
       document.querySelectorAll('.impr-help-pop').forEach(p => { p.style.display = 'none'; });
       if (!isOpen) {
+        // Position with fixed so table overflow doesn't clip it
+        pop.style.position = 'fixed';
         pop.style.display = 'block';
+        pop.style.zIndex = '9999';
+        const rect = triggerEl.getBoundingClientRect();
+        const popW = 340;
+        let left = rect.right - popW;
+        if (left < 8) left = 8;
+        pop.style.left = left + 'px';
+        pop.style.top = (rect.bottom + 6) + 'px';
+        pop.style.right = 'auto';
         setTimeout(() => {
           const handler = (e) => {
             if (!pop.contains(e.target) && e.target !== triggerEl) {
@@ -3949,13 +4073,22 @@
               </summary>
               <div class="impr-fold-body" style="padding:10px 12px;background:var(--parchment)">${detailCombined}</div>
             </details>
-            ${extras}
+            <div id="impr-extras-${groupKey}" data-group-key="${groupKey}">${extras}</div>
           </div>
         </td>
       </tr>`;
     }
 
     function _imprRenderRows() {
+      // Snapshot which sub-rows are currently open so we can restore after re-render.
+      const openKeys = new Set();
+      document.querySelectorAll('tr[class*="impr-sub-"]').forEach(r => {
+        if (r.style.display !== 'none') {
+          const match = r.className.match(/impr-sub-([A-Za-z0-9]+)/);
+          if (match) openKeys.add(match[1]);
+        }
+      });
+
       const visible = _imprFiltered.slice(0, _imprPage);
       const html = visible.map(group => {
         const latest = group[0];
@@ -3969,6 +4102,17 @@
         <p style="font-family:var(--font-sans);font-size:0.82rem;color:var(--stone);margin-bottom:16px">Import your Etsy Ads report to see which listings are profitable — and what to do next.</p>
         <button onclick="_perfPillClick('import')" style="font-family:var(--font-sans);font-size:0.85rem;font-weight:500;color:var(--ivory);background:var(--terracotta);border:none;border-radius:8px;padding:9px 20px;cursor:pointer">Import Etsy Ads Report →</button>
       </td></tr>`;
+
+      // Restore open state for sub-rows that were visible before re-render.
+      openKeys.forEach(key => {
+        document.querySelectorAll(`tr.impr-sub-${key}`).forEach(r => { r.style.display = ''; });
+        const caretRow = document.querySelector(`tr[data-group-key="${key}"]`);
+        if (caretRow) {
+          const caret = caretRow.querySelector('.impr-caret');
+          if (caret) caret.style.transform = 'rotate(90deg)';
+        }
+      });
+
       _imprUpdateSortIndicators();
       const hasMore = _imprFiltered.length > _imprPage;
       const btn = document.getElementById('imprLoadMore');

@@ -92,6 +92,9 @@ export CRAWLER_NOTIFY_SMTP_USER="your-bot@gmail.com"
 export CRAWLER_NOTIFY_SMTP_PASS="xxxx xxxx xxxx xxxx"
 export CRAWLER_CAPTCHA_WAIT="180"   # giây — chờ user solve trước khi skip
 
+# EtseeMate backend URL — trigger references/refresh sau market_discovery
+export BACKEND_URL="https://nguyenphamdieuhien.online"
+
 # Forces no-TTY path inside crawlers
 export CRAWLER_UNATTENDED=1
 EOF
@@ -139,18 +142,59 @@ done
 launchctl list | grep etseemate
 ```
 
-Kết quả: 4 jobs hiện ra:
+Kết quả: 3 scheduled jobs hiện ra (internal crawler không còn chạy theo schedule):
 - `com.etseemate.crawler.gitsync` — git pull mỗi 5p
 - `com.etseemate.crawler.market` — Mon 02:00 hằng tuần
-- `com.etseemate.crawler.internal` — mỗi 30p
 - `com.etseemate.crawler.rank` — daily 04:00
+
+> **Note (2026-05-15):** `com.etseemate.crawler.internal` — **KHÔNG còn chạy định kỳ**.
+> `StartInterval` đã bị disable trong plist. Internal crawler chỉ chạy khi
+> `crawl_queue` có item (queue-driven). Xem mục "Internal Crawler — Queue-Driven Mode" bên dưới.
 
 ### Chạy thử ngay (không chờ lịch)
 
 ```bash
-launchctl start com.etseemate.crawler.internal
+# Internal crawler — chỉ chạy khi crawl_queue có item
+python3 internal_listing_crawler.py --queue
 tail -f /tmp/crawler-internal.log
 ```
+
+---
+
+## Internal Crawler — Queue-Driven Mode (thay thế schedule từ 2026-05-15)
+
+Internal crawler **không còn chạy định kỳ**. Thay vào đó:
+
+1. Mỗi khi user `confirm_import` một batch trong EtseeMate, backend tự động enqueue
+   các `listing_id` mới vào bảng `crawl_queue` (status = `pending`).
+2. Internal crawler chạy theo lệnh thủ công hoặc được trigger bởi `run_scheduled.py`
+   khi queue có item.
+
+### Chạy thủ công
+
+```bash
+cd ~/Downloads/etsy_pilot/nguyenphamdieuhien.online/market_engine_crawler
+
+# Pop tất cả pending items từ crawl_queue (batch mặc định: 50)
+python3 internal_listing_crawler.py --queue
+
+# Giới hạn batch size
+python3 internal_listing_crawler.py --queue 20
+```
+
+### Kiểm tra queue status
+
+```sql
+SELECT status, COUNT(*) FROM crawl_queue GROUP BY status;
+SELECT listing_id, queued_at, attempts, status FROM crawl_queue ORDER BY queued_at DESC LIMIT 20;
+```
+
+### Tại sao bỏ schedule?
+
+- Trước đây crawler chạy mỗi 30 phút bất kể có listing mới hay không → tốn tài nguyên, tăng risk bị Etsy block.
+- Nay crawler chỉ chạy khi có việc thực sự cần làm (confirmed batch → crawl_queue có item).
+- `launchd/com.etseemate.crawler.internal.plist` vẫn giữ file để tham khảo, nhưng
+  `StartInterval` đã bị comment out — **không load plist này lên launchd**.
 
 ---
 

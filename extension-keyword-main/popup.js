@@ -11,7 +11,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const settingsBody = document.getElementById("settings-body");
   const inputApiUrl = document.getElementById("input-api-url");
   const inputToken = document.getElementById("input-token");
+  const inputVmName = document.getElementById("input-vm-name");
   const btnSaveConfig = document.getElementById("btn-save-config");
+
+  // Read VM Code from user settings (input field). Fallback to "extension".
+  function getVmName() {
+    return (inputVmName && inputVmName.value && inputVmName.value.trim()) || "extension";
+  }
   const btnTestConn = document.getElementById("btn-test-conn");
   const btnToggleVisibility = document.getElementById("btn-toggle-visibility");
   const btnSettings = document.getElementById("btn-settings");
@@ -301,7 +307,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ? cleanData.metadata.exported_at
       : new Date().toISOString();
 
-    const vmName = typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.VM_NAME : null;
+    const vmName = getVmName();
     for (const item of listings) {
       const stats = item.stats || {};
       rows.push({
@@ -342,7 +348,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ? cleanData.metadata.exported_at
       : new Date().toISOString();
 
-    const vmName = typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.VM_NAME : null;
+    const vmName = getVmName();
     for (const item of keywords) {
       rows.push({
         listing_id: String(item.listing_id || ""),
@@ -433,7 +439,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const listing = body.listing;
     const listingIdStr = String(listing.listingId || "");
     const importTime = result.metadata.exported_at || new Date().toISOString();
-    const vmName = typeof APP_CONFIG !== "undefined" ? APP_CONFIG.VM_NAME : null;
+    const vmName = getVmName();
 
     for (const stat of body.graphStats) {
       if (!stat || stat.timestamp == null) continue;
@@ -1437,9 +1443,10 @@ document.addEventListener("DOMContentLoaded", () => {
     setDbStatus(`Sending ${rows.length} rows to backend...`, "info");
 
     try {
+      const importer = getVmName();
       const response = await new Promise((resolve) => {
         chrome.runtime.sendMessage(
-          { action: "INGEST_LISTING", rows, apiUrl, token },
+          { action: "INGEST_LISTING", rows, apiUrl, token, importer },
           resolve
         );
       });
@@ -1450,10 +1457,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       setDbStatus(`Inserted ${response.inserted || 0} rows into listing_report.`, "success");
     } catch (error) {
-      setDbStatus(
-        "Insert failed: " + String(error && error.message ? error.message : error),
-        "error"
-      );
+      const errMsg = String(error && error.message ? error.message : error);
+      const isAuthExpired = /401|Unauthorized|Invalid or expired token/i.test(errMsg);
+      const displayMsg = isAuthExpired
+        ? 'Token đã hết hạn. Hãy quay lại portal (/app), bấm "Copy Token" và paste lại vào Settings của extension.'
+        : "Insert failed: " + errMsg;
+      setDbStatus(displayMsg, "error");
     } finally {
       btnAddDb.textContent = originalLabel;
       btnAddDb.disabled = allSessions.length === 0;
@@ -1523,11 +1532,12 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       let dailyInserted = 0;
       let keywordInserted = 0;
+      const importer = getVmName();
 
       if (dailyRows.length > 0) {
         const dailyResp = await new Promise((resolve) => {
           chrome.runtime.sendMessage(
-            { action: "INGEST_LISTING", rows: dailyRows, apiUrl, token },
+            { action: "INGEST_LISTING", rows: dailyRows, apiUrl, token, importer },
             resolve
           );
         });
@@ -1540,7 +1550,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (keywordRows.length > 0) {
         const kwResp = await new Promise((resolve) => {
           chrome.runtime.sendMessage(
-            { action: "INGEST_KEYWORD", rows: keywordRows, apiUrl, token },
+            { action: "INGEST_KEYWORD", rows: keywordRows, apiUrl, token, importer },
             resolve
           );
         });
@@ -1555,10 +1565,12 @@ document.addEventListener("DOMContentLoaded", () => {
         "success"
       );
     } catch (error) {
-      setDbStatus(
-        "Insert failed: " + String(error && error.message ? error.message : error),
-        "error"
-      );
+      const errMsg = String(error && error.message ? error.message : error);
+      const isAuthExpired = /401|Unauthorized|Invalid or expired token/i.test(errMsg);
+      const displayMsg = isAuthExpired
+        ? 'Token đã hết hạn. Hãy quay lại portal (/app), bấm "Copy Token" và paste lại vào Settings của extension.'
+        : "Insert failed: " + errMsg;
+      setDbStatus(displayMsg, "error");
     } finally {
       btnAddDbKeywords.textContent = originalLabel;
       btnAddDbKeywords.disabled = allSessions.length === 0;
@@ -1664,6 +1676,7 @@ document.addEventListener("DOMContentLoaded", () => {
   btnSaveConfig.addEventListener("click", () => {
     const apiUrl = inputApiUrl.value.trim();
     const token = inputToken.value.trim();
+    const vmName = (inputVmName && inputVmName.value || "").trim();
     if (!apiUrl) {
       setSettingsStatus("API URL không được để trống.", "error");
       return;
@@ -1676,9 +1689,13 @@ document.addEventListener("DOMContentLoaded", () => {
       setSettingsStatus("Token không được để trống.", "error");
       return;
     }
+    if (!vmName) {
+      setSettingsStatus("VM Code không được để trống (vd: VM08).", "error");
+      return;
+    }
 
     chrome.runtime.sendMessage(
-      { action: "SAVE_DB_CONFIG", data: { apiUrl, token } },
+      { action: "SAVE_DB_CONFIG", data: { apiUrl, token, vmName } },
       (response) => {
         if (response && response.ok) {
           setSettingsStatus("Đã lưu cấu hình.", "success");
@@ -1769,6 +1786,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chrome.runtime.sendMessage({ action: "GET_DB_CONFIG" }, (response) => {
       if (response && response.apiUrl) inputApiUrl.value = response.apiUrl;
       if (response && response.token) inputToken.value = response.token;
+      if (response && response.vmName && inputVmName) inputVmName.value = response.vmName;
     });
   }
 

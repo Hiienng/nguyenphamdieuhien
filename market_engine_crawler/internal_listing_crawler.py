@@ -24,6 +24,10 @@ Modes:
   --auto      Fully automated (delay 8–20s)
   --auto N    Automated N listings rồi dừng
   --resume TS Resume từ checkpoint_TS.json
+  --queue     Queue-driven: pop pending items từ crawl_queue (không crawl toàn bộ listings).
+              Triggered on-demand bởi run_scheduled.py hoặc thủ công.
+              launchd StartInterval đã bị disabled — xem SETUP_CRAWLER_MAC.md.
+  --queue N   Queue mode, tối đa N items mỗi lần chạy (default: 50)
 
 Usage:
     python3 internal_listing_crawler.py
@@ -31,6 +35,8 @@ Usage:
     python3 internal_listing_crawler.py --auto 10
     python3 internal_listing_crawler.py --resume 20260504_120000
     python3 internal_listing_crawler.py --init-schema
+    python3 internal_listing_crawler.py --queue
+    python3 internal_listing_crawler.py --queue 20
 """
 
 import asyncio
@@ -131,6 +137,82 @@ def load_listings() -> list[dict]:
             rows = [{"listing_id": r[0], "url": r[1], "title": r[2]} for r in cur.fetchall()]
     conn.close()
     return rows
+
+
+def load_from_queue(batch_size: int = 50) -> list[dict]:
+    """
+    --queue mode: pop up to `batch_size` pending items from crawl_queue,
+    join to listings for url+title, mark them as 'running' atomically.
+
+    Returns list of dicts with keys: listing_id, url, title.
+    Only items with status='pending' AND next_after <= now() are returned.
+    """
+    conn = get_conn()
+    rows: list[dict] = []
+    with conn:
+        with conn.cursor() as cur:
+            # Claim items: set status='running' + last_attempt=now, return them
+            cur.execute("""
+                UPDATE crawl_queue
+                SET    status       = 'running',
+                       last_attempt = now(),
+                       attempts     = attempts + 1
+                WHERE  listing_id IN (
+                    SELECT listing_id FROM crawl_queue
+                    WHERE  status    = 'pending'
+                    AND    next_after <= now()
+                    ORDER  BY queued_at
+                    LIMIT  %s
+                )
+                RETURNING listing_id
+            """, (batch_size,))
+            claimed_ids = [r[0] for r in cur.fetchall()]
+
+        if not claimed_ids:
+            conn.close()
+            return []
+
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT l.listing_id, l.url, l.title
+                FROM   listings l
+                WHERE  l.listing_id = ANY(%s)
+            """, (claimed_ids,))
+            rows = [{"listing_id": r[0], "url": r[1], "title": r[2]} for r in cur.fetchall()]
+
+    conn.close()
+    return rows
+
+
+def mark_queue_done(listing_ids: list[str]):
+    """Mark successfully crawled items as 'done' in crawl_queue."""
+    if not listing_ids:
+        return
+    conn = get_conn()
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE crawl_queue
+                SET status = 'done'
+                WHERE listing_id = ANY(%s)
+            """, (listing_ids,))
+    conn.close()
+
+
+def mark_queue_failed(listing_ids: list[str]):
+    """Mark failed items back to 'failed' in crawl_queue."""
+    if not listing_ids:
+        return
+    conn = get_conn()
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE crawl_queue
+                SET    status     = 'failed',
+                       next_after = now() + interval '30 minutes'
+                WHERE  listing_id = ANY(%s)
+            """, (listing_ids,))
+    conn.close()
 
 
 def upsert_detail(cur, listing_id: str, d: dict):
@@ -353,7 +435,7 @@ async def scrape_listing(page: Page, url: str) -> dict | None:
 
 # ─────────────────────────── main loop ────────────────────────────────────────
 
-async def run(listings: list[dict], run_ts: str, auto_mode: bool, auto_limit: int = 0, init_schema: bool = False):
+async def run(listings: list[dict], run_ts: str, auto_mode: bool, auto_limit: int = 0, init_schema: bool = False, queue_mode: bool = False):
     checkpoint_path = OUTPUT_DIR / f"internal_checkpoint_{run_ts}.json"
     done_ids        = load_checkpoint(checkpoint_path)
 
@@ -364,9 +446,15 @@ async def run(listings: list[dict], run_ts: str, auto_mode: bool, auto_limit: in
     if auto_mode and auto_limit > 0:
         pending = pending[:auto_limit]
 
-    mode_label = (f"AUTO {auto_limit}" if (auto_mode and auto_limit)
-                  else ("AUTO ALL" if auto_mode else "HUMAN-IN-LOOP"))
+    mode_label = (f"QUEUE AUTO {auto_limit}" if (queue_mode and auto_limit)
+                  else ("QUEUE AUTO ALL" if queue_mode
+                  else (f"AUTO {auto_limit}" if (auto_mode and auto_limit)
+                  else ("AUTO ALL" if auto_mode else "HUMAN-IN-LOOP"))))
     banner(f"Internal Listing Crawler [{mode_label}] — {len(pending)} listings")
+
+    # Track per-run done/failed ids for queue mode updates
+    queue_done_ids: list[str] = []
+    queue_failed_ids: list[str] = []
 
     if init_schema:
         init_db()
@@ -394,72 +482,94 @@ async def run(listings: list[dict], run_ts: str, auto_mode: bool, auto_limit: in
         page: Page = await context.new_page()
         total = 0
 
-        for i, listing in enumerate(pending, 1):
-            lid   = listing["listing_id"]
-            url   = listing["url"]
-            title = listing.get("title") or ""
-            banner(f"[{i}/{len(pending)}] {lid} — {title[:55]}")
-            print(f"  {url}")
+        try:
+            for i, listing in enumerate(pending, 1):
+                lid   = listing["listing_id"]
+                url   = listing["url"]
+                title = listing.get("title") or ""
+                banner(f"[{i}/{len(pending)}] {lid} — {title[:55]}")
+                print(f"  {url}")
 
-            detail = await scrape_listing(page, url)
+                detail = await scrape_listing(page, url)
 
-            if not detail:
-                print("  [!] Failed — skipping.")
-                done_ids.add(lid)
-                save_checkpoint(checkpoint_path, done_ids)
-                continue
-
-            if not auto_mode:
-                sale  = detail.get("sale_price")
-                base  = detail.get("base_price")
-                disc  = detail.get("discount_percent")
-                shop  = (detail.get("shop") or {}).get("page_shop_name", "?")
-                print(f"\n  price: {sale} (base: {base}, disc: {disc}%)")
-                print(f"  shop: {shop}")
-                print(f"  shipping: {detail.get('shipping_status')}  from: {detail.get('origin_ship_from')}")
-                loop = asyncio.get_event_loop()
-                choice = await loop.run_in_executor(
-                    None, lambda: input("\n  [A] Approve  [S] Skip  [Q] Quit > ").strip().upper()
-                )
-                if choice == "Q":
-                    print("  [Q] Quitting.")
-                    break
-                if choice == "S":
-                    print("  [S] Skipped.")
+                if not detail:
+                    print("  [!] Failed — skipping.")
                     done_ids.add(lid)
                     save_checkpoint(checkpoint_path, done_ids)
+                    if queue_mode:
+                        queue_failed_ids.append(lid)
                     continue
 
-            cur = conn.cursor()
-            try:
-                cur.execute("SAVEPOINT sp")
-                upsert_detail(cur, lid, detail)
-                cur.execute("RELEASE SAVEPOINT sp")
-                conn.commit()
-                total += 1
-                print(f"  [+] Saved (total: {total})")
-            except Exception as e:
-                cur.execute("ROLLBACK TO SAVEPOINT sp")
-                conn.commit()
-                print(f"  [!] DB error: {e}")
-            finally:
-                cur.close()
-
-            done_ids.add(lid)
-            save_checkpoint(checkpoint_path, done_ids)
-
-            if i < len(pending):
-                if auto_mode:
-                    delay = random.uniform(DELAY_MIN, DELAY_MAX)
-                    print(f"  Sleeping {delay:.0f}s...")
-                    await asyncio.sleep(delay)
-                else:
+                if not auto_mode:
+                    sale  = detail.get("sale_price")
+                    base  = detail.get("base_price")
+                    disc  = detail.get("discount_percent")
+                    shop  = (detail.get("shop") or {}).get("page_shop_name", "?")
+                    print(f"\n  price: {sale} (base: {base}, disc: {disc}%)")
+                    print(f"  shop: {shop}")
+                    print(f"  shipping: {detail.get('shipping_status')}  from: {detail.get('origin_ship_from')}")
                     loop = asyncio.get_event_loop()
-                    await loop.run_in_executor(None, lambda: input("\n  Press ENTER to continue..."))
+                    choice = await loop.run_in_executor(
+                        None, lambda: input("\n  [A] Approve  [S] Skip  [Q] Quit > ").strip().upper()
+                    )
+                    if choice == "Q":
+                        print("  [Q] Quitting.")
+                        break
+                    if choice == "S":
+                        print("  [S] Skipped.")
+                        done_ids.add(lid)
+                        save_checkpoint(checkpoint_path, done_ids)
+                        continue
+
+                cur = conn.cursor()
+                saved_ok = False
+                try:
+                    cur.execute("SAVEPOINT sp")
+                    upsert_detail(cur, lid, detail)
+                    cur.execute("RELEASE SAVEPOINT sp")
+                    conn.commit()
+                    total += 1
+                    saved_ok = True
+                    print(f"  [+] Saved (total: {total})")
+                except Exception as e:
+                    cur.execute("ROLLBACK TO SAVEPOINT sp")
+                    conn.commit()
+                    print(f"  [!] DB error: {e}")
+                finally:
+                    cur.close()
+
+                if queue_mode:
+                    if saved_ok:
+                        queue_done_ids.append(lid)
+                    else:
+                        queue_failed_ids.append(lid)
+
+                done_ids.add(lid)
+                save_checkpoint(checkpoint_path, done_ids)
+
+                if i < len(pending):
+                    if auto_mode:
+                        delay = random.uniform(DELAY_MIN, DELAY_MAX)
+                        print(f"  Sleeping {delay:.0f}s...")
+                        await asyncio.sleep(delay)
+                    else:
+                        loop = asyncio.get_event_loop()
+                        await loop.run_in_executor(None, lambda: input("\n  Press ENTER to continue..."))
+        finally:
+            # Always mark queue items — even if process is killed mid-loop,
+            # this block runs before the coroutine is abandoned so items don't
+            # stay stuck in 'running' indefinitely.
+            if queue_mode:
+                if queue_done_ids:
+                    mark_queue_done(queue_done_ids)
+                if queue_failed_ids:
+                    mark_queue_failed(queue_failed_ids)
+                print(f"[queue] marked done={len(queue_done_ids)}, failed={len(queue_failed_ids)}")
 
         await browser.close()
 
     conn.close()
+
     banner(f"Done — {total} listings saved to internal_listing_details")
 
 
@@ -468,6 +578,36 @@ async def run(listings: list[dict], run_ts: str, auto_mode: bool, auto_limit: in
 if __name__ == "__main__":
     args = sys.argv[1:]
 
+    # ── --queue mode: poll crawl_queue instead of full listings table ──────────
+    # Usage:
+    #   python3 internal_listing_crawler.py --queue
+    #   python3 internal_listing_crawler.py --queue 20   (batch_size limit)
+    # In this mode the script is triggered on-demand (e.g. by run_scheduled.py
+    # or manually) whenever crawl_queue has pending items.  The launchd
+    # StartInterval schedule has been disabled — see com.etseemate.crawler.internal.plist.
+    if "--queue" in args:
+        queue_mode  = True
+        auto_mode   = True   # queue mode is always automated
+        auto_limit  = 0
+        init_schema = "--init-schema" in args
+
+        q_idx = args.index("--queue")
+        if q_idx + 1 < len(args) and args[q_idx + 1].isdigit():
+            auto_limit = int(args[q_idx + 1])
+
+        batch_size = auto_limit if auto_limit > 0 else 50
+        listings = load_from_queue(batch_size=batch_size)
+        if not listings:
+            print("[queue] crawl_queue is empty — nothing to do.")
+            sys.exit(0)
+        print(f"[queue] Claimed {len(listings)} items from crawl_queue")
+
+        run_ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        asyncio.run(run(listings, run_ts, auto_mode=True, auto_limit=0,
+                        init_schema=init_schema, queue_mode=True))
+        sys.exit(0)
+
+    # ── legacy modes (--auto, --resume, default human-in-loop) ────────────────
     auto       = "--auto" in args
     auto_limit = 0
     if auto:
@@ -492,4 +632,5 @@ if __name__ == "__main__":
     print(f"[+] Loaded {len(listings)} listings from etsy_pilot DB")
 
     run_ts = resume_ts or datetime.now().strftime("%Y%m%d_%H%M%S")
-    asyncio.run(run(listings, run_ts, auto_mode=auto, auto_limit=auto_limit, init_schema=init_schema))
+    asyncio.run(run(listings, run_ts, auto_mode=auto, auto_limit=auto_limit,
+                    init_schema=init_schema, queue_mode=False))

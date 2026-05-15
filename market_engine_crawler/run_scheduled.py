@@ -6,6 +6,7 @@ For each job:
     2. spawn the actual crawler subprocess with CRAWLER_UNATTENDED=1
     3. parse its exit code + tail of stdout for success/fail counts
     4. finish_run(...)
+    5. (market_discovery only) POST /api/v1/references/refresh to backfill product_type
 
 Usage:
     python3 run_scheduled.py market_discovery
@@ -17,6 +18,8 @@ Env vars (loaded from ~/.etseemate-crawler.env via launchd EnvironmentVariables)
     CHROME_PATH                   — /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
     CRAWLER_NOTIFY_*              — email config for captcha alerts
     CRAWLER_UNATTENDED=1          — forces no-TTY mode in the crawler children
+    BACKEND_URL                   — EtseeMate API base URL (e.g. https://nguyenphamdieuhien.online)
+                                    Required for post-crawl hooks (references/refresh)
 """
 from __future__ import annotations
 
@@ -25,9 +28,26 @@ import re
 import subprocess
 import sys
 import time
+import urllib.request
 from pathlib import Path
 
 from crawl_ledger import start_run, finish_run
+
+
+def _trigger_references_refresh() -> None:
+    """POST /api/v1/references/refresh after market_discovery to backfill product_type."""
+    base = (os.environ.get("BACKEND_URL") or "").rstrip("/")
+    if not base:
+        print("[run_scheduled] BACKEND_URL not set — skipping references/refresh", flush=True)
+        return
+    url = f"{base}/api/v1/references/refresh"
+    try:
+        req = urllib.request.Request(url, data=b"", method="POST")
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            print(f"[run_scheduled] references/refresh → {resp.status}", flush=True)
+    except Exception as e:
+        # Non-fatal — crawler already succeeded, log and move on
+        print(f"[run_scheduled] references/refresh failed (non-fatal): {e}", flush=True)
 
 HERE = Path(__file__).resolve().parent
 
@@ -69,6 +89,9 @@ def main(job: str) -> int:
         finish_run(run_id, status, success_count=ok, fail_count=fail, error_summary=err_summary)
         print(f"[run_scheduled] job={job} run_id={run_id} done status={status} "
               f"duration={time.time()-t0:.0f}s ok={ok} fail={fail}", flush=True)
+        # Auto-backfill product_type sau market_discovery (kể cả partial success)
+        if job == "market_discovery" and status in ("success", "partial"):
+            _trigger_references_refresh()
         return rc
     except subprocess.TimeoutExpired:
         finish_run(run_id, "failed", error_summary="timeout after 4h")

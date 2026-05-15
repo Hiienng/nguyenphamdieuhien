@@ -383,6 +383,71 @@ async def get_batch_preview(batch_id: str) -> dict:
         return batch.preview_data
 
 
+# ── Sync listings from report (merged ETL logic) ─────────────────────────────
+
+async def sync_listings_from_report(db: AsyncSession) -> dict:
+    """
+    Upsert listings từ cả hai nguồn vào bảng listings:
+      - manual_listing_report : screenshot import flow (confirm_import)
+      - listing_report        : browser extension ingest flow (/ingest/listing)
+
+    Cả hai bảng đều còn active write nên phải UNION để không bỏ sót listing nào.
+    Logic (mirrors data/etl/etl_listings.py — now inline so it runs on every confirm):
+      - Lấy latest non-null value per field per listing_id từ cả hai nguồn
+      - UPSERT vào listings: INSERT if new, UPDATE with COALESCE (never overwrite
+        an existing non-null value with null).
+
+    Called automatically at end of confirm_import — no longer needs a separate
+    GitHub Actions job / weekly ETL schedule.
+    """
+    result = await db.execute(text("""
+        INSERT INTO listings (listing_id, title, category, no_vm, url, import_time, importer)
+        SELECT
+            r.listing_id,
+            (SELECT title    FROM (
+                SELECT title, import_time FROM manual_listing_report WHERE listing_id = r.listing_id AND title    IS NOT NULL
+                UNION ALL
+                SELECT title, import_time FROM listing_report         WHERE listing_id = r.listing_id AND title    IS NOT NULL
+             ) t ORDER BY import_time DESC NULLS LAST LIMIT 1),
+            (SELECT category FROM (
+                SELECT category, import_time FROM manual_listing_report WHERE listing_id = r.listing_id AND category IS NOT NULL
+                UNION ALL
+                SELECT category, import_time FROM listing_report         WHERE listing_id = r.listing_id AND category IS NOT NULL
+             ) t ORDER BY import_time DESC NULLS LAST LIMIT 1),
+            (SELECT no_vm    FROM (
+                SELECT no_vm, import_time FROM manual_listing_report WHERE listing_id = r.listing_id AND no_vm    IS NOT NULL
+                UNION ALL
+                SELECT no_vm, import_time FROM listing_report         WHERE listing_id = r.listing_id AND no_vm    IS NOT NULL
+             ) t ORDER BY import_time DESC NULLS LAST LIMIT 1),
+            'https://www.etsy.com/listing/' || r.listing_id,
+            MAX(r.import_time),
+            (SELECT importer FROM (
+                SELECT importer, import_time FROM manual_listing_report WHERE listing_id = r.listing_id AND importer IS NOT NULL
+                UNION ALL
+                SELECT importer, import_time FROM listing_report         WHERE listing_id = r.listing_id AND importer IS NOT NULL
+             ) t ORDER BY import_time DESC NULLS LAST LIMIT 1)
+        FROM (
+            SELECT listing_id, import_time FROM manual_listing_report WHERE listing_id IS NOT NULL
+            UNION ALL
+            SELECT listing_id, import_time FROM listing_report         WHERE listing_id IS NOT NULL
+        ) r
+        GROUP BY r.listing_id
+        ON CONFLICT (listing_id) DO UPDATE SET
+            title       = COALESCE(EXCLUDED.title,       listings.title),
+            category    = COALESCE(EXCLUDED.category,    listings.category),
+            no_vm       = COALESCE(EXCLUDED.no_vm,       listings.no_vm),
+            url         = COALESCE(EXCLUDED.url,         listings.url),
+            import_time = COALESCE(EXCLUDED.import_time, listings.import_time),
+            importer    = COALESCE(EXCLUDED.importer,    listings.importer)
+    """))
+    await db.commit()
+    upserted = result.rowcount or 0
+
+    total_row = (await db.execute(text("SELECT COUNT(*) AS n FROM listings"))).mappings().one()
+    total = total_row["n"]
+    return {"upserted": upserted, "total_listings": total}
+
+
 # ── Confirm ──────────────────────────────────────────────────────────────────
 
 async def confirm_import(
@@ -496,6 +561,17 @@ async def confirm_import(
     batch.keyword_count = kw_count
     batch.confirmed_at = now
     await db.commit()
+
+    # 6. Sync listings table from manual_listing_report (merged ETL logic)
+    sync_result = await sync_listings_from_report(db)
+    logger.info("sync_listings_from_report: %s", sync_result)
+
+    # 7. Enqueue new listing_ids into crawl_queue for internal crawler
+    from .crawler_ops import ensure_crawler_tables, enqueue_listings
+    await ensure_crawler_tables(db)
+    new_listing_ids = list({row["listing_id"] for row in listing_report if row.get("listing_id")})
+    enqueued = await enqueue_listings(db, new_listing_ids, reason="confirm_import")
+    logger.info("crawl_queue: enqueued %d listings (batch=%s)", enqueued, batch_id)
 
     return {"imported": True, "rows": {"listing": lr_count, "keyword": kw_count}}
 

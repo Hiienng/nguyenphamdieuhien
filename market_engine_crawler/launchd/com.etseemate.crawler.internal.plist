@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Internal sweep — every 30 minutes. Pops listings from crawl_queue.
+  Internal sweep — SCHEDULE DISABLED (2026-05-15).
+  Crawler is now queue-driven: triggered on-demand via --queue flag when
+  crawl_queue has pending items (enqueued by confirm_import).
+  StartInterval block below is commented out — kept for reference only.
+  See: SETUP_CRAWLER_MAC.md § "Internal Crawler — Queue-Driven Mode"
 -->
 <plist version="1.0">
 <dict>
@@ -21,8 +25,10 @@
     <string>/usr/local/bin:/usr/bin:/bin:/Users/USERNAME/.pyenv/shims</string>
   </dict>
 
+  <!-- DISABLED 2026-05-15: crawler is now queue-driven, not schedule-driven.
   <key>StartInterval</key>
   <integer>1800</integer>
+  -->
 
   <key>StandardOutPath</key>
   <string>/tmp/crawler-internal.log</string>
