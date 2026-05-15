@@ -51,15 +51,22 @@ class NoCacheMiddleware(BaseHTTPMiddleware):
         return response
 
 
+async def _background_init():
+    """Run DB init tasks after app is already serving traffic."""
+    try:
+        await create_tables()
+        async with AsyncSessionLocal() as session:
+            await performance_service.seed_scenarios(session)
+            await reporting_etl.ensure_reporting_tables(session)
+            await crawler_ops.ensure_crawler_tables(session)
+    except Exception as exc:
+        logger.warning("Background init failed: %s", exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await create_tables()
-    async with AsyncSessionLocal() as session:
-        await performance_service.seed_scenarios(session)
-        await reporting_etl.ensure_reporting_tables(session)
-        await crawler_ops.ensure_crawler_tables(session)
-        # Note: reporting rebuild requires a tenant_id — skipped at startup.
-        # Each tenant's data is rebuilt on first dashboard load.
+    # Yield immediately so Render port scan succeeds, then init DB in background
+    asyncio.create_task(_background_init())
     yield
 
 
