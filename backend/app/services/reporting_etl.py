@@ -36,9 +36,10 @@ _ADVISORY_LOCK_KEY = 0x4953524C  # 'ISRL'
 # ─────────────────────────────────────────────────────────────────────────────
 
 _DDL = [
-    # Range-period overview, one row per (listing_id, period).
+    # Range-period overview, one row per (tenant_id, listing_id, period).
     """
     CREATE TABLE IF NOT EXISTS listings_int_ext (
+        tenant_id       VARCHAR(36) NOT NULL,
         listing_id      VARCHAR(32) NOT NULL,
         period          VARCHAR(32) NOT NULL,
         reference_date  TIMESTAMPTZ,
@@ -73,12 +74,13 @@ _DDL = [
         is_ad           BOOLEAN,
         tag_ranking     INTEGER,
         rebuilt_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-        PRIMARY KEY (listing_id, period)
+        PRIMARY KEY (tenant_id, listing_id, period)
     )
     """,
-    # Daily history rows, one per (listing_id, period=YYYY-MM-DD).
+    # Daily history rows, one per (tenant_id, listing_id, period=YYYY-MM-DD).
     """
     CREATE TABLE IF NOT EXISTS listings_int_hist (
+        tenant_id       VARCHAR(36) NOT NULL,
         listing_id      VARCHAR(32) NOT NULL,
         period          VARCHAR(32) NOT NULL,
         reference_date  TIMESTAMPTZ,
@@ -92,12 +94,13 @@ _DDL = [
         cpp             NUMERIC(10,2),
         source          VARCHAR(16),
         rebuilt_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-        PRIMARY KEY (listing_id, period)
+        PRIMARY KEY (tenant_id, listing_id, period)
     )
     """,
-    # Keyword sub-table — latest import per listing.
+    # Keyword sub-table — latest import per (tenant_id, listing_id).
     """
     CREATE TABLE IF NOT EXISTS keywords (
+        tenant_id        VARCHAR(36) NOT NULL,
         listing_id       VARCHAR(32) NOT NULL,
         keyword          TEXT NOT NULL,
         period           VARCHAR(32) NOT NULL,
@@ -112,7 +115,7 @@ _DDL = [
         cpc              NUMERIC(10,2),
         cpp              NUMERIC(10,2),
         rebuilt_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-        PRIMARY KEY (listing_id, keyword, period)
+        PRIMARY KEY (tenant_id, listing_id, keyword, period)
     )
     """,
     """
@@ -125,8 +128,9 @@ _DDL = [
         CONSTRAINT refresh_state_singleton CHECK (id = 1)
     )
     """,
-    "CREATE INDEX IF NOT EXISTS idx_listings_int_hist_listing ON listings_int_hist (listing_id)",
-    "CREATE INDEX IF NOT EXISTS idx_keywords_listing ON keywords (listing_id)",
+    "CREATE INDEX IF NOT EXISTS idx_listings_int_ext_tenant ON listings_int_ext (tenant_id)",
+    "CREATE INDEX IF NOT EXISTS idx_listings_int_hist_tenant ON listings_int_hist (tenant_id)",
+    "CREATE INDEX IF NOT EXISTS idx_keywords_tenant ON keywords (tenant_id)",
 ]
 
 
@@ -175,13 +179,13 @@ async def get_state(db: AsyncSession) -> dict | None:
 
 _INSERT_HIST_SQL = text(f"""
     INSERT INTO listings_int_hist (
-        listing_id, period, reference_date,
+        tenant_id, listing_id, period, reference_date,
         views, clicks, orders, revenue, spend, roas,
         cpc, cpp, source
     )
     WITH unioned AS (
         SELECT
-            listing_id, period,
+            tenant_id, listing_id, period,
             import_time   AS reference_date,
             COALESCE(views, 0)   AS views,
             COALESCE(clicks, 0)  AS clicks,
@@ -192,9 +196,10 @@ _INSERT_HIST_SQL = text(f"""
             'spy'::text AS source
         FROM listing_report
         WHERE period ~ '^\\d{{4}}-\\d{{2}}-\\d{{2}}$'
+          AND tenant_id = :tenant_id
         UNION ALL
         SELECT
-            listing_id, period,
+            tenant_id, listing_id, period,
             import_time   AS reference_date,
             COALESCE(views, 0)   AS views,
             COALESCE(clicks, 0)  AS clicks,
@@ -205,9 +210,11 @@ _INSERT_HIST_SQL = text(f"""
             'manual'::text AS source
         FROM manual_listing_report
         WHERE period ~ '^\\d{{4}}-\\d{{2}}-\\d{{2}}$'
+          AND tenant_id = :tenant_id
     ),
     grouped AS (
         SELECT
+            tenant_id,
             listing_id,
             period,
             MAX(reference_date) AS reference_date,
@@ -220,10 +227,10 @@ _INSERT_HIST_SQL = text(f"""
             -- Prefer manual source if present (latest-corrected by user)
             (ARRAY_AGG(source ORDER BY CASE WHEN source = 'manual' THEN 0 ELSE 1 END))[1] AS source
         FROM unioned
-        GROUP BY listing_id, period
+        GROUP BY tenant_id, listing_id, period
     )
     SELECT
-        listing_id, period, reference_date,
+        tenant_id, listing_id, period, reference_date,
         views, clicks, orders, revenue, spend, roas,
         CASE WHEN clicks > 0 THEN ROUND(spend::numeric / clicks, 2) ELSE NULL END AS cpc,
         CASE WHEN orders > 0 THEN ROUND(spend::numeric / orders, 2) ELSE NULL END AS cpp,
@@ -234,7 +241,7 @@ _INSERT_HIST_SQL = text(f"""
 
 _INSERT_EXT_SQL = text(f"""
     INSERT INTO listings_int_ext (
-        listing_id, period, reference_date,
+        tenant_id, listing_id, period, reference_date,
         title, no_vm, product, url,
         views, clicks, orders, revenue, spend, roas,
         ctr, cr, cpc, cpp,
@@ -244,7 +251,7 @@ _INSERT_EXT_SQL = text(f"""
     )
     WITH unioned AS (
         SELECT
-            listing_id, title, no_vm, category AS product, period,
+            tenant_id, listing_id, title, no_vm, category AS product, period,
             import_time AS reference_date,
             COALESCE(views, 0) AS views, COALESCE(clicks, 0) AS clicks,
             COALESCE(orders, 0) AS orders, COALESCE(revenue, 0) AS revenue,
@@ -252,9 +259,10 @@ _INSERT_EXT_SQL = text(f"""
             'spy'::text AS source
         FROM listing_report
         WHERE period ~ '^\\d{{4}}-\\d{{2}}-\\d{{2}}/\\d{{4}}-\\d{{2}}-\\d{{2}}$'
+          AND tenant_id = :tenant_id
         UNION ALL
         SELECT
-            listing_id, title, no_vm, category AS product, period,
+            tenant_id, listing_id, title, no_vm, category AS product, period,
             import_time AS reference_date,
             COALESCE(views, 0) AS views, COALESCE(clicks, 0) AS clicks,
             COALESCE(orders, 0) AS orders, COALESCE(revenue, 0) AS revenue,
@@ -262,10 +270,11 @@ _INSERT_EXT_SQL = text(f"""
             'manual'::text AS source
         FROM manual_listing_report
         WHERE period ~ '^\\d{{4}}-\\d{{2}}-\\d{{2}}/\\d{{4}}-\\d{{2}}-\\d{{2}}$'
+          AND tenant_id = :tenant_id
     ),
     grouped AS (
         SELECT
-            listing_id, period,
+            tenant_id, listing_id, period,
             MAX(NULLIF(title, ''))        AS title,
             MAX(NULLIF(no_vm, ''))        AS no_vm,
             MAX(NULLIF(product, ''))      AS product,
@@ -277,7 +286,7 @@ _INSERT_EXT_SQL = text(f"""
             MAX(spend)   AS spend,
             MAX(roas)    AS roas
         FROM unioned
-        GROUP BY listing_id, period
+        GROUP BY tenant_id, listing_id, period
     ),
     enriched AS (
         SELECT
@@ -310,7 +319,7 @@ _INSERT_EXT_SQL = text(f"""
         FROM grouped g
     )
     SELECT
-        e.listing_id, e.period, e.reference_date,
+        e.tenant_id, e.listing_id, e.period, e.reference_date,
         COALESCE(e.title, l.title)                                AS title,
         COALESCE(e.no_vm, l.no_vm)                                AS no_vm,
         COALESCE(e.product, l.category)                           AS product,
@@ -336,13 +345,13 @@ _INSERT_EXT_SQL = text(f"""
 # Only the latest import_time per listing is retained (matches old behavior).
 _INSERT_KEYWORDS_SQL = text("""
     INSERT INTO keywords (
-        listing_id, keyword, period, currently_status,
+        tenant_id, listing_id, keyword, period, currently_status,
         views, clicks, orders, revenue, spend, roas,
         click_rate, cpc, cpp
     )
     WITH unioned AS (
         SELECT
-            listing_id, keyword, period,
+            tenant_id, listing_id, keyword, period,
             relevant   AS currently_status,
             click_rate,
             import_time,
@@ -354,9 +363,10 @@ _INSERT_KEYWORDS_SQL = text("""
             COALESCE(roas, 0)    AS roas,
             0 AS source_priority
         FROM keyword_report
+        WHERE tenant_id = :tenant_id
         UNION ALL
         SELECT
-            listing_id, keyword, period,
+            tenant_id, listing_id, keyword, period,
             relevant   AS currently_status,
             click_rate,
             import_time,
@@ -368,38 +378,39 @@ _INSERT_KEYWORDS_SQL = text("""
             COALESCE(roas, 0)    AS roas,
             1 AS source_priority
         FROM manual_keyword_report
+        WHERE tenant_id = :tenant_id
     ),
-    -- Keep only rows belonging to the latest period per listing (period strings
-    -- are ISO 8601 so lexicographic MAX = chronological latest). Falls back to
-    -- the latest import_time for that period in case the same period was
-    -- re-imported multiple times.
+    -- Keep only rows belonging to the latest period per (tenant_id, listing_id).
     latest_period AS (
-        SELECT listing_id, MAX(period) AS latest_period
+        SELECT tenant_id, listing_id, MAX(period) AS latest_period
         FROM unioned
         WHERE period IS NOT NULL AND period <> '' AND period <> 'custom_default'
-        GROUP BY listing_id
+        GROUP BY tenant_id, listing_id
     ),
     latest AS (
-        SELECT u.listing_id, MAX(u.import_time) AS latest_import_time
+        SELECT u.tenant_id, u.listing_id, MAX(u.import_time) AS latest_import_time
         FROM unioned u
         JOIN latest_period lp
-          ON lp.listing_id = u.listing_id
+          ON lp.tenant_id  = u.tenant_id
+         AND lp.listing_id = u.listing_id
          AND lp.latest_period = u.period
-        GROUP BY u.listing_id
+        GROUP BY u.tenant_id, u.listing_id
     ),
     filtered AS (
         SELECT u.*
         FROM unioned u
         JOIN latest_period lp
-          ON lp.listing_id = u.listing_id
+          ON lp.tenant_id  = u.tenant_id
+         AND lp.listing_id = u.listing_id
          AND lp.latest_period = u.period
         JOIN latest l
-          ON l.listing_id = u.listing_id
+          ON l.tenant_id  = u.tenant_id
+         AND l.listing_id = u.listing_id
          AND l.latest_import_time = u.import_time
     ),
     grouped AS (
         SELECT
-            listing_id, keyword, period,
+            tenant_id, listing_id, keyword, period,
             (ARRAY_AGG(currently_status ORDER BY source_priority DESC))[1] AS currently_status,
             (ARRAY_AGG(click_rate        ORDER BY source_priority DESC))[1] AS click_rate,
             MAX(views)   AS views,
@@ -409,10 +420,10 @@ _INSERT_KEYWORDS_SQL = text("""
             MAX(spend)   AS spend,
             MAX(roas)    AS roas
         FROM filtered
-        GROUP BY listing_id, keyword, period
+        GROUP BY tenant_id, listing_id, keyword, period
     )
     SELECT
-        listing_id, keyword, period, currently_status,
+        tenant_id, listing_id, keyword, period, currently_status,
         views, clicks, orders, revenue, spend, roas,
         click_rate,
         CASE WHEN clicks > 0 THEN ROUND(spend::numeric / clicks, 2) ELSE NULL END AS cpc,
@@ -421,14 +432,16 @@ _INSERT_KEYWORDS_SQL = text("""
 """)
 
 
-async def rebuild_reporting(db: AsyncSession) -> dict:
-    """Full rebuild of the three reporting tables. Internal data only — market
-    enrichment (price/rating/...) happens at serving time via market_db."""
+async def rebuild_reporting(db: AsyncSession, tenant_id: str) -> dict:
+    """Full rebuild of reporting tables for a single tenant. Internal data only —
+    market enrichment (price/rating/...) happens at serving time via market_db."""
     t0 = time.monotonic()
 
-    # Advisory lock — non-blocking. If another rebuild is running, signal back.
+    # Per-tenant advisory lock key: XOR base key with hash of tenant_id so
+    # different tenants can rebuild in parallel without blocking each other.
+    lock_key = _ADVISORY_LOCK_KEY ^ (hash(tenant_id) & 0x7FFFFFFF)
     locked = (await db.execute(
-        text("SELECT pg_try_advisory_lock(:k)"), {"k": _ADVISORY_LOCK_KEY}
+        text("SELECT pg_try_advisory_lock(:k)"), {"k": lock_key}
     )).scalar()
     if not locked:
         return {"status": "in_progress"}
@@ -436,17 +449,36 @@ async def rebuild_reporting(db: AsyncSession) -> dict:
     try:
         sig = await compute_ingest_signature(db)
 
-        await db.execute(text("TRUNCATE listings_int_ext"))
-        await db.execute(text("TRUNCATE listings_int_hist"))
-        await db.execute(text("TRUNCATE keywords"))
+        await db.execute(
+            text("DELETE FROM listings_int_ext WHERE tenant_id = :tid"),
+            {"tid": tenant_id},
+        )
+        await db.execute(
+            text("DELETE FROM listings_int_hist WHERE tenant_id = :tid"),
+            {"tid": tenant_id},
+        )
+        await db.execute(
+            text("DELETE FROM keywords WHERE tenant_id = :tid"),
+            {"tid": tenant_id},
+        )
 
-        await db.execute(_INSERT_HIST_SQL)
-        await db.execute(_INSERT_EXT_SQL)
-        await db.execute(_INSERT_KEYWORDS_SQL)
+        params = {"tenant_id": tenant_id}
+        await db.execute(_INSERT_HIST_SQL, params)
+        await db.execute(_INSERT_EXT_SQL, params)
+        await db.execute(_INSERT_KEYWORDS_SQL, params)
 
-        n_ext = (await db.execute(text("SELECT count(*) FROM listings_int_ext"))).scalar()
-        n_hist = (await db.execute(text("SELECT count(*) FROM listings_int_hist"))).scalar()
-        n_kw = (await db.execute(text("SELECT count(*) FROM keywords"))).scalar()
+        n_ext = (await db.execute(
+            text("SELECT count(*) FROM listings_int_ext WHERE tenant_id = :tid"),
+            {"tid": tenant_id},
+        )).scalar()
+        n_hist = (await db.execute(
+            text("SELECT count(*) FROM listings_int_hist WHERE tenant_id = :tid"),
+            {"tid": tenant_id},
+        )).scalar()
+        n_kw = (await db.execute(
+            text("SELECT count(*) FROM keywords WHERE tenant_id = :tid"),
+            {"tid": tenant_id},
+        )).scalar()
 
         duration_ms = int((time.monotonic() - t0) * 1000)
         row_counts = {"ext": n_ext, "hist": n_hist, "keywords": n_kw}
@@ -476,11 +508,11 @@ async def rebuild_reporting(db: AsyncSession) -> dict:
         await db.rollback()
         raise
     finally:
-        await db.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": _ADVISORY_LOCK_KEY})
+        await db.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": lock_key})
         await db.commit()
 
 
-async def refresh_if_stale(db: AsyncSession, *, force: bool = False) -> dict:
+async def refresh_if_stale(db: AsyncSession, tenant_id: str, *, force: bool = False) -> dict:
     """Public entrypoint for /refresh + auto-trigger after import.
 
     Returns:
@@ -497,4 +529,4 @@ async def refresh_if_stale(db: AsyncSession, *, force: bool = False) -> dict:
             "row_counts": state.get("row_counts"),
         }
 
-    return await rebuild_reporting(db)
+    return await rebuild_reporting(db, tenant_id)

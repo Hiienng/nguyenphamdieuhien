@@ -391,6 +391,7 @@ async def confirm_import(
     keyword_report: list[dict],
     no_vm: str | None,
     db: AsyncSession,
+    tenant_id: str,
 ) -> dict:
     """
     Import user-reviewed data into DB.
@@ -440,6 +441,7 @@ async def confirm_import(
             import_time=now,
             importer=importer,
             batch_id=batch_id,
+            tenant_id=tenant_id,
         ))
         lr_count += 1
 
@@ -461,6 +463,7 @@ async def confirm_import(
             import_time=now,
             importer=importer,
             batch_id=batch_id,
+            tenant_id=tenant_id,
         ))
         kw_count += 1
 

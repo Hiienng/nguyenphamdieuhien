@@ -23,6 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.config import get_settings
 from ..schemas.vision_schema import CriterionScore, ThumbnailEvalResponse, ThumbnailFeatures
+from . import thumbnail_ml_service
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +111,24 @@ Return ONLY a valid JSON object with these exact keys (no markdown fences):
   "text_overlay": true or false,
   "text_overlay_content": "<text if present, else null>",
   "composition": "<centered|flat_lay|close_up|editorial|angled|hanging>",
-  "overall_mood": "<warm|minimal|playful|elegant|rustic|vibrant|etc.>"
+  "overall_mood": "<warm|minimal|playful|elegant|rustic|vibrant|etc.>",
+
+  "image_brightness": "<dark|medium|bright>",
+  "image_contrast": "<low|medium|high>",
+  "color_harmony": "<monochromatic|analogous|complementary|triadic|neutral>",
+  "color_count": <integer 1-6, number of visually dominant colors>,
+  "background_clutter": "<clean|minimal|moderate|busy>",
+
+  "product_visibility": "<full|partial|close_up|multiple_angles>",
+  "product_size_in_frame": "<small|medium|large|fills_frame>",
+  "personalization_visible": true or false,
+  "gift_cue_visible": true or false,
+  "size_reference": true or false,
+
+  "gender_signal": "<neutral|feminine|masculine>",
+  "age_target": "<newborn|infant|toddler|adult|unknown>",
+  "occasion_signal": "<everyday|gift|seasonal|hospital|announcement>",
+  "style_aesthetic": "<modern|rustic|boho|classic|whimsical|minimal>"
 }"""
 
 
@@ -148,7 +166,13 @@ async def _extract_features_from_bytes(
     return _parse_features(data, source="user", product_type=product_type)
 
 
-def _parse_features(data: dict, source: str, image_url: str | None = None, product_type: str | None = None) -> ThumbnailFeatures:
+def _parse_features(
+    data: dict,
+    source: str,
+    image_url: str | None = None,
+    product_type: str | None = None,
+    ml_label: int | None = None,
+) -> ThumbnailFeatures:
     return ThumbnailFeatures(
         source=source,
         image_url=image_url,
@@ -171,10 +195,31 @@ def _parse_features(data: dict, source: str, image_url: str | None = None, produ
         text_overlay_content=data.get("text_overlay_content"),
         composition=data.get("composition"),
         overall_mood=data.get("overall_mood"),
+        # new fields
+        image_brightness=data.get("image_brightness"),
+        image_contrast=data.get("image_contrast"),
+        color_harmony=data.get("color_harmony"),
+        color_count=data.get("color_count"),
+        background_clutter=data.get("background_clutter"),
+        product_visibility=data.get("product_visibility"),
+        product_size_in_frame=data.get("product_size_in_frame"),
+        personalization_visible=bool(data.get("personalization_visible", False)),
+        gift_cue_visible=bool(data.get("gift_cue_visible", False)),
+        size_reference=bool(data.get("size_reference", False)),
+        gender_signal=data.get("gender_signal"),
+        age_target=data.get("age_target"),
+        occasion_signal=data.get("occasion_signal"),
+        style_aesthetic=data.get("style_aesthetic"),
+        ml_label=ml_label,
     )
 
 
-async def _save_features(features: ThumbnailFeatures, badge: str | None, internal_db: AsyncSession) -> None:
+async def _save_features(
+    features: ThumbnailFeatures,
+    badge: str | None,
+    internal_db: AsyncSession,
+    ml_label: int | None = None,
+) -> None:
     """Persist a ThumbnailFeatures record to the thumbnail_features table."""
     await internal_db.execute(
         text("""
@@ -186,7 +231,11 @@ async def _save_features(features: ThumbnailFeatures, badge: str | None, interna
                 decoration_object, decoration_technique, decoration_colors,
                 seasonal_type, lifestyle_props,
                 text_overlay, text_overlay_content, composition, overall_mood,
-                extracted_at
+                image_brightness, image_contrast, color_harmony, color_count, background_clutter,
+                product_visibility, product_size_in_frame,
+                personalization_visible, gift_cue_visible, size_reference,
+                gender_signal, age_target, occasion_signal, style_aesthetic,
+                ml_label, extracted_at
             ) VALUES (
                 :source, :listing_id, :image_url, :product_type, :badge,
                 :subject, CAST(:subject_colors AS jsonb), CAST(:subject_color_names AS jsonb),
@@ -195,7 +244,11 @@ async def _save_features(features: ThumbnailFeatures, badge: str | None, interna
                 :decoration_object, :decoration_technique, CAST(:decoration_colors AS jsonb),
                 :seasonal_type, CAST(:lifestyle_props AS jsonb),
                 :text_overlay, :text_overlay_content, :composition, :overall_mood,
-                NOW()
+                :image_brightness, :image_contrast, :color_harmony, :color_count, :background_clutter,
+                :product_visibility, :product_size_in_frame,
+                :personalization_visible, :gift_cue_visible, :size_reference,
+                :gender_signal, :age_target, :occasion_signal, :style_aesthetic,
+                :ml_label, NOW()
             )
         """),
         {
@@ -222,6 +275,21 @@ async def _save_features(features: ThumbnailFeatures, badge: str | None, interna
             "text_overlay_content": features.text_overlay_content,
             "composition": features.composition,
             "overall_mood": features.overall_mood,
+            "image_brightness": features.image_brightness,
+            "image_contrast": features.image_contrast,
+            "color_harmony": features.color_harmony,
+            "color_count": features.color_count,
+            "background_clutter": features.background_clutter,
+            "product_visibility": features.product_visibility,
+            "product_size_in_frame": features.product_size_in_frame,
+            "personalization_visible": features.personalization_visible,
+            "gift_cue_visible": features.gift_cue_visible,
+            "size_reference": features.size_reference,
+            "gender_signal": features.gender_signal,
+            "age_target": features.age_target,
+            "occasion_signal": features.occasion_signal,
+            "style_aesthetic": features.style_aesthetic,
+            "ml_label": ml_label,
         },
     )
 
@@ -288,9 +356,12 @@ async def generate_knowledge(
     for url, badge in zip(image_urls, badges):
         feat = await _extract_features_from_url(url, product_type=product_type)
         feat.badge = badge
+        # ml_label: 1 for Bestseller/Popular now, 0 for others
+        ml_label = 1 if badge and ("bestseller" in badge.lower() or "popular" in badge.lower()) else 0
+        feat.ml_label = ml_label
         all_features.append(feat)
         try:
-            await _save_features(feat, badge=badge, internal_db=internal_db)
+            await _save_features(feat, badge=badge, internal_db=internal_db, ml_label=ml_label)
         except Exception as exc:
             logger.warning("Failed to save features for %s: %s", url, exc)
     if all_features:
@@ -391,6 +462,35 @@ async def generate_knowledge(
 # Function 2: Evaluate Thumbnail
 # ---------------------------------------------------------------------------
 
+_VALIDATE_PROMPT = """You are an Etsy product image validator.
+Look at this image and answer ONE question: is this a legitimate product listing thumbnail for an e-commerce store?
+
+A valid product thumbnail must show:
+- A clearly identifiable physical product (clothing, accessory, home item, etc.)
+- The product is the main subject, not a person's face, landscape, screenshot, meme, document, or abstract art
+
+Respond ONLY with this exact JSON (no markdown, no extra text):
+{"valid": true, "reason": "brief reason"}
+OR
+{"valid": false, "reason": "brief reason explaining what the image actually shows"}"""
+
+
+async def _validate_is_product_image(image_bytes: bytes, image_media_type: str) -> tuple[bool, str]:
+    """Return (is_valid, reason). Fast single-call check before full evaluation."""
+    image_b64 = base64.b64encode(image_bytes).decode()
+    contents = [
+        _VALIDATE_PROMPT,
+        {"mime_type": image_media_type, "data": image_b64},
+    ]
+    try:
+        raw = await _generate_with_fallback(contents)
+        data = _extract_json(raw)
+        return bool(data.get("valid", False)), str(data.get("reason", ""))
+    except Exception as exc:
+        logger.warning("Validation call failed (%s) — allowing through", exc)
+        return True, "validation skipped"
+
+
 async def evaluate_thumbnail(
     image_bytes: bytes,
     image_media_type: str,
@@ -401,6 +501,14 @@ async def evaluate_thumbnail(
     Evaluate a seller's thumbnail image against thumbnail_knowledge for the given product_type.
     Returns structured scores across 9 rubric criteria.
     """
+    # ── Step 0: Validate image is a product thumbnail ─────────────────────
+    is_valid, reason = await _validate_is_product_image(image_bytes, image_media_type)
+    if not is_valid:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Image does not appear to be a product listing thumbnail: {reason}",
+        )
+
     # ── Step 1: Load knowledge from DB ────────────────────────────────────
     result = await internal_db.execute(
         text("SELECT target_audience, patterns FROM thumbnail_knowledge WHERE product_type = :pt"),
@@ -423,6 +531,9 @@ async def evaluate_thumbnail(
 
     # ── Step 2: Extract rich features from image (Tier 1) ─────────────────
     features = await _extract_features_from_bytes(image_bytes, image_media_type, product_type)
+
+    # ── Step 2b: ML score (LightGBM) ──────────────────────────────────────
+    ml_score = thumbnail_ml_service.score_features(features.model_dump())
 
     # ── Step 3: Build Gemini scoring prompt using features + knowledge ─────
     criteria_str = "\n".join(f"- {c}" for c in RUBRIC_CRITERIA)
@@ -503,4 +614,5 @@ async def evaluate_thumbnail(
         strengths=data.get("strengths", []),
         suggestions=data.get("suggestions", []),
         features=features,
+        ml_score=ml_score,
     )

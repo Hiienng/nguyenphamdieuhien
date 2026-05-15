@@ -24,3 +24,4 @@ class ManualListingReport(Base):
     import_time = Column(DateTime(timezone=True), nullable=True)
     importer = Column(String(64), nullable=True)
     batch_id = Column(String(64), nullable=True)
+    tenant_id = Column(String(36), nullable=True, index=True)

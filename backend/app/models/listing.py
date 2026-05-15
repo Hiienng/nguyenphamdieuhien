@@ -31,5 +31,7 @@ class Listing(Base):
     optimized_tags: Mapped[str | None] = mapped_column(Text)
     optimized_description: Mapped[str | None] = mapped_column(Text)
 
+    tenant_id: Mapped[str | None] = mapped_column(String(36), index=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

@@ -37,6 +37,19 @@ class Settings(BaseSettings):
     IMAGEKIT_URL_ENDPOINT: str = ""
     IMAGEKIT_FOLDER: str = "/listing/EtseeMate"
 
+    # JWT Auth
+    JWT_SECRET_KEY: str = ""
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_EXPIRE_MIN: int = 30
+    JWT_REFRESH_EXPIRE_DAYS: int = 7
+
+    # Stripe
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_PUBLISHABLE_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_PRICE_SUBSCRIPTION: str = ""   # recurring $9.9/month price ID
+    STRIPE_PRICE_CREDIT_DEPOSIT: str = "" # one-time $9.9 price ID
+
     # App
     APP_ENV: str = "development"
     APP_HOST: str = "0.0.0.0"

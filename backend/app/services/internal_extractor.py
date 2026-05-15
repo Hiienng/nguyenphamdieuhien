@@ -245,7 +245,7 @@ VISION_QUOTA_MESSAGE = (
     "He thong da het quota Vision API. Vui long doi Gemini key hoac nap them credit Hugging Face roi thu lai."
 )
 VISION_NOT_CONFIGURED_MESSAGE = (
-    "Chua cau hinh Vision API. Can co GEMINI_API_KEY, GEMINI_API_KEY_2 hoac HUGGINGFACE_API_KEY."
+    "Chua cau hinh Vision API. Can co GEMINI_API_KEY_paid, GEMINI_API_KEY_free hoac HUGGINGFACE_API_KEY."
 )
 
 def _mime_for(name: str) -> str:
@@ -312,7 +312,7 @@ async def _call_gemini_vision(filename: str, image_data: bytes, settings) -> dic
     """Try Gemini keys in order before falling back to other providers."""
     gemini_keys = [
         key.strip()
-        for key in (settings.GEMINI_API_KEY, getattr(settings, "GEMINI_API_KEY_2", ""))
+        for key in (settings.GEMINI_API_KEY_paid, settings.GEMINI_API_KEY_free)
         if key and key.strip()
     ]
     if not gemini_keys:
@@ -389,7 +389,7 @@ async def extract_batch_streaming(
     total = len(images)
     gemini_keys = [
         key.strip()
-        for key in (settings.GEMINI_API_KEY, getattr(settings, "GEMINI_API_KEY_2", ""))
+        for key in (settings.GEMINI_API_KEY_paid, settings.GEMINI_API_KEY_free)
         if key and key.strip()
     ]
     has_hf = bool(settings.HUGGINGFACE_API_KEY and settings.HUGGINGFACE_API_KEY.strip())

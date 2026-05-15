@@ -46,8 +46,30 @@ class ThumbnailFeatures(BaseModel):
     # Composition & Mood
     text_overlay: bool = False
     text_overlay_content: str | None = None
-    composition: str | None = None             # centered | flat_lay | close_up | editorial
+    composition: str | None = None
     overall_mood: str | None = None
+
+    # Visual quality
+    image_brightness: str | None = None        # dark|medium|bright
+    image_contrast: str | None = None          # low|medium|high
+    color_harmony: str | None = None           # monochromatic|analogous|complementary|triadic|neutral
+    color_count: int | None = None
+    background_clutter: str | None = None      # clean|minimal|moderate|busy
+
+    # Product presentation
+    product_visibility: str | None = None      # full|partial|close_up|multiple_angles
+    product_size_in_frame: str | None = None   # small|medium|large|fills_frame
+    personalization_visible: bool = False
+    gift_cue_visible: bool = False
+    size_reference: bool = False
+
+    # Audience & occasion signals
+    gender_signal: str | None = None           # neutral|feminine|masculine
+    age_target: str | None = None              # newborn|infant|toddler|adult|unknown
+    occasion_signal: str | None = None         # everyday|gift|seasonal|hospital|announcement
+    style_aesthetic: str | None = None         # modern|rustic|boho|classic|whimsical|minimal
+
+    ml_label: int | None = None
 
     model_config = {"from_attributes": True}
 
@@ -94,4 +116,5 @@ class ThumbnailEvalResponse(BaseModel):
     scores: dict[str, CriterionScore]
     strengths: list[str]
     suggestions: list[str]
-    features: ThumbnailFeatures | None = None   # rich extracted features
+    features: ThumbnailFeatures | None = None
+    ml_score: float | None = None       # LightGBM proba(1), 0–1, None if model not available

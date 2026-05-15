@@ -12,6 +12,8 @@ from sqlalchemy.exc import NotSupportedError
 logger = logging.getLogger(__name__)
 
 from ...core.database import get_db
+from ...core.auth_middleware import require_subscription, get_tenant_db_for_user
+from ...models.user import User
 from ...schemas.internal import (
     UploadResponse,
     ExtractResponse,
@@ -19,6 +21,9 @@ from ...schemas.internal import (
     ConfirmResponse,
     BatchActionResponse,
     BatchHistoryItem,
+    IngestListingRequest,
+    IngestKeywordRequest,
+    IngestResponse,
 )
 from ...services import internal_service, reporting_etl, crawler_ops
 
@@ -107,9 +112,13 @@ async def upload_screenshots(
             detail={"message": "Image validation failed", "errors": errors},
         )
 
-    batch_id, count, _ = await internal_service.save_uploaded_files(
-        file_contents, db,
-    )
+    try:
+        batch_id, count, _ = await internal_service.save_uploaded_files(
+            file_contents, db,
+        )
+    except Exception as exc:
+        logger.exception("save_uploaded_files failed")
+        raise HTTPException(500, f"Lỗi lưu file: {exc}") from exc
     return UploadResponse(batch_id=batch_id, file_count=count)
 
 
@@ -130,7 +139,7 @@ async def extract_batch(
 # ── POST /confirm — write reviewed data to DB ───────────────────────────────
 
 @router.post("/confirm", response_model=ConfirmResponse)
-async def confirm_import(req: ConfirmRequest, db: AsyncSession = Depends(get_db)):
+async def confirm_import(req: ConfirmRequest, db: AsyncSession = Depends(get_tenant_db_for_user), user: User = Depends(require_subscription)):
     try:
         result = await internal_service.confirm_import(
             batch_id=req.batch_id,
@@ -138,15 +147,19 @@ async def confirm_import(req: ConfirmRequest, db: AsyncSession = Depends(get_db)
             keyword_report=[r.model_dump() for r in req.keyword_report],
             no_vm=req.no_vm,
             db=db,
+            tenant_id=user.id,
         )
     except ValueError as e:
         raise HTTPException(400, str(e))
+    except Exception as exc:
+        logger.exception("confirm_import failed for batch %s", req.batch_id)
+        raise HTTPException(500, f"Lỗi confirm: {exc}") from exc
 
     # New raw rows just landed — rebuild reporting layer so the FE shows them
     # without the user having to click "Tải lại". Failure here must not break
     # the import response.
     try:
-        await reporting_etl.refresh_if_stale(db, force=True)
+        await reporting_etl.refresh_if_stale(db, user.id, force=True)
     except Exception as exc:  # noqa: BLE001
         logger.warning("Post-import reporting rebuild failed for batch %s: %s", req.batch_id, exc)
 
@@ -201,3 +214,91 @@ async def get_snapshot(batch_id: str):
     if data is None:
         raise HTTPException(404, f"Snapshot not found for batch {batch_id}")
     return data
+
+
+# ── POST /ingest/listing — extension pushes listing_report rows ──────────────
+
+@router.post("/ingest/listing", response_model=IngestResponse)
+async def ingest_listing(
+    req: IngestListingRequest,
+    db: AsyncSession = Depends(get_tenant_db_for_user),
+    user: User = Depends(require_subscription),
+):
+    """Endpoint for browser extension to push listing_report rows.
+    tenant_id is injected from JWT — extension never touches DB directly.
+    """
+    from ...models.listing_report import ListingReport
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc)
+    importer = req.importer or "extension"
+    count = 0
+    for row in req.rows:
+        db.add(ListingReport(
+            listing_id=row.listing_id,
+            title=row.title,
+            no_vm=row.no_vm,
+            price=row.price,
+            stock=row.stock,
+            category=row.category,
+            lifetime_orders=row.lifetime_orders,
+            lifetime_revenue=row.lifetime_revenue,
+            period=row.period,
+            views=row.views,
+            clicks=row.clicks,
+            orders=row.orders,
+            revenue=row.revenue,
+            spend=row.spend,
+            roas=row.roas,
+            import_time=now,
+            importer=importer,
+            tenant_id=user.id,
+        ))
+        count += 1
+    await db.commit()
+
+    try:
+        new_ids = list({r.listing_id for r in req.rows})
+        await crawler_ops.enqueue_listings(db, new_ids, reason="extension_ingest")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Enqueue crawl_queue failed (ingest/listing): %s", exc)
+
+    return IngestResponse(inserted=count)
+
+
+# ── POST /ingest/keyword — extension pushes keyword_report rows ──────────────
+
+@router.post("/ingest/keyword", response_model=IngestResponse)
+async def ingest_keyword(
+    req: IngestKeywordRequest,
+    db: AsyncSession = Depends(get_tenant_db_for_user),
+    user: User = Depends(require_subscription),
+):
+    """Endpoint for browser extension to push keyword_report rows."""
+    from ...models.keyword_report import KeywordReport
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc)
+    importer = req.importer or "extension"
+    count = 0
+    for row in req.rows:
+        db.add(KeywordReport(
+            listing_id=row.listing_id,
+            keyword=row.keyword,
+            no_vm=row.no_vm,
+            relevant=row.relevant,
+            period=row.period,
+            roas=row.roas,
+            orders=row.orders,
+            spend=row.spend,
+            revenue=row.revenue,
+            clicks=row.clicks,
+            click_rate=row.click_rate,
+            views=row.views,
+            import_time=now,
+            importer=importer,
+            tenant_id=user.id,
+        ))
+        count += 1
+    await db.commit()
+    return IngestResponse(inserted=count)

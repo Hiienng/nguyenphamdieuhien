@@ -2279,9 +2279,9 @@
       <!-- Pill toggle -->
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:28px;">
         <div class="perf-pill-wrap" style="margin-bottom:0;">
-          <button class="perf-pill active" data-perf="improvement">Đề xuất hành động</button>
-          <button class="perf-pill" data-perf="import">Upload báo cáo Etsy Ads</button>
-          <button class="perf-pill" data-perf="rules">Cấu hình ngưỡng</button>
+          <button class="perf-pill" data-perf="import">1. Import Report</button>
+          <button class="perf-pill active" data-perf="improvement">2. Action Recommendations</button>
+          <button class="perf-pill" data-perf="rules">3. Configure Thresholds</button>
         </div>
       </div>
 
@@ -2404,10 +2404,31 @@
       <!-- ── Sub-panel: Internal Import ──────────── -->
       <div id="perf-sub-import" style="display:none">
 
-        <h2 class="section-heading" style="margin-bottom:6px">Upload báo cáo Etsy Ads</h2>
-        <p style="font-family:var(--font-sans);font-size:0.94rem;color:var(--stone);margin-bottom:24px">
-          Upload Etsy Ads screenshots &rarr; Claude Vision extract &rarr; Review &rarr; Import DB
-        </p>
+        <h2 class="section-heading" style="margin-bottom:16px">1. Import Report</h2>
+
+        <!-- Import method selector -->
+        <div id="importMethodSelector" style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+          <button class="import-method-btn active" data-method="image" onclick="importSelectMethod('image')"
+            style="flex:1;min-width:160px;padding:16px 12px;border:2px solid var(--terracotta);border-radius:10px;background:var(--terracotta);color:#fff;font-family:var(--font-sans);font-size:0.88rem;font-weight:500;cursor:pointer;text-align:center;transition:all 0.15s">
+            <div style="font-size:1.4rem;margin-bottom:6px">🖼️</div>
+            Import from image
+          </button>
+          <button class="import-method-btn" data-method="extension" onclick="importSelectMethod('extension')"
+            style="flex:1;min-width:160px;padding:16px 12px;border:2px solid var(--border-cream);border-radius:10px;background:var(--ivory);color:var(--charcoal);font-family:var(--font-sans);font-size:0.88rem;font-weight:500;cursor:pointer;text-align:center;transition:all 0.15s">
+            <div style="font-size:1.4rem;margin-bottom:6px">🧩</div>
+            Import from extension
+          </button>
+          <button class="import-method-btn" data-method="csv" onclick="importSelectMethod('csv')"
+            style="flex:1;min-width:160px;padding:16px 12px;border:2px solid var(--border-cream);border-radius:10px;background:var(--ivory);color:var(--charcoal);font-family:var(--font-sans);font-size:0.88rem;font-weight:500;cursor:pointer;text-align:center;transition:all 0.15s">
+            <div style="font-size:1.4rem;margin-bottom:6px">📄</div>
+            Import from CSV
+          </button>
+        </div>
+
+        <!-- Placeholder for extension / csv -->
+        <div id="importMethodPlaceholder" style="display:none;padding:40px;text-align:center;background:var(--ivory);border:1px dashed var(--border-cream);border-radius:10px;color:var(--stone);font-family:var(--font-sans);font-size:0.9rem">
+          Tính năng đang phát triển
+        </div>
 
         <!-- Section 1: Upload Zone -->
         <div class="chart-card" id="importUploadZone">
@@ -2564,7 +2585,7 @@
         <div
           style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap">
           <div>
-            <h2 class="section-heading" style="margin-bottom:4px">Ngưỡng quyết định</h2>
+            <h2 class="section-heading" style="margin-bottom:4px">Configure Thresholds</h2>
           </div>
           <button id="rulesAddBtn"
             style="display:flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;border:none;background:var(--terracotta);color:#fff;font-size:0.88rem;font-weight:500;cursor:pointer;transition:opacity 0.15s"
@@ -4425,6 +4446,30 @@
       const btn = document.getElementById('importExtractBtn');
       btn.disabled = false;
       btn.style.opacity = '1';
+    }
+
+    // ── Import method selector ────────────────────────
+    function importSelectMethod(method) {
+      document.querySelectorAll('.import-method-btn').forEach(btn => {
+        const active = btn.dataset.method === method;
+        btn.style.border = active ? '2px solid var(--terracotta)' : '2px solid var(--border-cream)';
+        btn.style.background = active ? 'var(--terracotta)' : 'var(--ivory)';
+        btn.style.color = active ? '#fff' : 'var(--charcoal)';
+      });
+      const uploadZone = document.getElementById('importUploadZone');
+      const placeholder = document.getElementById('importMethodPlaceholder');
+      const previewSection = document.getElementById('importPreviewSection');
+      if (method === 'image') {
+        uploadZone.style.display = '';
+        placeholder.style.display = 'none';
+      } else {
+        uploadZone.style.display = 'none';
+        if (previewSection) previewSection.style.display = 'none';
+        placeholder.style.display = '';
+        placeholder.textContent = method === 'extension'
+          ? '🧩 Import from extension — Tính năng đang phát triển'
+          : '📄 Import from CSV — Tính năng đang phát triển';
+      }
     }
 
     // ── Upload & Extract ──────────────────────────────

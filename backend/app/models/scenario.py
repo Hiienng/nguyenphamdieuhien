@@ -20,3 +20,4 @@ class ScenarioRule(Base):
         DateTime(timezone=True), nullable=False,
         server_default=func.now(), onupdate=func.now()
     )
+    tenant_id: Mapped[str | None] = mapped_column(String(36), index=True)

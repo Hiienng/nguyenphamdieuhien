@@ -20,3 +20,4 @@ class KeywordReport(Base):
     relevant = Column(String(8), nullable=True)
     import_time = Column(DateTime(timezone=True), nullable=True)
     importer = Column(String(64), nullable=True)
+    tenant_id = Column(String(36), nullable=True, index=True)

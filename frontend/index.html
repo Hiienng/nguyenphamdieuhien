@@ -1,1222 +1,227 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- ═══════════════════════════════════════════════════
-       SEO & GEO Meta — Tối ưu cho Google + AI (ChatGPT/Gemini)
-       ═══════════════════════════════════════════════════ -->
-  <title>EtseeMate — AI-Powered Etsy Listing Optimization for Sewing Businesses</title>
-  <meta name="description" content="EtseeMate is an AI-driven platform that optimizes Etsy listings for sewing and manufacturing businesses. Boost CTR, CR, and ROAS with AI title & tag optimization, market intelligence, and performance analytics.">
-  <meta name="keywords" content="Etsy listing optimization, Etsy seller tools, AI for Etsy sellers, Etsy SEO, Etsy product listing optimizer, sewing business Etsy, Etsy manufacturing, Etsy CTR improvement, Etsy ROAS, Etsy market research, Etsy tag optimizer, Etsy title optimizer">
-
-  <!-- Open Graph -->
-  <meta property="og:title" content="EtseeMate — AI-Powered Etsy Listing Optimization">
-  <meta property="og:description" content="Optimize your Etsy listings with AI. Track CTR/CR/ROAS, research market trends, and scale your sewing business on Etsy.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://nguyenphamdieuhien.online/index.html">
-  <meta property="og:locale" content="en_US">
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="EtseeMate — AI-Powered Etsy Listing Optimization">
-  <meta name="twitter:description" content="Boost CTR, CR, and ROAS with AI-driven Etsy optimization for sewing businesses.">
-
-  <!-- JSON-LD Structured Data — GEO (Generative Engine Optimization) -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "EtseeMate",
-    "applicationCategory": "BusinessApplication",
-    "operatingSystem": "Web",
-    "description": "AI-powered Etsy listing optimization platform for sewing and manufacturing businesses. Features AI title & tag optimization, performance analytics (CTR/CR/ROAS), market intelligence research, and manual import from Etsy Ads screenshots.",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD",
-      "description": "Private access — contact for pricing"
-    },
-    "author": {
-      "@type": "Organization",
-      "name": "Findatasolution"
-    },
-    "features": [
-      "AI Title & Tag Optimization using TF-IDF and Claude AI",
-      "Performance Dashboard tracking CTR, CR, ROAS across listings",
-      "Market Research Hub with 8 chart types for trend analysis",
-      "Listing Improvement matrix with 14 scenarios (keep/improve/off)",
-      "Manual Import from Etsy Ads screenshots via Claude Vision",
-      "Competitor reference analysis from market crawl data",
-      "Threshold management for custom KPI classification"
-    ],
-    "audience": {
-      "@type": "Audience",
-      "audienceType": "Etsy sellers in sewing and manufacturing"
-    }
-  }
-  </script>
-
-  <!-- FAQ Schema for GEO — AI often pulls FAQ in answers -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "What is EtseeMate?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "EtseeMate is an AI-powered optimization platform for Etsy sellers, especially sewing and manufacturing businesses. It helps optimize listing titles, tags, and descriptions using machine learning, tracks performance metrics like CTR/CR/ROAS, and provides market intelligence for product research."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "How does EtseeMate optimize Etsy listings?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "EtseeMate uses TF-IDF and Claude AI to analyze successful listings and generate optimized titles, tags, and descriptions. It classifies listings into 14 scenarios based on CTR, CR, and ROAS bands, providing actionable recommendations for each — whether to keep, improve, or turn off the listing."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Can EtseeMate help with Etsy market research?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes. EtseeMate's Research Hub crawls and analyzes Etsy market data across product types, price ranges, review counts, and hot badges. It identifies emerging opportunities and priority products for sewing businesses, filtering only for sewable products."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "What metrics does EtseeMate track?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "EtseeMate tracks three core metrics: CTR (Click-Through Rate), CR (Conversion Rate), and ROAS (Return on Ad Spend). It provides per-listing performance breakdowns, best performer identification, quick win detection, and portfolio-level aggregations."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Who is EtseeMate for?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "EtseeMate is designed for Etsy sellers, particularly those in the sewing, embroidery, and manufacturing space — businesses that produce fabric-based products like baby rompers, blankets, onesies, jackets, and accessories."
-        }
-      }
-    ]
-  }
-  </script>
-
-  <!-- How-to Schema for Etsy listing optimization steps -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "HowTo",
-    "name": "How to Optimize Etsy Listings with EtseeMate",
-    "description": "Step-by-step process to improve your Etsy listing performance using EtseeMate's AI tools.",
-    "step": [
-      {
-        "@type": "HowToStep",
-        "position": 1,
-        "name": "Import your Etsy Ads data",
-        "text": "Upload Etsy Ads screenshots or connect your listings. EtseeMate extracts metrics using Claude Vision AI."
-      },
-      {
-        "@type": "HowToStep",
-        "position": 2,
-        "name": "Review performance dashboard",
-        "text": "View CTR, CR, and ROAS across all listings. Identify best performers and quick wins."
-      },
-      {
-        "@type": "HowToStep",
-        "position": 3,
-        "name": "Analyze listing scenarios",
-        "text": "EtseeMate classifies each listing into one of 14 scenarios with specific improvement recommendations."
-      },
-      {
-        "@type": "HowToStep",
-        "position": 4,
-        "name": "Apply AI optimizations",
-        "text": "Use AI-generated title, tag, and description suggestions. Compare with competitor references from market data."
-      },
-      {
-        "@type": "HowToStep",
-        "position": 5,
-        "name": "Research new product opportunities",
-        "text": "Explore market trends, hot rates, and price bands to identify the next winning product for your shop."
-      }
-    ]
-  }
-  </script>
-
-  <!-- BreadcrumbList Schema -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://nguyenphamdieuhien.online/"},
-      {"@type": "ListItem", "position": 2, "name": "Products", "item": "https://nguyenphamdieuhien.online/index.html"},
-      {"@type": "ListItem", "position": 3, "name": "EtseeMate"}
-    ]
-  }
-  </script>
-
+  <title>EtseeMate — Biết listing nào đang kiếm tiền, và phải làm gì tiếp theo</title>
+  <meta name="description" content="EtseeMate phân tích ROAS · CTR · CR từng listing Etsy Ads của bạn — và nói thẳng cần scale listing nào, cắt listing nào.">
   <style>
-    /* ═══════════════════════════════════════════
-       Design System — Anthropic-inspired warm palette
-       ═══════════════════════════════════════════ */
-    *,
-    *::before,
-    *::after {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
-      --parchment: #f5f4ed;
-      --ivory: #faf9f5;
-      --white: #ffffff;
-      --warm-sand: #e8e6dc;
-      --dark-surface: #30302e;
-      --deep-dark: #141413;
-
-      --near-black: #141413;
-      --charcoal: #4d4c48;
-      --olive: #5e5d59;
-      --stone: #87867f;
-      --dark-warm: #3d3d3a;
-      --warm-silver: #b0aea5;
-
-      --terracotta: #c96442;
-      --coral: #d97757;
-
-      --border-cream: #f0eee6;
+      --parchment: #f5f4ed; --ivory: #faf9f5; --near-black: #141413;
+      --charcoal: #4d4c48; --stone: #87867f; --warm-gray: #5e5d59;
+      --warm-silver: #b0aea5; --terracotta: #c96442;
       --border-warm: #e8e6dc;
-      --ring-warm: #d1cfc5;
-      --ring-deep: #c2c0b6;
-
       --font-serif: Georgia, 'Times New Roman', serif;
       --font-sans: system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
-      --font-mono: 'Courier New', Courier, monospace;
     }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      font-family: var(--font-sans);
-      background: var(--parchment);
-      color: var(--near-black);
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* Accent underline for key terms — helps AI scanners detect keywords */
-    .accent-term {
-      color: var(--terracotta);
-      font-weight: 500;
-    }
-
-    /* ═══ Navigation ═══ */
-    .nav {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: var(--parchment);
-      border-bottom: 1px solid var(--border-cream);
-      padding: 0 40px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 64px;
-    }
-
-    .nav-brand {
-      font-family: var(--font-serif);
-      font-size: 1.2rem;
-      font-weight: 500;
-      color: var(--near-black);
-      text-decoration: none;
-    }
-
-    .nav-brand span {
-      color: var(--terracotta);
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 32px;
-      list-style: none;
-    }
-
-    .nav-links a {
-      font-family: var(--font-sans);
-      font-size: 0.94rem;
-      font-weight: 400;
-      color: var(--olive);
-      text-decoration: none;
-      transition: color 0.15s;
-    }
-
-    .nav-links a:hover {
-      color: var(--near-black);
-    }
-
-    .nav-cta {
-      background: var(--terracotta);
-      color: var(--ivory) !important;
-      padding: 8px 20px;
-      border-radius: 8px;
-      font-weight: 500 !important;
-      box-shadow: #c96442 0px 0px 0px 0px, #c96442 0px 0px 0px 1px;
-      transition: opacity 0.15s !important;
-    }
-
-    .nav-cta:hover {
-      opacity: 0.88;
-    }
-
-    /* ═══ Hero ═══ */
-    .hero {
-      padding: 100px 40px 80px;
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .hero-overline {
-      font-family: var(--font-sans);
-      font-size: 0.7rem;
-      font-weight: 400;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      color: var(--stone);
-    }
-
-    .hero-title {
-      font-family: var(--font-serif);
-      font-size: 4rem;
-      font-weight: 500;
-      line-height: 1.10;
-      color: var(--near-black);
-      max-width: 780px;
-    }
-
-    .hero-sub {
-      font-family: var(--font-sans);
-      font-size: 1.25rem;
-      font-weight: 400;
-      line-height: 1.60;
-      color: var(--olive);
-      max-width: 620px;
-    }
-
-    .hero-actions {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-top: 12px;
-      flex-wrap: wrap;
-    }
-
-    .btn-primary {
-      font-family: var(--font-sans);
-      font-size: 1rem;
-      font-weight: 500;
-      color: var(--ivory);
-      background: var(--terracotta);
-      border: none;
-      border-radius: 12px;
-      padding: 14px 32px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: #c96442 0px 0px 0px 0px, #c96442 0px 0px 0px 1px;
-      transition: opacity 0.15s;
-    }
-
-    .btn-primary:hover {
-      opacity: 0.88;
-    }
-
-    .btn-secondary {
-      font-family: var(--font-sans);
-      font-size: 1rem;
-      font-weight: 500;
-      color: var(--charcoal);
-      background: var(--warm-sand);
-      border: 1px solid var(--border-warm);
-      border-radius: 12px;
-      padding: 13px 28px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: border-color 0.15s, background 0.15s;
-    }
-
-    .btn-secondary:hover {
-      border-color: var(--ring-deep);
-      background: var(--border-warm);
-    }
-
-    /* ═══ Stats Bar ═══ */
-    .stats-bar {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 48px 40px 64px;
-      gap: 24px;
-    }
-
-    .stat-item {
-      text-align: center;
-    }
-
-    .stat-value {
-      font-family: var(--font-serif);
-      font-size: 2.8rem;
-      font-weight: 500;
-      line-height: 1.10;
-      color: var(--near-black);
-    }
-
-    .stat-label {
-      font-family: var(--font-sans);
-      font-size: 0.88rem;
-      color: var(--stone);
-      margin-top: 4px;
-    }
-
-    /* ═══ Section Common ═══ */
-    .section {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 80px 40px;
-    }
-
-    .section-label {
-      font-family: var(--font-sans);
-      font-size: 0.7rem;
-      font-weight: 500;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      color: var(--terracotta);
-      margin-bottom: 12px;
-    }
-
-    .section-title {
-      font-family: var(--font-serif);
-      font-size: 3.25rem;
-      font-weight: 500;
-      line-height: 1.20;
-      color: var(--near-black);
-      margin-bottom: 16px;
-      max-width: 640px;
-    }
-
-    .section-desc {
-      font-family: var(--font-sans);
-      font-size: 1.06rem;
-      line-height: 1.60;
-      color: var(--olive);
-      max-width: 560px;
-      margin-bottom: 48px;
-    }
-
-    /* ═══ Feature Grid ═══ */
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
-
-    .feature-card {
-      background: var(--ivory);
-      border: 1px solid var(--border-cream);
-      border-radius: 12px;
-      padding: 36px 28px 32px;
-      box-shadow: rgba(0, 0, 0, 0.05) 0px 4px 24px;
-      transition: box-shadow 0.15s;
-    }
-
-    .feature-card:hover {
-      box-shadow: rgba(0, 0, 0, 0.08) 0px 8px 32px, 0px 0px 0px 1px var(--ring-warm);
-    }
-
-    .feature-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      background: rgba(201, 100, 66, 0.08);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-      color: var(--terracotta);
-    }
-
-    .feature-title {
-      font-family: var(--font-serif);
-      font-size: 1.3rem;
-      font-weight: 500;
-      line-height: 1.20;
-      color: var(--near-black);
-      margin-bottom: 8px;
-    }
-
-    .feature-body {
-      font-family: var(--font-sans);
-      font-size: 0.94rem;
-      line-height: 1.60;
-      color: var(--olive);
-    }
-
-    .feature-tags {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin-top: 16px;
-    }
-
-    .feature-tag {
-      font-family: var(--font-sans);
-      font-size: 0.72rem;
-      font-weight: 500;
-      color: var(--stone);
-      background: var(--warm-sand);
-      padding: 3px 10px;
-      border-radius: 20px;
-    }
-
-    /* ═══ Metrics Section ═══ */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-    }
-
-    .metric-card {
-      background: var(--ivory);
-      border: 1px solid var(--border-cream);
-      border-radius: 16px;
-      padding: 36px 28px;
-      box-shadow: rgba(0, 0, 0, 0.05) 0px 4px 24px;
-      text-align: center;
-    }
-
-    .metric-kpi {
-      font-family: var(--font-serif);
-      font-size: 2.4rem;
-      font-weight: 500;
-      color: var(--terracotta);
-      line-height: 1.10;
-      margin-bottom: 6px;
-    }
-
-    .metric-name {
-      font-family: var(--font-sans);
-      font-size: 0.88rem;
-      font-weight: 600;
-      letter-spacing: 0.12px;
-      text-transform: uppercase;
-      color: var(--charcoal);
-      margin-bottom: 8px;
-    }
-
-    .metric-desc {
-      font-family: var(--font-sans);
-      font-size: 0.88rem;
-      line-height: 1.55;
-      color: var(--olive);
-    }
-
-    /* ═══ Scenario Matrix ═══ */
-    .scenario-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-    }
-
-    .scenario-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 20px;
-      background: var(--ivory);
-      border: 1px solid var(--border-cream);
-      border-radius: 8px;
-    }
-
-    .scenario-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .scenario-badge {
-      font-size: 1.2rem;
-    }
-
-    .scenario-text {
-      font-family: var(--font-sans);
-      font-size: 0.88rem;
-      color: var(--charcoal);
-    }
-
-    .scenario-action {
-      font-family: var(--font-sans);
-      font-size: 0.78rem;
-      font-weight: 600;
-      padding: 4px 12px;
-      border-radius: 6px;
-    }
-
-    .action-keep {
-      background: rgba(74, 140, 96, 0.10);
-      color: #4a8c60;
-    }
-
-    .action-improve {
-      background: rgba(180, 130, 40, 0.12);
-      color: #a07a1a;
-    }
-
-    .action-off {
-      background: rgba(201, 100, 66, 0.12);
-      color: #c96242;
-    }
-
-    /* ═══ Dark Section ═══ */
-    .dark-section {
-      background: var(--deep-dark);
-      padding: 100px 40px;
-    }
-
-    .dark-section .section {
-      padding: 0;
-    }
-
-    .dark-section .section-title {
-      color: var(--ivory);
-    }
-
-    .dark-section .section-desc {
-      color: var(--warm-silver);
-    }
-
-    .dark-section .feature-card {
-      background: var(--dark-surface);
-      border-color: #30302e;
-    }
-
-    .dark-section .feature-card .feature-title {
-      color: var(--ivory);
-    }
-
-    .dark-section .feature-card .feature-body {
-      color: var(--warm-silver);
-    }
-
-    .dark-section .feature-card .feature-tag {
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--warm-silver);
-    }
-
-    /* ═══ Timeline ═══ */
-    .timeline {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .timeline-item {
-      display: flex;
-      gap: 28px;
-      padding: 28px 0;
-      border-top: 1px solid var(--border-cream);
-    }
-
-    .timeline-item:first-child {
-      border-top: none;
-    }
-
-    .timeline-step {
-      font-family: var(--font-sans);
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--terracotta);
-      min-width: 44px;
-      padding-top: 2px;
-    }
-
-    .timeline-content h3 {
-      font-family: var(--font-serif);
-      font-size: 1.2rem;
-      font-weight: 500;
-      color: var(--near-black);
-      margin-bottom: 6px;
-    }
-
-    .timeline-content p {
-      font-family: var(--font-sans);
-      font-size: 0.94rem;
-      line-height: 1.60;
-      color: var(--olive);
-      max-width: 520px;
-    }
-
-    /* ═══ FAQ ═══ */
-    .faq-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .faq-item {
-      border-top: 1px solid var(--border-cream);
-      padding: 24px 0;
-    }
-
-    .faq-item:first-child {
-      border-top: none;
-    }
-
-    .faq-question {
-      font-family: var(--font-serif);
-      font-size: 1.15rem;
-      font-weight: 500;
-      color: var(--near-black);
-      margin-bottom: 8px;
-      cursor: default;
-    }
-
-    .faq-answer {
-      font-family: var(--font-sans);
-      font-size: 0.94rem;
-      line-height: 1.60;
-      color: var(--olive);
-      max-width: 680px;
-    }
-
-    /* ═══ Footer ═══ */
-    .footer {
-      background: var(--deep-dark);
-      padding: 48px 40px;
-      border-top: 1px solid #30302e;
-    }
-
-    .footer-inner {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .footer-brand {
-      font-family: var(--font-serif);
-      font-size: 1rem;
-      font-weight: 500;
-      color: var(--warm-silver);
-    }
-
-    .footer-brand span {
-      color: var(--terracotta);
-    }
-
-    .footer-text {
-      font-family: var(--font-sans);
-      font-size: 0.88rem;
-      color: var(--stone);
-    }
-
-    /* ═══ Responsive ═══ */
-    @media (max-width: 991px) {
-      .hero-title {
-        font-size: 2.8rem;
-      }
-
-      .feature-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .metrics-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .stats-bar {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 32px;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .nav {
-        padding: 0 16px;
-        height: auto;
-        flex-wrap: wrap;
-        padding: 14px 16px;
-      }
-
-      .nav-links {
-        display: none;
-      }
-
-      .hero {
-        padding: 60px 20px 40px;
-      }
-
-      .hero-title {
-        font-size: 2rem;
-      }
-
-      .section {
-        padding: 48px 20px;
-      }
-
-      .section-title {
-        font-size: 2rem;
-      }
-
-      .feature-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .metrics-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .stats-bar {
-        grid-template-columns: 1fr 1fr;
-        gap: 24px;
-        padding: 32px 20px 48px;
-      }
-
-      .scenario-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .dark-section {
-        padding: 60px 20px;
-      }
-
-      .footer-inner {
-        flex-direction: column;
-        gap: 12px;
-        text-align: center;
-      }
-    }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font-sans); background: var(--parchment); color: var(--near-black); line-height: 1.6; }
+    .lp-nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 32px; border-bottom: 1px solid var(--border-warm); background: var(--parchment); position: sticky; top: 0; z-index: 100; }
+    .lp-nav-brand { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 500; color: var(--near-black); text-decoration: none; }
+    .lp-nav-brand span { color: var(--terracotta); }
+    .lp-nav-links { display: flex; align-items: center; gap: 16px; }
+    .lp-nav-signin { font-family: var(--font-sans); font-size: 0.85rem; color: var(--stone); cursor: pointer; background: none; border: none; }
+    .lp-nav-signin:hover { color: var(--charcoal); }
+    .lp-cta-primary { display: inline-block; font-family: var(--font-sans); font-size: 1rem; font-weight: 600; color: var(--ivory); background: var(--terracotta); border: none; border-radius: 10px; padding: 14px 36px; cursor: pointer; text-decoration: none; transition: opacity 0.15s; }
+    .lp-cta-primary:hover { opacity: 0.88; }
+    .lp-hero { max-width: 900px; margin: 0 auto; padding: 80px 24px 64px; text-align: center; }
+    .lp-hero-headline { font-family: var(--font-serif); font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 500; line-height: 1.15; color: var(--near-black); margin-bottom: 20px; }
+    .lp-hero-sub { font-family: var(--font-sans); font-size: clamp(1rem, 2vw, 1.15rem); color: var(--warm-gray); line-height: 1.6; max-width: 620px; margin: 0 auto 36px; }
+    .lp-friction { font-family: var(--font-sans); font-size: 0.78rem; color: var(--stone); margin-top: 12px; }
+    .lp-stats { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; margin-top: 52px; padding-top: 40px; border-top: 1px solid var(--border-warm); }
+    .lp-stat-number { font-family: var(--font-serif); font-size: 2.2rem; font-weight: 500; color: var(--terracotta); line-height: 1; }
+    .lp-stat-label { font-family: var(--font-sans); font-size: 0.80rem; color: var(--stone); margin-top: 4px; }
+    .lp-pain { background: var(--near-black); padding: 72px 24px; }
+    .lp-pain-inner { max-width: 760px; margin: 0 auto; }
+    .lp-pain-tag { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 20px; }
+    .lp-pain-title { font-family: var(--font-serif); font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 500; color: var(--ivory); margin-bottom: 36px; line-height: 1.3; }
+    .lp-pain-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+    .lp-pain-item { font-family: var(--font-sans); font-size: 0.95rem; color: var(--warm-silver); padding: 16px 20px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: rgba(255,255,255,0.03); line-height: 1.5; }
+    .lp-pain-item::before { content: "— "; color: var(--terracotta); font-weight: 700; }
+    .lp-desire { max-width: 900px; margin: 0 auto; padding: 72px 24px; }
+    .lp-desire-tag { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 20px; }
+    .lp-desire-title { font-family: var(--font-serif); font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 500; color: var(--near-black); margin-bottom: 40px; line-height: 1.3; }
+    .lp-diff-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .lp-diff-card { background: var(--ivory); border: 1px solid var(--border-warm); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 8px; }
+    .lp-diff-num { font-family: var(--font-serif); font-size: 1.8rem; font-weight: 500; color: var(--terracotta); }
+    .lp-diff-title { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 600; color: var(--near-black); }
+    .lp-diff-desc { font-family: var(--font-sans); font-size: 0.82rem; color: var(--warm-gray); line-height: 1.5; }
+    .lp-ba { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 40px; }
+    @media (max-width: 600px) { .lp-ba { grid-template-columns: 1fr; } }
+    .lp-ba-card { border-radius: 10px; padding: 20px; }
+    .lp-ba-before { background: #fdf2f2; border: 1px solid #f5c6c6; }
+    .lp-ba-after  { background: #f2f9f5; border: 1px solid #b8e0c8; }
+    .lp-ba-label { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+    .lp-ba-before .lp-ba-label { color: #b53333; }
+    .lp-ba-after  .lp-ba-label { color: #2d7a4f; }
+    .lp-ba-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+    .lp-ba-list li { font-family: var(--font-sans); font-size: 0.84rem; color: var(--charcoal); line-height: 1.4; }
+    .lp-action { background: var(--near-black); padding: 80px 24px; text-align: center; }
+    .lp-action-title { font-family: var(--font-serif); font-size: clamp(1.6rem, 3.5vw, 2.4rem); font-weight: 500; color: var(--ivory); margin-bottom: 16px; line-height: 1.2; }
+    .lp-action-sub { font-family: var(--font-sans); font-size: 0.92rem; color: var(--warm-silver); margin-bottom: 36px; max-width: 480px; margin-left: auto; margin-right: auto; }
+    #lp-sticky-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 999; background: var(--near-black); border-top: 1px solid rgba(255,255,255,0.1); padding: 12px 24px; display: none; align-items: center; justify-content: space-between; gap: 16px; }
+    .lp-sticky-text { font-family: var(--font-sans); font-size: 0.88rem; color: var(--warm-silver); }
+    #auth-overlay { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(20,20,19,0.6); backdrop-filter: blur(4px); align-items: center; justify-content: center; }
+    #auth-overlay.open { display: flex; }
+    .auth-box { background: var(--ivory); border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 400px; box-shadow: 0 8px 40px rgba(0,0,0,0.2); position: relative; }
+    .auth-close { position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 1.3rem; color: var(--stone); cursor: pointer; }
+    .auth-brand { font-family: var(--font-serif); font-size: 1.1rem; color: var(--near-black); margin-bottom: 4px; }
+    .auth-brand span { color: var(--terracotta); }
+    .auth-heading { font-family: var(--font-serif); font-size: 1.6rem; font-weight: 500; margin: 6px 0 24px; color: var(--near-black); }
+    .auth-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
+    .auth-label { font-family: var(--font-sans); font-size: 0.80rem; font-weight: 500; color: var(--charcoal); }
+    .auth-input { font-family: var(--font-sans); font-size: 0.95rem; padding: 10px 14px; border: 1px solid var(--border-warm); border-radius: 8px; background: var(--parchment); color: var(--near-black); outline: none; transition: border-color 0.15s; }
+    .auth-input:focus { border-color: var(--terracotta); }
+    .auth-error { font-family: var(--font-sans); font-size: 0.80rem; color: #b53333; min-height: 18px; }
+    .auth-btn { width: 100%; font-family: var(--font-sans); font-size: 0.95rem; font-weight: 600; color: var(--ivory); background: var(--terracotta); border: none; border-radius: 10px; padding: 12px; cursor: pointer; margin-top: 4px; transition: opacity 0.15s; }
+    .auth-btn:hover { opacity: 0.88; }
+    .auth-switch { font-family: var(--font-sans); font-size: 0.84rem; color: var(--stone); text-align: center; margin-top: 16px; }
+    .auth-switch a { color: var(--terracotta); text-decoration: none; cursor: pointer; }
   </style>
 </head>
-
 <body>
 
-  <!-- ═══ Navigation ═══ -->
-  <nav class="nav" itemscope itemtype="https://schema.org/SiteNavigationElement">
-    <a href="#" class="nav-brand">EtseeMate<span>.</span></a>
-    <ul class="nav-links">
-      <li><a href="#features" itemprop="url"><span itemprop="name">Features</span></a></li>
-      <li><a href="#how-it-works" itemprop="url"><span itemprop="name">How It Works</span></a></li>
-      <li><a href="#metrics" itemprop="url"><span itemprop="name">Metrics</span></a></li>
-      <li><a href="#faq" itemprop="url"><span itemprop="name">FAQ</span></a></li>
-      <li><a href="EtseeMate.html" class="nav-cta" itemprop="url"><span itemprop="name">Launch App</span></a></li>
-    </ul>
-  </nav>
-
-  <!-- ═══ Hero ═══ -->
-  <section class="hero" itemscope itemtype="https://schema.org/SoftwareApplication">
-    <p class="hero-overline">AI-Powered Etsy Optimization</p>
-    <h1 class="hero-title" itemprop="name">Turn Your Etsy Listings Into a <span class="accent-term">Sewing Machine</span> That Prints Money</h1>
-    <p class="hero-sub" itemprop="description">
-      EtseeMate helps sewing and manufacturing businesses optimize Etsy listings with <strong class="accent-term">AI-driven title & tag optimization</strong>, <strong class="accent-term">performance analytics</strong> (CTR/CR/ROAS), and <strong class="accent-term">market intelligence</strong> — so you spend less time guessing and more time selling.
-    </p>
-    <div class="hero-actions">
-      <a href="EtseeMate.html" class="btn-primary">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 1v16M1 9h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Launch EtseeMate
-      </a>
-      <a href="#features" class="btn-secondary">Explore Features</a>
-    </div>
-  </section>
-
-  <!-- ═══ Stats Bar ═══ -->
-  <div class="stats-bar" itemscope itemtype="https://schema.org/StatisticalPopulation">
-    <div class="stat-item">
-      <p class="stat-value">128</p>
-      <p class="stat-label">Listings Tracked</p>
-    </div>
-    <div class="stat-item">
-      <p class="stat-value">14</p>
-      <p class="stat-label">Optimization Scenarios</p>
-    </div>
-    <div class="stat-item">
-      <p class="stat-value">95</p>
-      <p class="stat-label">Product Types Analyzed</p>
-    </div>
-    <div class="stat-item">
-      <p class="stat-value">3</p>
-      <p class="stat-label">Core KPIs (CTR · CR · ROAS)</p>
-    </div>
+<nav class="lp-nav">
+  <a href="/" class="lp-nav-brand">EtseeMate<span>.</span></a>
+  <div class="lp-nav-links">
+    <button class="lp-nav-signin" onclick="showAuth('login')">Đăng nhập</button>
+    <button class="lp-cta-primary" style="padding:9px 22px;font-size:0.88rem" onclick="showAuth('register')">Dùng thử miễn phí</button>
   </div>
+</nav>
 
-  <!-- ═══ Features Section ═══ -->
-  <section id="features" class="section">
-    <p class="section-label">Everything You Need</p>
-    <h2 class="section-title">AI-Powered Features Built for <span class="accent-term">Etsy Sellers</span></h2>
-    <p class="section-desc">
-      From AI listing optimization to market intelligence — EtseeMate provides the tools you need to scale your sewing business on Etsy.
-    </p>
+<section class="lp-hero" id="lp-hero">
+  <h1 class="lp-hero-headline">Biết listing nào đang thật sự kiếm tiền —<br>và phải làm gì tiếp theo.</h1>
+  <p class="lp-hero-sub">EtseeMate phân tích ROAS · CTR · CR từng listing Etsy Ads của bạn — và nói thẳng cần scale listing nào, cắt listing nào.</p>
+  <button class="lp-cta-primary" onclick="showAuth('register')">Dùng thử miễn phí</button>
+  <p class="lp-friction">Không cần thẻ tín dụng · Miễn phí 30 ngày · Hủy bất cứ lúc nào</p>
+  <div class="lp-stats">
+    <div class="lp-stat"><div class="lp-stat-number">2.3×</div><div class="lp-stat-label">ROAS trung bình sau 30 ngày</div></div>
+    <div class="lp-stat"><div class="lp-stat-number">&lt;5'</div><div class="lp-stat-label">Để ra quyết định scale / cắt</div></div>
+    <div class="lp-stat"><div class="lp-stat-number">180+</div><div class="lp-stat-label">Market listings làm benchmark</div></div>
+  </div>
+</section>
 
-    <div class="feature-grid">
-      <article class="feature-card" itemscope itemtype="https://schema.org/SoftwareApplication">
-        <div class="feature-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-        </div>
-        <h3 class="feature-title" itemprop="name">AI Title & Tag Optimizer</h3>
-        <p class="feature-body" itemprop="description">
-          EtseeMate uses <strong>TF-IDF</strong> and <strong>Claude AI</strong> to analyze top-performing listings and generate optimized titles, tags, and descriptions that drive <span class="accent-term">Etsy SEO</span> rankings.
-        </p>
-        <div class="feature-tags">
-          <span class="feature-tag">TF-IDF</span>
-          <span class="feature-tag">Claude AI</span>
-          <span class="feature-tag">SEO</span>
-          <span class="feature-tag">Tag Optimization</span>
-        </div>
-      </article>
+<section class="lp-pain">
+  <div class="lp-pain-inner">
+    <p class="lp-pain-tag">Vấn đề quen thuộc</p>
+    <h2 class="lp-pain-title">Bạn đang đổ tiền vào Etsy Ads mà không biết đồng nào đang sinh lời.</h2>
+    <ul class="lp-pain-list">
+      <li class="lp-pain-item">Bạn đang chạy Etsy Ads nhưng không biết listing nào thật sự có lãi — chỉ thấy tổng spend tăng</li>
+      <li class="lp-pain-item">eRank cho điểm A nhưng listing vẫn không bán được — vì họ không đo ROAS, chỉ đo keyword</li>
+      <li class="lp-pain-item">Mỗi tháng nhìn báo cáo Etsy mà không biết phải làm gì tiếp theo — scale cái nào, cắt cái nào</li>
+    </ul>
+  </div>
+</section>
 
-      <article class="feature-card">
-        <div class="feature-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-        </div>
-        <h3 class="feature-title">Performance Dashboard</h3>
-        <p class="feature-body">
-          Track <span class="accent-term">CTR</span> (Click-Through Rate), <span class="accent-term">CR</span> (Conversion Rate), and <span class="accent-term">ROAS</span> (Return on Ad Spend) across all your listings. Spot best performers, quick wins, and underperformers at a glance.
-        </p>
-        <div class="feature-tags">
-          <span class="feature-tag">CTR Tracking</span>
-          <span class="feature-tag">CR Analytics</span>
-          <span class="feature-tag">ROAS Monitor</span>
-          <span class="feature-tag">KPI Dashboard</span>
-        </div>
-      </article>
+<section class="lp-desire">
+  <p class="lp-desire-tag">Tại sao EtseeMate khác</p>
+  <h2 class="lp-desire-title">3 thứ không tool Etsy nào khác có.</h2>
+  <div class="lp-diff-grid">
+    <div class="lp-diff-card"><div class="lp-diff-num">01</div><div class="lp-diff-title">ROAS · CTR · CR từng listing</div><div class="lp-diff-desc">Data chỉ có trong Etsy Ads dashboard — không có API public. EtseeMate lấy qua OCR screenshot bạn upload. Không tool nào khác làm được điều này.</div></div>
+    <div class="lp-diff-card"><div class="lp-diff-num">02</div><div class="lp-diff-title">Market data fresh — không stale</div><div class="lp-diff-desc">eRank dùng Google Keyword Planner cũ 1–2 tháng. EtseeMate crawl trực tiếp Etsy hàng tuần — bạn thấy cái đang trending thật sự hôm nay.</div></div>
+    <div class="lp-diff-card"><div class="lp-diff-num">03</div><div class="lp-diff-title">Scenario engine: biết phải làm gì</div><div class="lp-diff-desc">Mọi tool dừng lại ở "đây là số liệu". EtseeMate nói thêm "đây là việc bạn cần làm" — dựa trên ma trận ROAS × CTR × CR của từng listing.</div></div>
+  </div>
+  <div class="lp-ba">
+    <div class="lp-ba-card lp-ba-before"><p class="lp-ba-label">Không có EtseeMate</p><ul class="lp-ba-list"><li>Xem báo cáo tổng — không biết listing nào đang lỗ</li><li>Đoán mò cắt hoặc scale dựa trên cảm giác</li><li>Keyword A trên eRank nhưng ROAS vẫn âm</li><li>Mất 2–3 giờ / tuần phân tích thủ công trong Excel</li></ul></div>
+    <div class="lp-ba-card lp-ba-after"><p class="lp-ba-label">Với EtseeMate</p><ul class="lp-ba-list"><li>Thấy ROAS từng listing — biết cái nào đang kiếm tiền</li><li>Scenario engine nói thẳng: scale / cải thiện / cắt</li><li>Market data fresh — biết sản phẩm nào đang trending thật</li><li>Ra quyết định trong &lt; 5 phút, không cần Excel</li></ul></div>
+  </div>
+</section>
 
-      <article class="feature-card">
-        <div class="feature-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        </div>
-        <h3 class="feature-title">Market Intelligence Hub</h3>
-        <p class="feature-body">
-          Research trends with <strong>8 chart types</strong>: market share, hot rate ranking, price range histograms, discount vs review scatter, and emerging vs established bubble charts — all filtered for <span class="accent-term">sewable products only</span>.
-        </p>
-        <div class="feature-tags">
-          <span class="feature-tag">Market Research</span>
-          <span class="feature-tag">Hot Rate Analysis</span>
-          <span class="feature-tag">Price Bands</span>
-          <span class="feature-tag">Competitor Intel</span>
-        </div>
-      </article>
+<section class="lp-action">
+  <h2 class="lp-action-title">Bắt đầu phân tích shop của bạn.</h2>
+  <p class="lp-action-sub">Upload 1 screenshot báo cáo Etsy Ads — EtseeMate cho bạn thấy listing nào đang thật sự có lãi ngay trong session đầu tiên.</p>
+  <button class="lp-cta-primary" onclick="showAuth('register')">Bắt đầu phân tích shop của bạn</button>
+  <p class="lp-friction" style="color:var(--warm-silver);margin-top:12px">Không cần thẻ tín dụng · Miễn phí 30 ngày · Hủy bất cứ lúc nào</p>
+</section>
 
-      <article class="feature-card">
-        <div class="feature-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        </div>
-        <h3 class="feature-title">14-Scenario Decision Matrix</h3>
-        <p class="feature-body">
-          Every listing is classified into one of <strong>14 scenarios</strong> based on CTR, CR, and ROAS bands. Get clear actions: 🟢 <span class="accent-term">Keep</span>, 🟡 <span class="accent-term">Improve</span>, or 🔴 <span class="accent-term">Improve or Turn Off</span> — with specific cause & fix recommendations.
-        </p>
-        <div class="feature-tags">
-          <span class="feature-tag">14 Scenarios</span>
-          <span class="feature-tag">Actionable Insights</span>
-          <span class="feature-tag">Listing Audit</span>
-        </div>
-      </article>
+<div id="lp-sticky-bar">
+  <span class="lp-sticky-text">EtseeMate — Biết listing nào đang thật sự kiếm tiền.</span>
+  <button class="lp-cta-primary" style="padding:9px 22px;font-size:0.85rem;white-space:nowrap" onclick="showAuth('register')">Dùng thử miễn phí</button>
+</div>
 
-      <article class="feature-card">
-        <div class="feature-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        </div>
-        <h3 class="feature-title">Manual Import via Vision AI</h3>
-        <p class="feature-body">
-          Upload Etsy Ads screenshots and let <strong>Claude/Gemini Vision</strong> extract listing performance data automatically. Review, edit, and import into your database with rollback support.
-        </p>
-        <div class="feature-tags">
-          <span class="feature-tag">Claude Vision</span>
-          <span class="feature-tag">Screenshot Import</span>
-          <span class="feature-tag">OCR</span>
-          <span class="feature-tag">Data Pipeline</span>
-        </div>
-      </article>
+<div id="auth-overlay">
+  <div id="auth-login-box" class="auth-box" style="display:none">
+    <button class="auth-close" onclick="closeAuth()">×</button>
+    <p class="auth-brand">EtseeMate<span>.</span></p>
+    <h1 class="auth-heading">Đăng nhập</h1>
+    <div class="auth-field"><label class="auth-label">Email</label><input id="login-email" class="auth-input" type="email" placeholder="you@example.com" autocomplete="email"></div>
+    <div class="auth-field"><label class="auth-label">Mật khẩu</label><input id="login-password" class="auth-input" type="password" placeholder="••••••••" autocomplete="current-password"><p id="login-error" class="auth-error"></p></div>
+    <button id="login-btn" class="auth-btn">Đăng nhập</button>
+    <p class="auth-switch">Chưa có tài khoản? <a onclick="showAuth('register')">Dùng thử miễn phí</a></p>
+  </div>
+  <div id="auth-register-box" class="auth-box" style="display:none">
+    <button class="auth-close" onclick="closeAuth()">×</button>
+    <p class="auth-brand">EtseeMate<span>.</span></p>
+    <h1 class="auth-heading">Tạo tài khoản</h1>
+    <div class="auth-field"><label class="auth-label">Email</label><input id="reg-email" class="auth-input" type="email" placeholder="you@example.com" autocomplete="email"></div>
+    <div class="auth-field"><label class="auth-label">Mật khẩu</label><input id="reg-password" class="auth-input" type="password" placeholder="Tối thiểu 8 ký tự" autocomplete="new-password"></div>
+    <div class="auth-field"><label class="auth-label">Xác nhận mật khẩu</label><input id="reg-confirm" class="auth-input" type="password" placeholder="Nhập lại mật khẩu" autocomplete="new-password"><p id="register-error" class="auth-error"></p></div>
+    <button id="register-btn" class="auth-btn">Tạo tài khoản</button>
+    <p class="auth-switch">Đã có tài khoản? <a onclick="showAuth('login')">Đăng nhập</a></p>
+  </div>
+</div>
 
-      <article class="feature-card">
-        <div class="feature-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-        </div>
-        <h3 class="feature-title">Competitor Reference Analysis</h3>
-        <p class="feature-body">
-          For each listing, EtseeMate automatically finds <strong>top 3 competitor references</strong> from crawled market data, comparing price, discount, rating, reviews, badges, and search ranking — so you know exactly how to compete.
-        </p>
-        <div class="feature-tags">
-          <span class="feature-tag">Competitor Analysis</span>
-          <span class="feature-tag">Market Benchmark</span>
-          <span class="feature-tag">Pricing Intel</span>
-        </div>
-      </article>
-    </div>
-  </section>
+<script>
+  (function() {
+    if (sessionStorage.getItem('etseemate_token')) window.location.replace('/app');
+  })();
 
-  <!-- ═══ Metrics Deep-Dive (Dark) ═══ -->
-  <section id="metrics" class="dark-section">
-    <div class="section">
-      <p class="section-label" style="color:var(--coral)">The Metrics That Matter</p>
-      <h2 class="section-title">Three KPIs That Define <span class="accent-term">Etsy Listing Success</span></h2>
-      <p class="section-desc">
-        EtseeMate organizes everything around CTR, CR, and ROAS — the three numbers that tell you whether a listing is winning, coasting, or bleeding money.
-      </p>
+  new IntersectionObserver(([e]) => {
+    document.getElementById('lp-sticky-bar').style.display = e.isIntersecting ? 'none' : 'flex';
+  }, { threshold: 0 }).observe(document.getElementById('lp-hero'));
 
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <p class="metric-kpi">CTR</p>
-          <p class="metric-name">Click-Through Rate</p>
-          <p class="metric-desc">
-            The percentage of shoppers who click on your listing after seeing it in search or ads. <strong>Target: ≥ 2%.</strong> Low CTR means your thumbnail, title, or pricing isn't compelling enough.
-          </p>
-        </div>
-        <div class="metric-card">
-          <p class="metric-kpi">CR</p>
-          <p class="metric-name">Conversion Rate</p>
-          <p class="metric-desc">
-            The percentage of visitors who purchase after clicking. <strong>Target: ≥ 4%.</strong> Low CR means your listing page — photos, description, reviews — isn't closing the sale.
-          </p>
-        </div>
-        <div class="metric-card">
-          <p class="metric-kpi">ROAS</p>
-          <p class="metric-name">Return on Ad Spend</p>
-          <p class="metric-desc">
-            Revenue divided by ad spend. <strong>Break-even: 2.0x.</strong> Below that, you're losing money on ads. EtseeMate identifies profitable, slight-loss, heavy-loss, and no-sales bands.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
+  function showAuth(mode) {
+    document.getElementById('auth-overlay').classList.add('open');
+    document.getElementById('auth-login-box').style.display    = mode === 'login'    ? '' : 'none';
+    document.getElementById('auth-register-box').style.display = mode === 'register' ? '' : 'none';
+  }
+  function closeAuth() { document.getElementById('auth-overlay').classList.remove('open'); }
+  document.getElementById('auth-overlay').addEventListener('click', e => { if (e.target.id === 'auth-overlay') closeAuth(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAuth(); });
 
-  <!-- ═══ Scenario Matrix ═══ -->
-  <section class="section">
-    <p class="section-label">Intelligent Classification</p>
-    <h2 class="section-title">14 Scenarios, One Clear <span class="accent-term">Action</span></h2>
-    <p class="section-desc">
-      Every listing falls into one of 14 scenarios based on its CTR, CR, and ROAS. No guesswork — just clear data-driven decisions.
-    </p>
+  async function apiPost(path, body) {
+    const res = await fetch(path, { method: 'POST', credentials: 'include', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    return { res, data: await res.json().catch(() => ({})) };
+  }
 
-    <div class="scenario-grid">
-      <div class="scenario-row">
-        <div class="scenario-info">
-          <span class="scenario-badge">💰</span>
-          <span class="scenario-text">Profitable + Good CTR/CR</span>
-        </div>
-        <span class="scenario-action action-keep">🟢 Keep</span>
-      </div>
-      <div class="scenario-row">
-        <div class="scenario-info">
-          <span class="scenario-badge">📈</span>
-          <span class="scenario-text">Profitable but low CTR or CR</span>
-        </div>
-        <span class="scenario-action action-improve">🟡 Improve</span>
-      </div>
-      <div class="scenario-row">
-        <div class="scenario-info">
-          <span class="scenario-badge">⚖️</span>
-          <span class="scenario-text">Slight loss (ROAS 1.0–2.0)</span>
-        </div>
-        <span class="scenario-action action-improve">🟡 Improve</span>
-      </div>
-      <div class="scenario-row">
-        <div class="scenario-info">
-          <span class="scenario-badge">🔻</span>
-          <span class="scenario-text">Heavy loss — has sales but losing money</span>
-        </div>
-        <span class="scenario-action action-improve">🟡 Improve</span>
-      </div>
-      <div class="scenario-row">
-        <div class="scenario-info">
-          <span class="scenario-badge">🚫</span>
-          <span class="scenario-text">Heavy loss + low CTR + low CR</span>
-        </div>
-        <span class="scenario-action action-off">🔴 Improve or Off</span>
-      </div>
-      <div class="scenario-row">
-        <div class="scenario-info">
-          <span class="scenario-badge">❌</span>
-          <span class="scenario-text">Zero sales — has clicks or no clicks</span>
-        </div>
-        <span class="scenario-action action-off">🔴 Improve or Off</span>
-      </div>
-    </div>
-  </section>
+  document.getElementById('login-btn').addEventListener('click', async () => {
+    const email = document.getElementById('login-email').value.trim();
+    const pass  = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    errEl.textContent = '';
+    if (!email || !pass) { errEl.textContent = 'Vui lòng nhập email và mật khẩu.'; return; }
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true; btn.textContent = 'Đang đăng nhập...';
+    try {
+      const { res, data } = await apiPost('/api/v1/auth/login', { email, password: pass });
+      if (!res.ok) { errEl.textContent = data.detail || 'Đăng nhập thất bại.'; return; }
+      sessionStorage.setItem('etseemate_token', data.access_token);
+      window.location.href = '/app';
+    } catch { errEl.textContent = 'Lỗi kết nối. Thử lại.'; }
+    finally { btn.disabled = false; btn.textContent = 'Đăng nhập'; }
+  });
+  document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('login-btn').click(); });
 
-  <!-- ═══ How It Works ═══ -->
-  <section id="how-it-works" class="dark-section">
-    <div class="section">
-      <p class="section-label" style="color:var(--coral)">Simple Workflow</p>
-      <h2 class="section-title">From Screenshot to <span class="accent-term">Actionable Insight</span> in 5 Steps</h2>
-      <p class="section-desc">
-        EtseeMate's pipeline is designed for sewing businesses. Import your data, get AI-powered analysis, and act on clear recommendations.
-      </p>
-
-      <div class="timeline">
-        <div class="timeline-item">
-          <span class="timeline-step">Step 01</span>
-          <div class="timeline-content">
-            <h3>Upload Etsy Ads Screenshots</h3>
-            <p>Drag-and-drop your Etsy Ads screenshots. Claude Vision AI extracts listing performance data automatically — no manual data entry.</p>
-          </div>
-        </div>
-        <div class="timeline-item">
-          <span class="timeline-step">Step 02</span>
-          <div class="timeline-content">
-            <h3>Review & Import</h3>
-            <p>EtseeMate presents extracted data in clean editable tables. Review listing and keyword reports, make corrections, then confirm the import.</p>
-          </div>
-        </div>
-        <div class="timeline-item">
-          <span class="timeline-step">Step 03</span>
-          <div class="timeline-content">
-            <h3>AI Classification & Analysis</h3>
-            <p>Each listing is classified into one of 14 scenarios. EtseeMate generates specific cause, fix-listing, and fix-ads recommendations using the decision matrix.</p>
-          </div>
-        </div>
-        <div class="timeline-item">
-          <span class="timeline-step">Step 04</span>
-          <div class="timeline-content">
-            <h3>Market Research & Competitor Intel</h3>
-            <p>Compare your listings against top competitors. Analyze price gaps, discount strategies, and market hot rates to find your competitive edge.</p>
-          </div>
-        </div>
-        <div class="timeline-item">
-          <span class="timeline-step">Step 05</span>
-          <div class="timeline-content">
-            <h3>Scale What Works</h3>
-            <p>Identify scale-up candidates — listings with strong CTR, CR, and ROAS that are ready for increased ad budget or expansion to other shops.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ Who It's For ═══ -->
-  <section class="section">
-    <p class="section-label">Built For</p>
-    <h2 class="section-title">Designed for <span class="accent-term">Sewing & Manufacturing</span> Businesses on Etsy</h2>
-    <p class="section-desc">
-      EtseeMate is purpose-built for businesses that <strong>make things with fabric</strong> — baby rompers, blankets, onesies, denim jackets, embroidered keepsakes, and more.
-    </p>
-
-    <div class="feature-grid">
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-        </div>
-        <h3 class="feature-title">Baby & Kids Apparel</h3>
-        <p class="feature-body">Optimize listings for baby rompers, bodysuits, onesies, sweaters, and denim jackets — EtseeMate's top product categories.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-        </div>
-        <h3 class="feature-title">Blankets & Home Textiles</h3>
-        <p class="feature-body">From baby blankets and milestone blankets to woven throws — analyze pricing, reviews, and hot badges for fabric home products.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        </div>
-        <h3 class="feature-title">Embroidery & Personalization</h3>
-        <p class="feature-body">Perfect for personalized keepsakes, embroidered albums, name pillows, and custom fabric products where your stitching is the value.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ FAQ ═══ -->
-  <section id="faq" class="dark-section" itemscope itemtype="https://schema.org/FAQPage">
-    <div class="section">
-      <p class="section-label" style="color:var(--coral)">Questions?</p>
-      <h2 class="section-title">Frequently Asked <span class="accent-term">Questions</span></h2>
-
-      <div class="faq-list">
-        <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-          <h3 class="faq-question" itemprop="name">What is EtseeMate and who is it for?</h3>
-          <div class="faq-answer" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
-            <div itemprop="text">EtseeMate is an AI-powered optimization platform for Etsy sellers, especially sewing and manufacturing businesses. It helps optimize listing titles, tags, and descriptions using machine learning, tracks performance metrics like CTR/CR/ROAS, and provides market intelligence for product research. It's built for businesses that produce fabric-based products.</div>
-          </div>
-        </div>
-        <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-          <h3 class="faq-question" itemprop="name">How does EtseeMate optimize Etsy SEO?</h3>
-          <div class="faq-answer" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
-            <div itemprop="text">EtseeMate uses TF-IDF algorithms and Claude AI to analyze successful competitor listings and generate optimized titles, tags, and descriptions. It identifies high-performing keywords and patterns that drive Etsy search rankings, then applies those insights to your listings.</div>
-          </div>
-        </div>
-        <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-          <h3 class="faq-question" itemprop="name">What metrics does EtseeMate track?</h3>
-          <div class="faq-answer" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
-            <div itemprop="text">EtseeMate tracks three core metrics: CTR (Click-Through Rate, target ≥2%), CR (Conversion Rate, target ≥4%), and ROAS (Return on Ad Spend, break-even at 2.0x). It provides per-listing breakdowns, portfolio-level aggregations, and identifies best performers and quick wins automatically.</div>
-          </div>
-        </div>
-        <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-          <h3 class="faq-question" itemprop="name">How does the 14-scenario classification work?</h3>
-          <div class="faq-answer" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
-            <div itemprop="text">Each listing is classified into one of 14 scenarios based on its ROAS band (profitable, slight loss, heavy loss, no sales), CR level (high/low/zero), and CTR level (high/low/zero). Each scenario has a specific action (keep, improve, or improve-or-off) with detailed cause analysis and fix recommendations for both the listing and ads.</div>
-          </div>
-        </div>
-        <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-          <h3 class="faq-question" itemprop="name">Can EtseeMate help me find new products to sell?</h3>
-          <div class="faq-answer" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
-            <div itemprop="text">Yes! EtseeMate's Research Hub crawls Etsy market data and analyzes product types by hot rate, price range, discount strategy, and review counts. It automatically filters for sewable products only and ranks opportunities by priority score, helping you identify the next winning product for your shop.</div>
-          </div>
-        </div>
-        <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-          <h3 class="faq-question" itemprop="name">What's the difference between a Keep vs Improve vs Off listing?</h3>
-          <div class="faq-answer" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
-            <div itemprop="text"><strong>Keep</strong>: The listing is profitable with good CTR and CR — maintain and consider scaling up. <strong>Improve</strong>: The listing has potential but needs optimization (better thumbnails, keywords, pricing, or ads management). <strong>Improve or Off</strong>: The listing is losing money or has zero sales — either apply significant fixes or turn it off to stop wasting budget.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ CTA ═══ -->
-  <section class="section" style="text-align:center;padding-bottom:100px">
-    <p class="section-label" style="text-align:center">Get Started</p>
-    <h2 class="section-title" style="max-width:100%;text-align:center">Ready to Optimize Your <span class="accent-term">Etsy Listings</span>?</h2>
-    <p class="section-desc" style="max-width:540px;margin:0 auto 40px;text-align:center">
-      Join EtseeMate and transform data into decisions. Track performance, research markets, and scale your sewing business on Etsy.
-    </p>
-    <div class="hero-actions" style="justify-content:center">
-      <a href="EtseeMate.html" class="btn-primary">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 1v16M1 9h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Launch EtseeMate
-      </a>
-      <a href="mailto:" class="btn-secondary">Contact Us</a>
-    </div>
-  </section>
-
-  <!-- ═══ Footer ═══ -->
-  <footer class="footer">
-    <div class="footer-inner">
-      <p class="footer-brand">EtseeMate<span>.</span> by Findatasolution</p>
-      <p class="footer-text">© 2026 Findatasolution. Built with care for Etsy sewing businesses.</p>
-    </div>
-  </footer>
-
+  document.getElementById('register-btn').addEventListener('click', async () => {
+    const email = document.getElementById('reg-email').value.trim();
+    const pass  = document.getElementById('reg-password').value;
+    const conf  = document.getElementById('reg-confirm').value;
+    const errEl = document.getElementById('register-error');
+    errEl.textContent = '';
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'Email không hợp lệ.'; return; }
+    if (pass.length < 8) { errEl.textContent = 'Mật khẩu phải ít nhất 8 ký tự.'; return; }
+    if (pass !== conf)   { errEl.textContent = 'Mật khẩu không khớp.'; return; }
+    const btn = document.getElementById('register-btn');
+    btn.disabled = true; btn.textContent = 'Đang tạo tài khoản...';
+    try {
+      const { res, data } = await apiPost('/api/v1/auth/register', { email, password: pass });
+      if (!res.ok) { errEl.textContent = data.detail || 'Đăng ký thất bại.'; return; }
+      sessionStorage.setItem('etseemate_token', data.access_token);
+      window.location.href = '/app';
+    } catch { errEl.textContent = 'Lỗi kết nối. Thử lại.'; }
+    finally { btn.disabled = false; btn.textContent = 'Tạo tài khoản'; }
+  });
+</script>
 </body>
 </html>

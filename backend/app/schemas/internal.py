@@ -65,6 +65,21 @@ class ConfirmResponse(BaseModel):
     rows: dict  # {"listing": N, "keyword": M}
 
 
+# ── Extension ingest ─────────────────────────────────────
+class IngestListingRequest(BaseModel):
+    rows: list[ListingReportRow]
+    importer: str | None = None  # VM name e.g. "VM08"
+
+
+class IngestKeywordRequest(BaseModel):
+    rows: list[KeywordReportRow]
+    importer: str | None = None
+
+
+class IngestResponse(BaseModel):
+    inserted: int
+
+
 # ── Discard / Rollback response ──────────────────────────
 class BatchActionResponse(BaseModel):
     batch_id: str

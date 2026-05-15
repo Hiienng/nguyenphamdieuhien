@@ -124,7 +124,7 @@ async def seed_scenarios(db: AsyncSession) -> None:
         await db.commit()
 
 
-async def get_dashboard_listings(db: AsyncSession, market_db: AsyncSession) -> list[dict]:
+async def get_dashboard_listings(db: AsyncSession, market_db: AsyncSession, tenant_id: str) -> list[dict]:
     """
     Build listing dashboard by reading the materialized reporting layer
     (`listings_int_ext`, `listings_int_hist`, `keywords`) and enriching with
@@ -132,16 +132,14 @@ async def get_dashboard_listings(db: AsyncSession, market_db: AsyncSession) -> l
 
     The reporting tables are populated by `reporting_etl.rebuild_reporting`.
     """
-    # Global set: keywords từng có revenue > 0 ở BẤT KỲ listing nào, BẤT KỲ period nào
-    # trong toàn bộ lịch sử raw (keyword_report ∪ manual_keyword_report).
-    # Dùng để gán cờ `history_has_revenue` cho từng keyword row trên FE → Suggestion.
+    # Global set: keywords từng có revenue > 0 trong lịch sử raw của tenant này.
     sql = text("""
         WITH kw_history_earners AS (
             SELECT DISTINCT keyword
             FROM (
-                SELECT keyword, revenue FROM keyword_report
+                SELECT keyword, revenue FROM keyword_report       WHERE tenant_id = :tid
                 UNION ALL
-                SELECT keyword, revenue FROM manual_keyword_report
+                SELECT keyword, revenue FROM manual_keyword_report WHERE tenant_id = :tid
             ) s
             WHERE COALESCE(revenue, 0) > 0
         )
@@ -214,7 +212,7 @@ async def get_dashboard_listings(db: AsyncSession, market_db: AsyncSession) -> l
             ) AS keywords
             FROM keywords k
             LEFT JOIN kw_history_earners he ON he.keyword = k.keyword
-            WHERE k.listing_id = e.listing_id
+            WHERE k.listing_id = e.listing_id AND k.tenant_id = e.tenant_id
         ) kw ON true
         LEFT JOIN LATERAL (
             SELECT json_agg(
@@ -234,11 +232,12 @@ async def get_dashboard_listings(db: AsyncSession, market_db: AsyncSession) -> l
                 ) ORDER BY h.period DESC
             ) AS history
             FROM listings_int_hist h
-            WHERE h.listing_id = e.listing_id
+            WHERE h.listing_id = e.listing_id AND h.tenant_id = e.tenant_id
         ) hist ON true
+        WHERE e.tenant_id = :tid
         ORDER BY e.listing_id ASC, e.period ASC
     """)
-    result = await db.execute(sql)
+    result = await db.execute(sql, {"tid": tenant_id})
     rows = [dict(r) for r in result.mappings().all()]
 
     # Fetch own market data from ETSY_MARKET_DB, merge by listing_id

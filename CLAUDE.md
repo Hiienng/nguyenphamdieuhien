@@ -83,6 +83,17 @@ nguyenphamdieuhien.online/
 
 ---
 
+## Quy tắc khi bắt đầu task mới (mọi session, mọi agent)
+
+Trước khi viết hoặc sửa bất kỳ file nào:
+1. Chạy `git log --oneline -5` để biết commit gần nhất
+2. Đọc `.claude/system_context.md` để lấy trạng thái kiến trúc hiện tại
+3. **Không dựa vào conversation history để suy đoán trạng thái code** — history có thể cũ
+
+> Nếu bạn là user: nhắn "Sync context trước khi làm việc." khi mở lại session cũ.
+
+---
+
 ## Quy tắc chung cho mọi agent
 
 1. **Đọc file trước khi sửa** — không sửa blind
@@ -93,6 +104,7 @@ nguyenphamdieuhien.online/
 6. **Không xóa `data/raw/`** — đây là nguồn dữ liệu gốc
 7. Khi thêm dependency: cập nhật đúng `requirements.txt` của layer tương ứng (`backend/` hoặc `model/`)
 8. Mọi thay đổi DB schema: thêm migration, không `drop` table trực tiếp
+9. Các ad-hoc code dùng để chạy 1 lần duy nhất trong quá trình dev phải được drop ngay sau khi hoàn thành công việc
 
 ---
 

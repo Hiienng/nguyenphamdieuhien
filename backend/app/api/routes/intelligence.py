@@ -10,6 +10,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.database import get_db, MarketSessionLocal
+from ...core.auth_middleware import get_current_active_user, require_credit
+from ...models.user import User
 from ...schemas.vision_schema import (
     KnowledgeGenerateRequest,
     KnowledgeRecord,
@@ -17,6 +19,7 @@ from ...schemas.vision_schema import (
     ThumbnailEvalResponse,
 )
 from ...services import vision_service
+from ...services.billing_service import deduct_credit
 
 router = APIRouter(tags=["intelligence"])
 
@@ -85,6 +88,7 @@ async def evaluate_thumbnail(
     image: UploadFile = File(..., description="Thumbnail image to evaluate"),
     product_type: str = Form(..., description="Product type (e.g. 'onesie', 'mug')"),
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_credit),
 ):
     """
     Upload a thumbnail image and receive an AI evaluation scored against
@@ -103,9 +107,11 @@ async def evaluate_thumbnail(
     if not image_bytes:
         raise HTTPException(status_code=422, detail="Uploaded image is empty.")
 
-    return await vision_service.evaluate_thumbnail(
+    result = await vision_service.evaluate_thumbnail(
         image_bytes=image_bytes,
         image_media_type=content_type,
         product_type=product_type,
         internal_db=db,
     )
+    await deduct_credit(user.id, db)
+    return result

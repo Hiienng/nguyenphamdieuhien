@@ -66,6 +66,19 @@ async def get_db() -> AsyncSession:
             await session.close()
 
 
+async def get_tenant_db(tenant_id: str) -> AsyncSession:
+    """Yield a session with app.tenant_id set — activates RLS policies."""
+    async with AsyncSessionLocal() as session:
+        try:
+            await session.execute(
+                text("SELECT set_config('app.tenant_id', :tid, true)"),
+                {"tid": tenant_id},
+            )
+            yield session
+        finally:
+            await session.close()
+
+
 async def create_tables() -> None:
     # NOTE: ALTER TABLE migrations removed — all columns were added long ago.
     # Keeping DDL in startup causes asyncpg "InvalidCachedStatementError" because

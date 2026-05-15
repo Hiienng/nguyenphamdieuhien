@@ -24,3 +24,4 @@ class ImportBatch(Base):
     preview_data = Column(JSONB, nullable=True)
     # Final snapshot after confirm
     snapshot_data = Column(JSONB, nullable=True)
+    tenant_id = Column(String(36), nullable=True, index=True)
