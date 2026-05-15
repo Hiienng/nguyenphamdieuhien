@@ -245,7 +245,7 @@ VISION_QUOTA_MESSAGE = (
     "He thong da het quota Vision API. Vui long doi Gemini key hoac nap them credit Hugging Face roi thu lai."
 )
 VISION_NOT_CONFIGURED_MESSAGE = (
-    "Chua cau hinh Vision API. Can co GEMINI_API_KEY_paid, GEMINI_API_KEY_free hoac HUGGINGFACE_API_KEY."
+    "Chua cau hinh Vision API. Can co GEMINI_API_KEY_paid_imagereport hoac HUGGINGFACE_API_KEY."
 )
 
 def _mime_for(name: str) -> str:
@@ -309,34 +309,11 @@ async def _call_gemini_with_key(filename: str, image_data: bytes, settings, api_
 
 
 async def _call_gemini_vision(filename: str, image_data: bytes, settings) -> dict:
-    """Try Gemini keys in order before falling back to other providers."""
-    gemini_keys = [
-        key.strip()
-        for key in (settings.GEMINI_API_KEY_paid, settings.GEMINI_API_KEY_free)
-        if key and key.strip()
-    ]
-    if not gemini_keys:
-        raise ValueError("No Gemini API key configured")
-
-    saw_quota_error = False
-    last_error: Exception | None = None
-    for api_key in gemini_keys:
-        try:
-            return await _call_gemini_with_key(filename, image_data, settings, api_key)
-        except GeminiQuotaExceeded as exc:
-            saw_quota_error = True
-            last_error = exc
-            logger.warning("Gemini quota exhausted for %s on one configured key", filename)
-            continue
-        except Exception as exc:
-            last_error = exc
-            break
-
-    if saw_quota_error and (last_error is None or isinstance(last_error, GeminiQuotaExceeded)):
-        raise GeminiQuotaExceeded("All configured Gemini keys are out of quota")
-    if last_error is not None:
-        raise last_error
-    raise GeminiQuotaExceeded("All configured Gemini keys are out of quota")
+    """Call image report Gemini key — dedicated key, no fallback."""
+    api_key = (settings.GEMINI_API_KEY_paid_imagereport or "").strip()
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY_paid_imagereport chưa được cấu hình")
+    return await _call_gemini_with_key(filename, image_data, settings, api_key)
 
 
 async def _call_huggingface_vision(filename: str, image_data: bytes, settings) -> dict:
@@ -387,11 +364,8 @@ async def extract_batch_streaming(
     """
     settings = get_settings()
     total = len(images)
-    gemini_keys = [
-        key.strip()
-        for key in (settings.GEMINI_API_KEY_paid, settings.GEMINI_API_KEY_free)
-        if key and key.strip()
-    ]
+    gemini_key = (settings.GEMINI_API_KEY_paid_imagereport or "").strip()
+    gemini_keys = [gemini_key] if gemini_key else []
     has_hf = bool(settings.HUGGINGFACE_API_KEY and settings.HUGGINGFACE_API_KEY.strip())
 
     for idx, (name, data) in enumerate(images):

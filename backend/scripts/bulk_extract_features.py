@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 INTERNAL_DB = os.environ["DATABASE_URL"].replace("postgresql://", "postgres://")
 MARKET_DB   = os.environ["ETSY_MARKET_DB"].replace("postgresql://", "postgres://")
-GEMINI_KEY  = os.environ.get("GEMINI_API_KEY_paid") or os.environ.get("GEMINI_API_KEY_free")
+GEMINI_KEY  = os.environ.get("GEMINI_API_KEY_paid_thumbnail")
 
 
 async def already_extracted(pool: asyncpg.Pool, image_url: str) -> bool:

@@ -114,10 +114,10 @@ ON CONFLICT (listing_id, reference_listing_id) DO UPDATE SET
 def _classify_titles_with_gemini_sync(titles: list[str]) -> dict[str, str]:
     """Batch-classify titles → product_type. 1 Gemini call cho tất cả."""
     settings = get_settings()
-    if not settings.GEMINI_API_KEY_paid or not titles:
+    if not settings.GEMINI_API_KEY_paid_thumbnail or not titles:
         return {}
 
-    genai.configure(api_key=settings.GEMINI_API_KEY_paid)
+    genai.configure(api_key=settings.GEMINI_API_KEY_paid_thumbnail)
     model = genai.GenerativeModel("gemini-2.5-flash")
 
     try:

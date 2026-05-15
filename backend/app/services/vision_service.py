@@ -6,7 +6,7 @@ Uses Gemini 2.5 Flash Lite for vision tasks (cheapest available):
   2. generate_knowledge(): crawl trending market listings → extract features → aggregate patterns
   3. evaluate_thumbnail(): score a thumbnail against knowledge base + return extracted features
 
-Key rotation: GEMINI_API_KEY_paid (primary) → GEMINI_API_KEY_free (fallback on quota error).
+Key used: GEMINI_API_KEY_paid_thumbnail (dedicated, no fallback).
 """
 from __future__ import annotations
 
@@ -40,11 +40,11 @@ RUBRIC_CRITERIA = [
 ]
 
 
-def _get_model(use_fallback: bool = False) -> genai.GenerativeModel:
+def _get_model() -> genai.GenerativeModel:
     settings = get_settings()
-    key = settings.GEMINI_API_KEY_free if use_fallback else settings.GEMINI_API_KEY_paid
+    key = settings.GEMINI_API_KEY_paid_thumbnail
     if not key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY_paid chưa được cấu hình.")
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY_paid_thumbnail chưa được cấu hình.")
     genai.configure(api_key=key)
     return genai.GenerativeModel(settings.GEMINI_MODEL)
 
@@ -58,17 +58,9 @@ async def _generate(model: genai.GenerativeModel, contents: list) -> str:
 
 
 async def _generate_with_fallback(contents: list) -> str:
-    """Try primary key, fall back to secondary on ResourceExhausted / quota errors."""
-    try:
-        model = _get_model(use_fallback=False)
-        return await _generate(model, contents)
-    except Exception as e:
-        err = str(e).lower()
-        if "quota" in err or "resource" in err or "429" in err or "exhausted" in err:
-            logger.warning("Primary Gemini key quota hit, switching to fallback key.")
-            model = _get_model(use_fallback=True)
-            return await _generate(model, contents)
-        raise
+    """Call thumbnail Gemini key — no fallback, fail fast on quota."""
+    model = _get_model()
+    return await _generate(model, contents)
 
 
 def _extract_json(text_content: str) -> Any:

@@ -23,9 +23,9 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     CLAUDE_MODEL: str = "claude-sonnet-4-6"
 
-    # AI Vision — Gemini paid (primary) + free (fallback)
-    GEMINI_API_KEY_paid: str = ""
-    GEMINI_API_KEY_free: str = ""
+    # AI Vision — 2 dedicated keys, one per pipeline
+    GEMINI_API_KEY_paid_imagereport: str = ""   # internal_extractor — Etsy Ads screenshot OCR
+    GEMINI_API_KEY_paid_thumbnail: str = ""     # vision_service — thumbnail evaluation/knowledge
     GEMINI_MODEL: str = "gemini-2.5-flash-lite"  # cheapest vision model available
     HUGGINGFACE_API_KEY: str = ""
     # Use a router-supported vision model with an explicit provider suffix.
@@ -90,5 +90,5 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     s = Settings()
-    print(f"DEBUG: Settings loaded. Gemini paid key present: {bool(s.GEMINI_API_KEY_paid)}")
+    print(f"DEBUG: Settings loaded. Gemini imagereport key: {bool(s.GEMINI_API_KEY_paid_imagereport)}, thumbnail key: {bool(s.GEMINI_API_KEY_paid_thumbnail)}")
     return s
