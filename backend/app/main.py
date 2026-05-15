@@ -58,13 +58,8 @@ async def lifespan(app: FastAPI):
         await performance_service.seed_scenarios(session)
         await reporting_etl.ensure_reporting_tables(session)
         await crawler_ops.ensure_crawler_tables(session)
-        # Initial populate if reporting tables are empty (e.g. fresh deploy).
-        state = await reporting_etl.get_state(session)
-        if state is None:
-            try:
-                await reporting_etl.refresh_if_stale(session, force=True)
-            except Exception as exc:  # noqa: BLE001
-                logger.warning("Initial reporting rebuild failed: %s", exc)
+        # Note: reporting rebuild requires a tenant_id — skipped at startup.
+        # Each tenant's data is rebuilt on first dashboard load.
     yield
 
 
