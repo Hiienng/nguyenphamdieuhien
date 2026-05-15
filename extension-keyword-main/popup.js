@@ -209,8 +209,17 @@ document.addEventListener("DOMContentLoaded", () => {
         processKeywordStats(body, result, url);
       }
 
-      if (body.listing && Array.isArray(body.graphStats)) {
-        processListingDailyStats(body, result);
+      // graphStats may arrive in same response as listing (flat) or nested under
+      // body.data or body.listingStats depending on Etsy API version.
+      const graphStatsBody =
+        (body.listing && Array.isArray(body.graphStats)) ? body :
+        (body.listing && body.data && Array.isArray(body.data.graphStats))
+          ? { listing: body.listing, graphStats: body.data.graphStats } :
+        (body.data && body.data.listing && Array.isArray(body.data.graphStats))
+          ? { listing: body.data.listing, graphStats: body.data.graphStats } :
+        null;
+      if (graphStatsBody) {
+        processListingDailyStats(graphStatsBody, result);
       }
 
       if (hasAttributionShape || url.indexOf("revenue/attribution") !== -1) {
@@ -1494,7 +1503,11 @@ document.addEventListener("DOMContentLoaded", () => {
       for (const s of allSessions) {
         const b = s && s.body;
         if (!b || typeof b !== "object") continue;
-        if (b.listing && Array.isArray(b.graphStats)) dailyCaptures++;
+        const hasGraphStats =
+          (b.listing && Array.isArray(b.graphStats)) ||
+          (b.listing && b.data && Array.isArray(b.data.graphStats)) ||
+          (b.data && b.data.listing && Array.isArray(b.data.graphStats));
+        if (hasGraphStats) dailyCaptures++;
         if (Array.isArray(b.queryStats) || Array.isArray(b.queries)) keywordCaptures++;
       }
       setDbStatus(
@@ -1560,9 +1573,12 @@ document.addEventListener("DOMContentLoaded", () => {
         keywordInserted = kwResp.inserted || 0;
       }
 
+      const dailyHint = dailyInserted === 0
+        ? " (0 daily — scroll qua biểu đồ trên trang keyword của listing rồi thử lại)"
+        : "";
       setDbStatus(
-        `Inserted ${keywordInserted} keyword + ${dailyInserted} daily rows.`,
-        "success"
+        `Inserted ${keywordInserted} keyword + ${dailyInserted} daily rows.${dailyHint}`,
+        dailyInserted === 0 && keywordInserted > 0 ? "info" : "success"
       );
     } catch (error) {
       const errMsg = String(error && error.message ? error.message : error);

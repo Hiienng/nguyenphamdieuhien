@@ -85,16 +85,16 @@
 <nav class="lp-nav">
   <a href="/" class="lp-nav-brand">EtseeMate<span>.</span></a>
   <div class="lp-nav-links">
-    <button class="lp-nav-signin" onclick="showAuth('login')">Đăng nhập</button>
-    <button class="lp-cta-primary" style="padding:9px 22px;font-size:0.88rem" onclick="showAuth('register')">Dùng thử miễn phí</button>
+    <button class="lp-cta-primary" style="padding:9px 22px;font-size:0.88rem" onclick="showAuth('login')">Đăng nhập</button>
+    <!-- <button class="lp-cta-primary" style="padding:9px 22px;font-size:0.88rem" onclick="showAuth('register')">Dùng thử miễn phí</button> -->
   </div>
 </nav>
 
 <section class="lp-hero" id="lp-hero">
   <h1 class="lp-hero-headline">Biết listing nào đang thật sự kiếm tiền —<br>và phải làm gì tiếp theo.</h1>
   <p class="lp-hero-sub">EtseeMate phân tích ROAS · CTR · CR từng listing Etsy Ads của bạn — và nói thẳng cần scale listing nào, cắt listing nào.</p>
-  <button class="lp-cta-primary" onclick="showAuth('register')">Dùng thử miễn phí</button>
-  <p class="lp-friction">Không cần thẻ tín dụng · Miễn phí 30 ngày · Hủy bất cứ lúc nào</p>
+  <button class="lp-cta-primary" onclick="showAuth('login')">Đăng nhập</button>
+  <!-- <p class="lp-friction">Không cần thẻ tín dụng · Miễn phí 30 ngày · Hủy bất cứ lúc nào</p> -->
   <div class="lp-stats">
     <div class="lp-stat"><div class="lp-stat-number">2.3×</div><div class="lp-stat-label">ROAS trung bình sau 30 ngày</div></div>
     <div class="lp-stat"><div class="lp-stat-number">&lt;5'</div><div class="lp-stat-label">Để ra quyết định scale / cắt</div></div>
@@ -131,13 +131,13 @@
 <section class="lp-action">
   <h2 class="lp-action-title">Bắt đầu phân tích shop của bạn.</h2>
   <p class="lp-action-sub">Upload 1 screenshot báo cáo Etsy Ads — EtseeMate cho bạn thấy listing nào đang thật sự có lãi ngay trong session đầu tiên.</p>
-  <button class="lp-cta-primary" onclick="showAuth('register')">Bắt đầu phân tích shop của bạn</button>
-  <p class="lp-friction" style="color:var(--warm-silver);margin-top:12px">Không cần thẻ tín dụng · Miễn phí 30 ngày · Hủy bất cứ lúc nào</p>
+  <button class="lp-cta-primary" onclick="showAuth('login')">Đăng nhập để bắt đầu</button>
+  <!-- <p class="lp-friction" style="color:var(--warm-silver);margin-top:12px">Không cần thẻ tín dụng · Miễn phí 30 ngày · Hủy bất cứ lúc nào</p> -->
 </section>
 
 <div id="lp-sticky-bar">
   <span class="lp-sticky-text">EtseeMate — Biết listing nào đang thật sự kiếm tiền.</span>
-  <button class="lp-cta-primary" style="padding:9px 22px;font-size:0.85rem;white-space:nowrap" onclick="showAuth('register')">Dùng thử miễn phí</button>
+  <button class="lp-cta-primary" style="padding:9px 22px;font-size:0.85rem;white-space:nowrap" onclick="showAuth('login')">Đăng nhập</button>
 </div>
 
 <div id="auth-overlay">
@@ -148,7 +148,7 @@
     <div class="auth-field"><label class="auth-label">Email</label><input id="login-email" class="auth-input" type="email" placeholder="you@example.com" autocomplete="email"></div>
     <div class="auth-field"><label class="auth-label">Mật khẩu</label><input id="login-password" class="auth-input" type="password" placeholder="••••••••" autocomplete="current-password"><p id="login-error" class="auth-error"></p></div>
     <button id="login-btn" class="auth-btn">Đăng nhập</button>
-    <p class="auth-switch">Chưa có tài khoản? <a onclick="showAuth('register')">Dùng thử miễn phí</a></p>
+    <!-- <p class="auth-switch">Chưa có tài khoản? <a onclick="showAuth('register')">Dùng thử miễn phí</a></p> -->
   </div>
   <div id="auth-register-box" class="auth-box" style="display:none">
     <button class="auth-close" onclick="closeAuth()">×</button>

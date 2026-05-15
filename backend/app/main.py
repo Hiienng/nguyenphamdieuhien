@@ -133,7 +133,7 @@ async def download_extension():
     return FileResponse(
         path=str(_ext_xpi),
         media_type="application/octet-stream",
-        filename="EtseeMate-extension.zip",
+        filename="EtseeMate-extension.xpi",
     )
 
 # Serve frontend static files — must be AFTER API routes
