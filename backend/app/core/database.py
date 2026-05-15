@@ -5,37 +5,43 @@ from sqlalchemy.orm import DeclarativeBase
 from .config import get_settings
 
 logger = logging.getLogger(__name__)
-settings = get_settings()
 
-engine = create_async_engine(
-    settings.async_db_url,
-    echo=settings.APP_ENV == "development",
-    pool_size=5,
-    max_overflow=10,
-    # statement_cache_size=0 disables asyncpg's prepared statement cache, which
-    # prevents "InvalidCachedStatementError" after DDL (CREATE/ALTER TABLE at
-    # startup invalidates ALL server-side cached plans across ALL connections).
-    connect_args={"ssl": True, "statement_cache_size": 0},
-)
+# ── Lazy engine init ─────────────────────────────────────────────────────────
+# Engines are created on first use so that a missing/empty DATABASE_URL at
+# import time does not crash the process before uvicorn can bind the port.
 
-AsyncSessionLocal = async_sessionmaker(
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-)
-
-# Second engine — market data DB (ETSY_MARKET_DB / etsy_star_engine output)
-# Built lazily so env var is read at first use, not at import time.
+_engine = None
+_AsyncSessionLocal = None
 _market_engine = None
 _MarketSessionLocal = None
+
+
+def _get_engine():
+    global _engine, _AsyncSessionLocal
+    if _engine is None:
+        settings = get_settings()
+        _engine = create_async_engine(
+            settings.async_db_url,
+            echo=settings.APP_ENV == "development",
+            pool_size=5,
+            max_overflow=10,
+            connect_args={"ssl": True, "statement_cache_size": 0},
+        )
+        _AsyncSessionLocal = async_sessionmaker(
+            bind=_engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+        )
+    return _engine, _AsyncSessionLocal
 
 
 def _get_market_session_factory() -> async_sessionmaker:
     global _market_engine, _MarketSessionLocal
     if _MarketSessionLocal is None:
+        settings = get_settings()
         _market_engine = create_async_engine(
-            get_settings().async_market_db_url,
-            echo=get_settings().APP_ENV == "development",
+            settings.async_market_db_url,
+            echo=settings.APP_ENV == "development",
             pool_size=3,
             max_overflow=5,
             connect_args={"ssl": True},
@@ -46,6 +52,28 @@ def _get_market_session_factory() -> async_sessionmaker:
             expire_on_commit=False,
         )
     return _MarketSessionLocal
+
+
+# ── Compatibility shims ───────────────────────────────────────────────────────
+# Code throughout the app does `from .database import engine, AsyncSessionLocal`.
+# These proxy objects forward attribute access to the lazy-initialised instances.
+
+class _EngineProxy:
+    def __getattr__(self, name):
+        return getattr(_get_engine()[0], name)
+    def begin(self):
+        return _get_engine()[0].begin()
+    def connect(self):
+        return _get_engine()[0].connect()
+
+class _SessionLocalProxy:
+    def __call__(self, *a, **kw):
+        return _get_engine()[1](*a, **kw)
+    def __getattr__(self, name):
+        return getattr(_get_engine()[1], name)
+
+engine = _EngineProxy()
+AsyncSessionLocal = _SessionLocalProxy()
 
 
 class MarketSessionLocal:
@@ -59,7 +87,8 @@ class Base(DeclarativeBase):
 
 
 async def get_db() -> AsyncSession:
-    async with AsyncSessionLocal() as session:
+    _, factory = _get_engine()
+    async with factory() as session:
         try:
             yield session
         finally:
@@ -68,7 +97,8 @@ async def get_db() -> AsyncSession:
 
 async def get_tenant_db(tenant_id: str) -> AsyncSession:
     """Yield a session with app.tenant_id set — activates RLS policies."""
-    async with AsyncSessionLocal() as session:
+    _, factory = _get_engine()
+    async with factory() as session:
         try:
             await session.execute(
                 text("SELECT set_config('app.tenant_id', :tid, true)"),
@@ -80,9 +110,6 @@ async def get_tenant_db(tenant_id: str) -> AsyncSession:
 
 
 async def create_tables() -> None:
-    # NOTE: ALTER TABLE migrations removed — all columns were added long ago.
-    # Keeping DDL in startup causes asyncpg "InvalidCachedStatementError" because
-    # PostgreSQL invalidates ALL server-side prepared plans across ALL connections
-    # after any DDL statement. Use raw SQL migration scripts for new columns.
-    async with engine.begin() as conn:
+    eng, _ = _get_engine()
+    async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
