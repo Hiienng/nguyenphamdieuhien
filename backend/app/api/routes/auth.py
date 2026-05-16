@@ -7,6 +7,7 @@ from typing import Optional
 
 from ...core.database import get_db
 from ...core.auth_middleware import get_current_active_user
+from ...core.config import get_settings
 from ...models.user import User
 from ...models.credit import CreditAccount
 from ...models.subscription import Subscription
@@ -17,6 +18,10 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 REFRESH_COOKIE = "refresh_token"
 COOKIE_MAX_AGE = 7 * 24 * 3600  # 7 days in seconds
+
+def _cookie_kwargs() -> dict:
+    secure = get_settings().APP_ENV == "production"
+    return {"httponly": True, "samesite": "lax", "max_age": COOKIE_MAX_AGE, "secure": secure}
 
 
 @router.post("/register", response_model=TokenResponse)
@@ -40,7 +45,7 @@ async def register(body: RegisterRequest, response: Response, db: AsyncSession =
 
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
-    response.set_cookie(REFRESH_COOKIE, refresh_token, httponly=True, samesite="lax", max_age=COOKIE_MAX_AGE)
+    response.set_cookie(REFRESH_COOKIE, refresh_token, **_cookie_kwargs())
     return TokenResponse(access_token=access_token)
 
 
@@ -54,7 +59,7 @@ async def login(body: LoginRequest, response: Response, db: AsyncSession = Depen
 
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
-    response.set_cookie(REFRESH_COOKIE, refresh_token, httponly=True, samesite="lax", max_age=COOKIE_MAX_AGE)
+    response.set_cookie(REFRESH_COOKIE, refresh_token, **_cookie_kwargs())
     return TokenResponse(access_token=access_token)
 
 
@@ -76,7 +81,7 @@ async def refresh(
 
     new_access = create_access_token(user.id)
     new_refresh = create_refresh_token(user.id)
-    response.set_cookie(REFRESH_COOKIE, new_refresh, httponly=True, samesite="lax", max_age=COOKIE_MAX_AGE)
+    response.set_cookie(REFRESH_COOKIE, new_refresh, **_cookie_kwargs())
     return TokenResponse(access_token=new_access)
 
 
