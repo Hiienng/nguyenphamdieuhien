@@ -209,17 +209,34 @@ document.addEventListener("DOMContentLoaded", () => {
         processKeywordStats(body, result, url);
       }
 
-      // graphStats may arrive in same response as listing (flat) or nested under
-      // body.data or body.listingStats depending on Etsy API version.
-      const graphStatsBody =
-        (body.listing && Array.isArray(body.graphStats)) ? body :
-        (body.listing && body.data && Array.isArray(body.data.graphStats))
-          ? { listing: body.listing, graphStats: body.data.graphStats } :
-        (body.data && body.data.listing && Array.isArray(body.data.graphStats))
-          ? { listing: body.data.listing, graphStats: body.data.graphStats } :
-        null;
-      if (graphStatsBody) {
-        processListingDailyStats(graphStatsBody, result);
+      // graphStats may arrive flat (with listing), nested under body.data,
+      // or standalone (no listing object — listing_id extracted from URL).
+      if (Array.isArray(body.graphStats) && body.graphStats.length > 0) {
+        if (body.listing) {
+          processListingDailyStats(body, result);
+        } else {
+          // Standalone graphStats — synthesise a minimal listing object from URL
+          const idMatch = url.match(/\/listings?\/(\d+)/);
+          if (idMatch) {
+            processListingDailyStats(
+              { listing: { listingId: idMatch[1] }, graphStats: body.graphStats },
+              result
+            );
+          }
+        }
+      } else if (body.data && Array.isArray(body.data.graphStats) && body.data.graphStats.length > 0) {
+        const listing = body.listing || (body.data && body.data.listing) || null;
+        if (listing) {
+          processListingDailyStats({ listing, graphStats: body.data.graphStats }, result);
+        } else {
+          const idMatch = url.match(/\/listings?\/(\d+)/);
+          if (idMatch) {
+            processListingDailyStats(
+              { listing: { listingId: idMatch[1] }, graphStats: body.data.graphStats },
+              result
+            );
+          }
+        }
       }
 
       if (hasAttributionShape || url.indexOf("revenue/attribution") !== -1) {
@@ -264,6 +281,12 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     fillDerivedSummary(result);
+
+    console.log("[Getify] daily rows raw:", result.listing_daily_rows ? result.listing_daily_rows.length : 0,
+      "| sessions with graphStats:", sessions.filter(s => {
+        const b = s && s.body;
+        return b && (Array.isArray(b.graphStats) || (b.data && Array.isArray(b.data.graphStats)));
+      }).map(s => s.url));
 
     // Pre-build rows aligned with DB table listing_report.
     // Dashboard captures produce aggregate rows (period = "YYYY/MM/DD-YYYY/MM/DD");
@@ -1504,9 +1527,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const b = s && s.body;
         if (!b || typeof b !== "object") continue;
         const hasGraphStats =
-          (b.listing && Array.isArray(b.graphStats)) ||
-          (b.listing && b.data && Array.isArray(b.data.graphStats)) ||
-          (b.data && b.data.listing && Array.isArray(b.data.graphStats));
+          Array.isArray(b.graphStats) ||
+          (b.data && Array.isArray(b.data.graphStats));
         if (hasGraphStats) dailyCaptures++;
         if (Array.isArray(b.queryStats) || Array.isArray(b.queries)) keywordCaptures++;
       }
