@@ -3923,9 +3923,9 @@
           <span style="display:inline-flex;align-items:center;gap:5px;justify-content:center"><span style="color:var(--terracotta);opacity:0.7">Suggestion</span>
             <span style="position:relative;display:inline-block">
               <span onclick="event.preventDefault();event.stopPropagation();imprHelp(this)" aria-label="suggestion logic" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--stone);color:var(--stone);font-size:0.62rem;font-weight:700;cursor:pointer;user-select:none;text-transform:none">?</span>
-              <span class="impr-help-pop" style="display:none;position:absolute;top:20px;right:0;z-index:50;width:320px;padding:10px 12px;background:var(--parchment);border:1px solid var(--border-cream);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);font-family:var(--font-sans);font-size:0.76rem;font-weight:400;color:var(--charcoal);letter-spacing:normal;text-transform:none;line-height:1.5;text-align:left">
+              <span class="impr-help-pop" style="display:none;position:absolute;top:20px;right:0;z-index:50;width:300px;max-width:calc(100vw - 32px);padding:10px 12px;background:var(--parchment);border:1px solid var(--border-cream);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);font-family:var(--font-sans);font-size:0.76rem;font-weight:400;color:var(--charcoal);letter-spacing:normal;text-transform:none;line-height:1.5;text-align:left;white-space:normal;word-wrap:break-word;overflow-wrap:break-word">
                 <b>Suggestion logic</b><br>
-                <span style="color:var(--terracotta);font-weight:600">on</span> &mdash; keyword has ever generated <b>revenue &gt; 0</b> on any listing, any period, across full system history (union of <code>keyword_report</code> ∪ <code>manual_keyword_report</code>).<br>
+                <span style="color:var(--terracotta);font-weight:600">on</span> &mdash; keyword has ever generated <b>revenue &gt; 0</b> on any listing, any period, across full system history.<br>
                 <span style="color:var(--terracotta);font-weight:600">off</span> &mdash; never generated any revenue.<br>
                 <br>
                 Recommendations based on full system history, independent of the currently displayed period.
