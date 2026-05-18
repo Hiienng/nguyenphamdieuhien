@@ -3779,11 +3779,19 @@
         : `<span style="font-size:0.78rem;color:var(--stone)">—</span>`;
       const actionLabel = _imprActionLabel(act);
       const bell = hasKeywordAlert
-        ? `<span title="A keyword is currently active but suggested to pause" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;background:rgba(201,100,66,0.12);color:var(--terracotta);flex:0 0 auto">
-            <svg viewBox="0 0 16 16" width="11" height="11" fill="none" aria-hidden="true">
-              <path d="M8 2.3a2.6 2.6 0 0 0-2.6 2.6v1.2c0 .8-.2 1.6-.7 2.3L4 9.7h8l-.7-1.3c-.4-.7-.7-1.5-.7-2.3V4.9A2.6 2.6 0 0 0 8 2.3Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M6.6 11.3a1.5 1.5 0 0 0 2.8 0" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
-            </svg>
+        ? `<span style="position:relative;display:inline-block;flex:0 0 auto" onmouseenter="imprHelpShow(this.querySelector('.bell-icon'))" onmouseleave="imprHelpHide(this.querySelector('.bell-icon'))">
+            <span class="bell-icon" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;background:rgba(201,100,66,0.12);color:var(--terracotta);cursor:help">
+              <svg viewBox="0 0 16 16" width="11" height="11" fill="none" aria-hidden="true">
+                <path d="M8 2.3a2.6 2.6 0 0 0-2.6 2.6v1.2c0 .8-.2 1.6-.7 2.3L4 9.7h8l-.7-1.3c-.4-.7-.7-1.5-.7-2.3V4.9A2.6 2.6 0 0 0 8 2.3Z" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6.6 11.3a1.5 1.5 0 0 0 2.8 0" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span class="impr-help-pop" style="display:none;position:absolute;top:24px;left:0;z-index:50;width:260px;max-width:calc(100vw - 32px);padding:10px 12px;background:var(--parchment);border:1px solid var(--border-cream);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);font-family:var(--font-sans);font-size:0.76rem;font-weight:400;color:var(--charcoal);letter-spacing:normal;text-transform:none;line-height:1.5;text-align:left;white-space:normal;word-wrap:break-word;overflow-wrap:break-word">
+              <b style="color:var(--terracotta)">Keyword alert</b><br>
+              Listing này có keyword đang bật (<b>on</b>) nhưng hệ thống đề xuất tắt (<b>off</b>) vì keyword đó chưa từng tạo ra revenue.<br>
+              <br>
+              Mở chi tiết để xem keyword nào cần pause.
+            </span>
           </span>`
         : '';
       const idLink = d.url
