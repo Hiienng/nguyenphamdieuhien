@@ -4047,7 +4047,7 @@
           <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--stone);opacity:0.4"></span>Market ref</span>
         </span>
         <span style="position:relative;display:inline-block">
-          <span onclick="event.preventDefault();event.stopPropagation();imprHelp(this)" aria-label="mapping info" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--stone);color:var(--stone);font-size:0.64rem;font-weight:700;cursor:pointer;user-select:none">?</span>
+          <span onmouseenter="imprHelpShow(this)" onmouseleave="imprHelpHide(this)" aria-label="mapping info" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--stone);color:var(--stone);font-size:0.64rem;font-weight:700;cursor:help;user-select:none">?</span>
           <span class="impr-help-pop" style="display:none;position:absolute;top:20px;right:0;z-index:50;width:340px;padding:10px 12px;background:var(--parchment);border:1px solid var(--border-cream);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);font-family:var(--font-sans);font-size:0.78rem;font-weight:400;color:var(--charcoal);letter-spacing:normal;text-transform:none;line-height:1.5">${mappingTip}</span>
         </span>`;
       const bodyHtml = `<div style="overflow-x:auto">
@@ -4067,7 +4067,7 @@
         <th style="text-align:center;padding:4px 8px;font-weight:600">${_imprMiniSortButton('keywords', groupKey, 'currently_status', 'Currently', 'center')}</th>
         <th style="text-align:center;padding:4px 8px;font-weight:600;color:var(--terracotta);opacity:0.7;position:relative">
           <span style="display:inline-flex;align-items:center;gap:5px;justify-content:center">Suggestion
-            <span onclick="event.preventDefault();event.stopPropagation();imprHelp(this)" aria-label="suggestion logic" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--stone);color:var(--stone);font-size:0.62rem;font-weight:700;cursor:pointer;user-select:none;text-transform:none">?</span>
+            <span onmouseenter="imprHelpShow(this)" onmouseleave="imprHelpHide(this)" aria-label="suggestion logic" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--stone);color:var(--stone);font-size:0.62rem;font-weight:700;cursor:help;user-select:none;text-transform:none">?</span>
           </span>
           <span class="impr-help-pop" style="display:none;position:absolute;top:24px;right:0;z-index:50;width:300px;max-width:calc(100vw - 32px);padding:10px 12px;background:var(--parchment);border:1px solid var(--border-cream);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);font-family:var(--font-sans);font-size:0.76rem;font-weight:400;color:var(--charcoal);letter-spacing:normal;text-transform:none;line-height:1.5;text-align:left;white-space:normal;word-wrap:break-word;overflow-wrap:break-word">
             <b>Suggestion logic</b><br>
@@ -4147,22 +4147,16 @@
     }
 
     // Toggle popover ? — đóng tất cả popover khác, mở cái được click.
-    function imprHelp(triggerEl) {
+    // Hover-only tooltip: show on mouseenter, hide on mouseleave.
+    function imprHelpShow(triggerEl) {
       const pop = triggerEl.parentElement.querySelector('.impr-help-pop');
-      const isOpen = pop.style.display === 'block';
+      if (!pop) return;
       document.querySelectorAll('.impr-help-pop').forEach(p => { p.style.display = 'none'; });
-      if (!isOpen) {
-        pop.style.display = 'block';
-        setTimeout(() => {
-          const handler = (e) => {
-            if (!pop.contains(e.target) && e.target !== triggerEl) {
-              pop.style.display = 'none';
-              document.removeEventListener('click', handler);
-            }
-          };
-          document.addEventListener('click', handler);
-        }, 0);
-      }
+      pop.style.display = 'block';
+    }
+    function imprHelpHide(triggerEl) {
+      const pop = triggerEl.parentElement.querySelector('.impr-help-pop');
+      if (pop) pop.style.display = 'none';
     }
 
     function _imprDetailRow(d, groupKey, withExtras) {
