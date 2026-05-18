@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EtseeMate — Portal</title>
+  <title>Internal — Portal</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <style>
     /* ─── Reset ─────────────────────────────────────────────── */
@@ -1852,7 +1852,7 @@
 <body>
   <!-- ── Auth Bootstrap (must run before any other script) ── -->
   <script>
-    let _accessToken = sessionStorage.getItem('etseemate_token') || null;
+    let _accessToken = sessionStorage.getItem('Getify_token') || null;
     let _currentUser = null;
     // DEBUG: log token presence to diagnose blank page
     console.log('[Bootstrap] token:', _accessToken ? 'PRESENT (' + _accessToken.substring(0,20) + '...)' : 'NULL');
@@ -1870,7 +1870,7 @@
 
   <!-- ── Navigation ─────────────────────────────────── -->
   <nav class="nav">
-    <a href="#" class="nav-brand">EtseeMate Portal<span>.</span></a>
+    <a href="#" class="nav-brand">Internal Portal<span>.</span></a>
     <div class="nav-tabs" role="tablist">
       <button class="hub-tab active" role="tab" data-tab="intelligence">Listing Builder</button>
       <button class="hub-tab" role="tab" data-tab="performance">Listing Manager</button>
@@ -2016,7 +2016,7 @@
       </div><!-- /perf-sub-improvement -->
 
 
-      <!-- ── Sub-panel: Internal Import ──────────── -->
+      <!-- ── Sub-panel: Getify Import ──────────── -->
       <div id="perf-sub-import" style="display:none">
 
         <h2 class="section-heading" style="margin-bottom:12px">1. Import Report</h2>
@@ -2556,7 +2556,7 @@
               onclick="intelUsePrompt('Which product type groups have the best hot rate signals?')">Hot product
               types</button>
             <button class="intel-prompt-chip" type="button"
-              onclick="intelUsePrompt('Suggest 5 next market research actions for EtseeMate.')">Next
+              onclick="intelUsePrompt('Suggest 5 next market research actions for Getify.')">Next
               actions</button>
             <button class="intel-prompt-chip" type="button"
               onclick="intelUsePrompt('Compare price band and review count to find products worth testing.')">Price
@@ -2628,7 +2628,7 @@
         <div class="stat-card">
           <p class="stat-label">Dashboard Users</p>
           <p class="stat-value">240</p>
-          <p class="stat-delta">internal analysts</p>
+          <p class="stat-delta">Getify analysts</p>
         </div>
         <div class="stat-card">
           <p class="stat-label">Query SLA</p>
@@ -2711,13 +2711,13 @@
           <p class="card-title">Credit Portfolio Heatmap</p>
           <p class="card-body">Segment-level PD/LGD visualisation across loan book. Drill-down by industry, geography,
             and vintage cohort.</p>
-          <div class="card-footer"><span class="badge">Plotly</span><span class="badge">Internal</span></div>
+          <div class="card-footer"><span class="badge">Plotly</span><span class="badge">Getify</span></div>
         </div>
         <div class="card">
           <p class="card-title">Model Performance Registry</p>
           <p class="card-body">Centralised monitoring for all production models — PSI, concept drift alerts, and
             champion/challenger A/B results.</p>
-          <div class="card-footer"><span class="badge">MLflow</span><span class="badge">Internal</span></div>
+          <div class="card-footer"><span class="badge">MLflow</span><span class="badge">Getify</span></div>
         </div>
       </div>
 
@@ -2811,7 +2811,7 @@
     // Restore last active tab on load — no paywall at tab level
     (async () => {
       await _userReady;
-      const savedTab = sessionStorage.getItem('etseemate_active_tab') || 'performance';
+      const savedTab = sessionStorage.getItem('Getify_active_tab') || 'performance';
       _activateTab(savedTab);
     })();
 
@@ -2819,7 +2819,7 @@
       tab.addEventListener('click', () => {
         const target = tab.dataset.tab;
         _activateTab(target);
-        sessionStorage.setItem('etseemate_active_tab', target);
+        sessionStorage.setItem('Getify_active_tab', target);
       });
     });
 
@@ -2836,7 +2836,7 @@
 
     const INTEL_WELCOME = {
       role: 'assistant',
-      text: 'Hi, I\'m the Intelligence Assistant — frontend prototype.\n\nI can help summarize reports, suggest product types worth scaling, research market questions, or turn insights into an action list for EtseeMate.'
+      text: 'Hi, I\'m the Intelligence Assistant — frontend prototype.\n\nI can help summarize reports, suggest product types worth scaling, research market questions, or turn insights into an action list for Getify.'
     };
     let intelMessages = [INTEL_WELCOME];
 
@@ -2904,7 +2904,7 @@
     function intelMockResponse(text) {
       const q = text.toLowerCase();
       if (q.includes('scale')) {
-        return 'Quick scale-up suggestions:\n\n1. Prioritize product types with all 3 signals: many market listings, clear price band, review count not too high.\n2. Segment by intent: baby gift, personalized keepsake, nursery decor.\n3. For each group, select 3 reference listings to compare main image, title pattern, price, and badge.\n4. Add candidates to EtseeMate Listing Improvement to track CTR, CR, ROAS after testing.';
+        return 'Quick scale-up suggestions:\n\n1. Prioritize product types with all 3 signals: many market listings, clear price band, review count not too high.\n2. Segment by intent: baby gift, personalized keepsake, nursery decor.\n3. For each group, select 3 reference listings to compare main image, title pattern, price, and badge.\n4. Add candidates to Getify Listing Improvement to track CTR, CR, ROAS after testing.';
       }
       if (q.includes('hot') || q.includes('product type')) {
         return 'Product types worth digging into now are those with high hot rate but not yet saturated with reviews.\n\nChecklist to use:\n- Hot rate higher than the report median.\n- Median price wide enough to test offers.\n- Review count of top listings not too dominant.\n- Keywords can be rewritten with long-tail intent.';
@@ -3314,7 +3314,7 @@
     }
 
     // Restore saved pill — never auto-restore 'import' (requires explicit user click + paywall)
-    const _savedPill = sessionStorage.getItem('etseemate_active_pill') || 'improvement';
+    const _savedPill = sessionStorage.getItem('Getify_active_pill') || 'improvement';
     const savedPill = _savedPill === 'import' ? 'improvement' : _savedPill;
     _activatePill(savedPill);
 
@@ -3324,7 +3324,7 @@
         if (!allowed) return;
       }
       _activatePill(target);
-      sessionStorage.setItem('etseemate_active_pill', target);
+      sessionStorage.setItem('Getify_active_pill', target);
       if (target === 'rules' && !window._rulesLoaded) {
         window._rulesLoaded = true;
         thrLoadFromDB();
@@ -3659,14 +3659,14 @@
       if (scope === 'listing') {
         rows = _imprSortRows(_imprListingRows(d), sortState, 'listing_id');
         newBody = rows.map(r => {
-          const rowTone = r.is_internal ? '#fff7f4' : 'var(--parchment)';
-          const rowColor = r.is_internal ? 'var(--charcoal)' : 'var(--stone)';
-          const sideBorder = r.is_internal ? 'var(--terracotta)' : 'var(--border-cream)';
+          const rowTone = r.is_Getify ? '#fff7f4' : 'var(--parchment)';
+          const rowColor = r.is_Getify ? 'var(--charcoal)' : 'var(--stone)';
+          const sideBorder = r.is_Getify ? 'var(--terracotta)' : 'var(--border-cream)';
           const ctrCell = r.ctr == null ? '—' : (Number(r.ctr) >= 1.5 ? `<span class="metric-chip chip-ok">${Number(r.ctr).toFixed(2)}%</span>` : `<span class="metric-chip chip-warn">${Number(r.ctr).toFixed(2)}%</span>`);
           const crCell  = r.cr  == null ? '—' : (Number(r.cr)  >= 3   ? `<span class="metric-chip chip-ok">${Number(r.cr).toFixed(2)}%</span>`  : `<span class="metric-chip chip-warn">${Number(r.cr).toFixed(2)}%</span>`);
           const roasCell= r.roas== null ? '—' : (Number(r.roas)>= 2   ? `<span class="metric-chip chip-ok">${_imprFmtRatio(r.roas)}</span>` : `<span class="metric-chip chip-neu">${_imprFmtRatio(r.roas)}</span>`);
           return `<tr style="font-family:var(--font-sans);font-size:0.76rem;color:${rowColor};border-top:1px solid var(--border-cream);background:${rowTone}">
-            <td style="padding:4px 8px;border-left:3px solid ${sideBorder}">${r.url?`<a href="${r.url}" target="_blank" rel="noopener" style="font-family:var(--font-mono);font-size:0.76rem;color:${r.is_internal?'var(--terracotta)':'var(--stone)'};text-decoration:underline;${r.is_internal?'font-weight:600;':''}">${r.listing_id||'—'}</a>`:`<span style="font-family:var(--font-mono);font-size:0.76rem;${r.is_internal?'font-weight:600;':''}">${r.listing_id||'—'}</span>`}</td>
+            <td style="padding:4px 8px;border-left:3px solid ${sideBorder}">${r.url?`<a href="${r.url}" target="_blank" rel="noopener" style="font-family:var(--font-mono);font-size:0.76rem;color:${r.is_Getify?'var(--terracotta)':'var(--stone)'};text-decoration:underline;${r.is_Getify?'font-weight:600;':''}">${r.listing_id||'—'}</a>`:`<span style="font-family:var(--font-mono);font-size:0.76rem;${r.is_Getify?'font-weight:600;':''}">${r.listing_id||'—'}</span>`}</td>
             <td style="padding:4px 8px">${r.product?`<span class="metric-chip chip-neu" style="font-size:0.68rem">${_imprEsc(r.product)}</span>`:'—'}</td>
             <td style="padding:4px 8px;text-align:right">${ctrCell}</td><td style="padding:4px 8px;text-align:right">${crCell}</td>
             <td style="padding:4px 8px;text-align:right">${roasCell}</td>
@@ -3781,8 +3781,8 @@
     }
 
     function _imprListingRows(d) {
-      const internalRow = {
-        is_internal: true,
+      const GetifyRow = {
+        is_Getify: true,
         listing_id: d.listing_id,
         product: d.product,
         ctr: d.ctr,
@@ -3798,7 +3798,7 @@
         url: d.url,
       };
       const refs = (Array.isArray(d.references) ? d.references : []).map(r => ({
-        is_internal: false,
+        is_Getify: false,
         listing_id: r.reference_listing_id,
         product: r.ref_product_type,
         ctr: null,
@@ -3813,7 +3813,7 @@
         rank: r.ref_rank != null ? r.ref_rank : r.ref_tag_ranking,
         url: r.ref_url,
       }));
-      return [internalRow, ...refs];
+      return [GetifyRow, ...refs];
     }
 
     function _imprListingTable(d, groupKey) {
@@ -3835,17 +3835,17 @@
       </tr></thead>`;
 
       const body = rows.map(r => {
-        const rowTone = r.is_internal ? '#fff7f4' : 'var(--parchment)';
-        const rowColor = r.is_internal ? 'var(--charcoal)' : 'var(--stone)';
-        const sideBorder = r.is_internal ? 'var(--terracotta)' : 'var(--border-cream)';
+        const rowTone = r.is_Getify ? '#fff7f4' : 'var(--parchment)';
+        const rowColor = r.is_Getify ? 'var(--charcoal)' : 'var(--stone)';
+        const sideBorder = r.is_Getify ? 'var(--terracotta)' : 'var(--border-cream)';
         const ctrCell = r.ctr == null ? '—' : (Number(r.ctr) >= 1.5 ? `<span class="metric-chip chip-ok">${Number(r.ctr).toFixed(2)}%</span>` : `<span class="metric-chip chip-warn">${Number(r.ctr).toFixed(2)}%</span>`);
         const crCell = r.cr == null ? '—' : (Number(r.cr) >= 3 ? `<span class="metric-chip chip-ok">${Number(r.cr).toFixed(2)}%</span>` : `<span class="metric-chip chip-warn">${Number(r.cr).toFixed(2)}%</span>`);
         const roasCell = r.roas == null ? '—' : (Number(r.roas) >= 2 ? `<span class="metric-chip chip-ok">${_imprFmtRatio(r.roas)}</span>` : `<span class="metric-chip chip-neu">${_imprFmtRatio(r.roas)}</span>`);
         return `<tr style="font-family:var(--font-sans);font-size:0.76rem;color:${rowColor};border-top:1px solid var(--border-cream);background:${rowTone}">
           <td style="padding:4px 8px;border-left:3px solid ${sideBorder}">
             ${r.url
-            ? `<a href="${r.url}" target="_blank" rel="noopener" style="font-family:var(--font-mono);font-size:0.76rem;color:${r.is_internal ? 'var(--terracotta)' : 'var(--stone)'};text-decoration:underline;${r.is_internal ? 'font-weight:600;' : ''}">${r.listing_id || '—'}</a>`
-            : `<span style="font-family:var(--font-mono);font-size:0.76rem;${r.is_internal ? 'font-weight:600;' : ''}">${r.listing_id || '—'}</span>`}
+            ? `<a href="${r.url}" target="_blank" rel="noopener" style="font-family:var(--font-mono);font-size:0.76rem;color:${r.is_Getify ? 'var(--terracotta)' : 'var(--stone)'};text-decoration:underline;${r.is_Getify ? 'font-weight:600;' : ''}">${r.listing_id || '—'}</a>`
+            : `<span style="font-family:var(--font-mono);font-size:0.76rem;${r.is_Getify ? 'font-weight:600;' : ''}">${r.listing_id || '—'}</span>`}
           </td>
           <td style="padding:4px 8px">${r.product ? `<span class="metric-chip chip-neu" style="font-size:0.68rem">${_imprEsc(r.product)}</span>` : '—'}</td>
           <td style="padding:4px 8px;text-align:right">${ctrCell}</td>
@@ -3861,9 +3861,9 @@
         </tr>`;
       }).join('');
 
-      const mappingTip = `How references are selected:<br>The system finds market listings that contain the <b>product name</b> (category) of the internal listing — typically found in the <b>title</b>, sometimes in search keywords or product type.<br><br>Results are ranked by <b>Etsy search ranking</b> (appearing earlier ⇒ better), and the <b>top 3</b> are selected.`;
+      const mappingTip = `How references are selected:<br>The system finds market listings that contain the <b>product name</b> (category) of the Getify listing — typically found in the <b>title</b>, sometimes in search keywords or product type.<br><br>Results are ranked by <b>Etsy search ranking</b> (appearing earlier ⇒ better), and the <b>top 3</b> are selected.`;
       const meta = `<span style="display:flex;align-items:center;gap:10px;font-weight:400;font-size:0.68rem;letter-spacing:0;text-transform:none;color:var(--stone)">
-          <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#c0714a;opacity:0.85"></span>Internal</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#c0714a;opacity:0.85"></span>Getify</span>
           <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--stone);opacity:0.4"></span>Market ref</span>
         </span>
         <span style="position:relative;display:inline-block">
@@ -4186,9 +4186,9 @@
 
   </script>
 
-  <!-- ── Internal Import ─────────────────────────────── -->
+  <!-- ── Getify Import ─────────────────────────────── -->
   <script>
-    const API_BASE = '/api/v1/internal';
+    const API_BASE = '/api/v1/Getify';
     let _importBatchId = null;
     let _importLR = [];
     let _importKW = [];
@@ -4421,7 +4421,7 @@
       let _pollPrevPct = -1;  // track last fetched progress to avoid repeated empty preview calls
       const pollInterval = setInterval(async () => {
         try {
-          const res = await authFetch('/api/v1/internal/status?batch_id=' + batchId);
+          const res = await authFetch('/api/v1/Getify/status?batch_id=' + batchId);
           if (!res.ok) return;
           const data = await res.json();
           console.log("Polling batch status:", data);
@@ -4863,18 +4863,18 @@
         if (!res.ok) { _authRedirectToLanding(); return false; }
         const data = await res.json();
         _accessToken = data.access_token;
-        sessionStorage.setItem('etseemate_token', _accessToken);
+        sessionStorage.setItem('Getify_token', _accessToken);
         return true;
       } catch { return false; }
     }
 
     function _authRedirectToLanding() {
-      sessionStorage.removeItem('etseemate_token');
+      sessionStorage.removeItem('Getify_token');
       window.location.replace('/');
     }
 
     async function copyExtensionToken() {
-      const token = sessionStorage.getItem('etseemate_token');
+      const token = sessionStorage.getItem('Getify_token');
       if (!token) {
         alert('No token found. Please log in again.');
         return;
@@ -4894,7 +4894,7 @@
 
     async function authLogout() {
       await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
-      sessionStorage.removeItem('etseemate_token');
+      sessionStorage.removeItem('Getify_token');
       _accessToken = null;
       _currentUser = null;
       window.location.replace('/');
