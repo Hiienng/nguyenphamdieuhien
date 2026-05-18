@@ -1866,6 +1866,40 @@
     // Resolves after authLoadUser() completes — tab script awaits this
     let _resolveUserReady;
     const _userReady = new Promise(resolve => { _resolveUserReady = resolve; });
+
+    // Auth helper functions (must be defined early, before loadListingsDashboard is called)
+    function getAuthHeaders() {
+      return _accessToken ? { 'Authorization': 'Bearer ' + _accessToken } : {};
+    }
+
+    async function authFetch(url, opts = {}) {
+      opts.headers = Object.assign({}, opts.headers || {}, getAuthHeaders());
+      let res = await fetch(url, opts);
+      if (res.status === 401 && _accessToken) {
+        const refreshed = await authRefresh();
+        if (refreshed) {
+          opts.headers = Object.assign({}, opts.headers || {}, getAuthHeaders());
+          res = await fetch(url, opts);
+        }
+      }
+      return res;
+    }
+
+    async function authRefresh() {
+      try {
+        const res = await fetch('/api/v1/auth/refresh', { method: 'POST', credentials: 'include' });
+        if (!res.ok) { _authRedirectToLanding(); return false; }
+        const data = await res.json();
+        _accessToken = data.access_token;
+        sessionStorage.setItem('Getify_token', _accessToken);
+        return true;
+      } catch { return false; }
+    }
+
+    function _authRedirectToLanding() {
+      sessionStorage.removeItem('Getify_token');
+      window.location.replace('/');
+    }
   </script>
 
   <!-- ── Navigation ─────────────────────────────────── -->
@@ -4838,40 +4872,7 @@
 
   <!-- ── Auth Script ───────────────────────────────── -->
   <script>
-    // _accessToken, _currentUser, _userReady declared in Auth Bootstrap above
-
-    function getAuthHeaders() {
-      return _accessToken ? { 'Authorization': 'Bearer ' + _accessToken } : {};
-    }
-
-    async function authFetch(url, opts = {}) {
-      opts.headers = Object.assign({}, opts.headers || {}, getAuthHeaders());
-      let res = await fetch(url, opts);
-      if (res.status === 401 && _accessToken) {
-        const refreshed = await authRefresh();
-        if (refreshed) {
-          opts.headers = Object.assign({}, opts.headers || {}, getAuthHeaders());
-          res = await fetch(url, opts);
-        }
-      }
-      return res;
-    }
-
-    async function authRefresh() {
-      try {
-        const res = await fetch('/api/v1/auth/refresh', { method: 'POST', credentials: 'include' });
-        if (!res.ok) { _authRedirectToLanding(); return false; }
-        const data = await res.json();
-        _accessToken = data.access_token;
-        sessionStorage.setItem('Getify_token', _accessToken);
-        return true;
-      } catch { return false; }
-    }
-
-    function _authRedirectToLanding() {
-      sessionStorage.removeItem('Getify_token');
-      window.location.replace('/');
-    }
+    // _accessToken, _currentUser, _userReady, authFetch, authRefresh, getAuthHeaders declared in Auth Bootstrap above
 
     async function copyExtensionToken() {
       const token = sessionStorage.getItem('Getify_token');
