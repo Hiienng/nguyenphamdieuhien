@@ -29,7 +29,7 @@ nguyenphamdieuhien.online/
 ### FRONTEND (`frontend/`)
 
 - Chỉ dùng **Vanilla HTML / CSS / JS** — không dùng React, Vue, hay bất kỳ JS framework nào
-- `frontend/EtseeMate.html` là file chính — **KHÔNG tạo lại, KHÔNG xóa**
+- `frontend/Getify.html` là file chính — **KHÔNG tạo lại, KHÔNG xóa**
 - CSS dùng design tokens trong `:root` (xem `docs/DESIGN.md`)
 - Màu sắc: dùng đúng tên biến CSS (`--terracotta`, `--parchment`...) — không hardcode hex
 - Gọi API backend qua `fetch('/api/v1/...')` — không gọi thẳng Neon hay external service
@@ -71,7 +71,7 @@ nguyenphamdieuhien.online/
 
 | Biến | Dùng cho | Nơi đọc |
 |---|---|---|
-| `DATABASE_URL` | Neon PostgreSQL — internal data (listings, reports) | `core/config.py` |
+| `DATABASE_URL` | Neon PostgreSQL — Getify data (listings, reports) | `core/config.py` |
 | `ETSY_MARKET_DB` | PostgreSQL — market data DB (etsy_star_engine output, bảng `market_listing`) | `core/config.py` |
 | `ANTHROPIC_API_KEY` | Claude API | `services/claude_service.py` |
 | `CLAUDE_MODEL` | Model ID (default: `claude-sonnet-4-6`) | `core/config.py` |
@@ -105,6 +105,8 @@ Trước khi viết hoặc sửa bất kỳ file nào:
 7. Khi thêm dependency: cập nhật đúng `requirements.txt` của layer tương ứng (`backend/` hoặc `model/`)
 8. Mọi thay đổi DB schema: thêm migration, không `drop` table trực tiếp
 9. Các ad-hoc code dùng để chạy 1 lần duy nhất trong quá trình dev phải được drop ngay sau khi hoàn thành công việc
+10. **Trước khi báo "done" cho user**: luôn chạy `git status` để kiểm tra tất cả file dirty. Nếu có file liên quan task chưa commit → commit ngay. Không để tình trạng "edit nhưng quên commit" làm Render deploy partial state.
+11. **Khi rename / refactor cross-file** (đổi brand, đổi tên biến chung như token key): luôn `grep -r` toàn bộ codebase để tìm hết occurrence trước khi sửa, không sửa file-by-file dựa vào trí nhớ. Sau khi sửa, verify lại bằng `grep -r` xem còn occurrence cũ nào không. Đặc biệt cẩn thận với **key dùng chung giữa nhiều file** (sessionStorage keys, localStorage keys, cookie names, env vars) — mismatch giữa 2 file = bug nghiêm trọng.
 
 ---
 
