@@ -25,6 +25,13 @@ def create_refresh_token(user_id: str) -> str:
     return jwt.encode({"sub": user_id, "exp": expire, "type": "refresh"}, s.JWT_SECRET_KEY, algorithm=s.JWT_ALGORITHM)
 
 
+def create_extension_token(user_id: str) -> str:
+    """Long-lived token for browser extension. No expiry — revoke by changing JWT_SECRET_KEY."""
+    s = get_settings()
+    iat = datetime.now(timezone.utc)
+    return jwt.encode({"sub": user_id, "iat": iat, "type": "extension"}, s.JWT_SECRET_KEY, algorithm=s.JWT_ALGORITHM)
+
+
 def decode_token(token: str) -> Optional[dict]:
     try:
         s = get_settings()

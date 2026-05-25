@@ -1,7 +1,7 @@
 """
-Internal Ads Data Pipeline — API routes.
+EtseeMate Ads Data Pipeline — API routes.
 
-Prefix: /api/v1/internal
+Prefix: /api/v1/EtseeMate
 """
 import asyncio
 import logging
@@ -27,22 +27,32 @@ from ...schemas.internal import (
 )
 from ...services import internal_service, reporting_etl, crawler_ops
 
-router = APIRouter(prefix="/internal", tags=["internal"])
+router = APIRouter(prefix="/EtseeMate", tags=["EtseeMate"])
+
+
+async def _assert_batch_owner(batch_id: str, user: "User", db: AsyncSession) -> "ImportBatch":
+    """Load batch and 404 if it doesn't exist or belong to user (no leak)."""
+    from ...models.import_batch import ImportBatch
+    from sqlalchemy import select
+
+    batch = (await db.execute(
+        select(ImportBatch).where(ImportBatch.batch_id == batch_id)
+    )).scalar_one_or_none()
+    if not batch or (batch.tenant_id and batch.tenant_id != user.id and not user.is_admin):
+        raise HTTPException(404, "Batch not found")
+    return batch
 
 
 @router.get("/status")
-async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_db)):
+async def get_batch_status(
+    batch_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_subscription),
+):
     """
     Get current progress of a batch.
     """
-    from ...models.import_batch import ImportBatch
-    from sqlalchemy import select
-    
-    result = await db.execute(select(ImportBatch).where(ImportBatch.batch_id == batch_id))
-    batch = result.scalar_one_or_none()
-    if not batch:
-        raise HTTPException(404, "Batch not found")
-        
+    batch = await _assert_batch_owner(batch_id, user, db)
     return {
         "batch_id": batch.batch_id,
         "status": batch.status,
@@ -56,11 +66,16 @@ async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/preview")
-async def get_batch_preview(batch_id: str, db: AsyncSession = Depends(get_db)):
+async def get_batch_preview(
+    batch_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_subscription),
+):
     """
     Get the preview JSON data for a batch.
     Returns empty streaming preview instead of 404 when data isn't ready yet.
     """
+    await _assert_batch_owner(batch_id, user, db)
     try:
         return await internal_service.get_batch_preview(batch_id)
     except FileNotFoundError:
@@ -83,6 +98,7 @@ async def get_batch_preview(batch_id: str, db: AsyncSession = Depends(get_db)):
 async def upload_screenshots(
     files: list[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_subscription),
 ):
     if not files:
         raise HTTPException(400, "No files provided")
@@ -114,7 +130,7 @@ async def upload_screenshots(
 
     try:
         batch_id, count, _ = await internal_service.save_uploaded_files(
-            file_contents, db,
+            file_contents, db, tenant_id=user.id,
         )
     except Exception as exc:
         logger.exception("save_uploaded_files failed")
@@ -126,12 +142,15 @@ async def upload_screenshots(
 
 @router.post("/extract")
 async def extract_batch(
-    batch_id: str
+    batch_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_subscription),
 ):
     """
     Start extraction in the background using asyncio.create_task.
     (BackgroundTasks closes DB connections after request — create_task avoids that.)
     """
+    await _assert_batch_owner(batch_id, user, db)
     asyncio.create_task(internal_service.run_extraction(batch_id))
     return {"message": "Extraction started in background", "batch_id": batch_id, "status": "processing"}
 
@@ -169,7 +188,12 @@ async def confirm_import(req: ConfirmRequest, db: AsyncSession = Depends(get_ten
 # ── POST /discard — cancel pending batch ─────────────────────────────────────
 
 @router.post("/discard", response_model=BatchActionResponse)
-async def discard_batch(batch_id: str, db: AsyncSession = Depends(get_db)):
+async def discard_batch(
+    batch_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_subscription),
+):
+    await _assert_batch_owner(batch_id, user, db)
     try:
         await internal_service.discard_batch(batch_id, db)
     except ValueError as e:
@@ -180,7 +204,12 @@ async def discard_batch(batch_id: str, db: AsyncSession = Depends(get_db)):
 # ── POST /rollback — revert confirmed batch ──────────────────────────────────
 
 @router.post("/rollback", response_model=BatchActionResponse)
-async def rollback_batch(batch_id: str, db: AsyncSession = Depends(get_db)):
+async def rollback_batch(
+    batch_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_subscription),
+):
+    await _assert_batch_owner(batch_id, user, db)
     try:
         await internal_service.rollback_batch(batch_id, db)
     except ValueError as e:
@@ -194,14 +223,20 @@ async def rollback_batch(batch_id: str, db: AsyncSession = Depends(get_db)):
 async def import_history(
     limit: int = 20,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_subscription),
 ):
-    return await internal_service.get_history(db, limit)
+    return await internal_service.get_history(db, limit, tenant_id=user.id)
 
 
 # ── GET /snapshot/{batch_id} — view confirmed data ──────────────────────────
 
 @router.get("/snapshot/{batch_id}")
-async def get_snapshot(batch_id: str):
+async def get_snapshot(
+    batch_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_subscription),
+):
+    await _assert_batch_owner(batch_id, user, db)
     data = await internal_service.get_snapshot(batch_id)
     if data is None:
         raise HTTPException(404, f"Snapshot not found for batch {batch_id}")
@@ -220,6 +255,7 @@ async def ingest_listing(
     tenant_id is injected from JWT — extension never touches DB directly.
     """
     from ...models.listing_report import ListingReport
+    from ...services.internal_extractor import _normalize_period
     from datetime import datetime, timezone
 
     now = datetime.now(timezone.utc)
@@ -235,7 +271,7 @@ async def ingest_listing(
             category=row.category,
             lifetime_orders=row.lifetime_orders,
             lifetime_revenue=row.lifetime_revenue,
-            period=row.period,
+            period=_normalize_period(row.period or ""),
             views=row.views,
             clicks=row.clicks,
             orders=row.orders,
@@ -268,6 +304,7 @@ async def ingest_keyword(
 ):
     """Endpoint for browser extension to push keyword_report rows."""
     from ...models.keyword_report import KeywordReport
+    from ...services.internal_extractor import _normalize_period
     from datetime import datetime, timezone
 
     now = datetime.now(timezone.utc)
@@ -279,7 +316,7 @@ async def ingest_keyword(
             keyword=row.keyword,
             no_vm=row.no_vm,
             relevant=row.relevant,
-            period=row.period,
+            period=_normalize_period(row.period or ""),
             roas=row.roas,
             orders=row.orders,
             spend=row.spend,

@@ -2073,7 +2073,7 @@
                 <div style="min-width:24px;height:24px;border-radius:50%;background:var(--terracotta);color:#fff;font-family:var(--font-sans);font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">1</div>
                 <div style="flex:1">
                   <p style="font-family:var(--font-sans);font-size:0.85rem;font-weight:600;color:var(--charcoal);margin-bottom:6px">Download &amp; install the extension</p>
-                  <a href="/extension/download"
+                  <a href="/extension/download" onclick="return extensionDownloadClick(event)"
                     style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:var(--terracotta);color:#fff;font-family:var(--font-sans);font-size:0.82rem;font-weight:500;border-radius:7px;text-decoration:none;transition:opacity 0.15s"
                     onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
                     <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M3.5 6l3.5 3.5L10.5 6M2 12h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -2094,7 +2094,7 @@
                     <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 11V3a1 1 0 0 1 1-1h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                     Copy Token
                   </button>
-                  <p style="font-family:var(--font-sans);font-size:0.76rem;color:var(--stone);margin-top:6px">Token is tied to your account. It expires periodically — come back here to copy a fresh one if the extension reports an auth error.</p>
+                  <p style="font-family:var(--font-sans);font-size:0.76rem;color:var(--stone);margin-top:6px">Token is tied to your account and does not expire. Keep it secret — anyone with this token can push data on your behalf.</p>
                 </div>
               </div>
 
@@ -3347,16 +3347,11 @@
       if (target === 'import') importSelectMethod('image');
     }
 
-    // Restore saved pill — never auto-restore 'import' (requires explicit user click + paywall)
-    const _savedPill = sessionStorage.getItem('Getify_active_pill') || 'improvement';
-    const savedPill = _savedPill === 'import' ? 'improvement' : _savedPill;
+    // Restore saved pill
+    const savedPill = sessionStorage.getItem('Getify_active_pill') || 'improvement';
     _activatePill(savedPill);
 
     async function _perfPillClick(target) {
-      if (target === 'import') {
-        const allowed = await showSubscriptionPaywall();
-        if (!allowed) return;
-      }
       _activatePill(target);
       sessionStorage.setItem('Getify_active_pill', target);
       if (target === 'rules' && !window._rulesLoaded) {
@@ -3369,8 +3364,11 @@
         loadListingsDashboard();
       }
       if (target === 'import' && !window._importRendered) {
-        window._importRendered = true;
-        importLoadHistory();
+        const hasSub = _currentUser && (_currentUser.is_admin || (_currentUser.subscription && _currentUser.subscription.status === 'active'));
+        if (hasSub) {
+          window._importRendered = true;
+          importLoadHistory();
+        }
       }
     }
 
@@ -4377,8 +4375,6 @@
     // ── Upload & Extract ──────────────────────────────
     async function importStartUpload() {
       if (!_importFiles.length) return;
-      const allowed = await showSubscriptionPaywall();
-      if (!allowed) return;
       // Yield to browser before DOM-heavy operations — fixes [Violation] 'click' handler
       await new Promise(r => setTimeout(r, 0));
 
@@ -4876,21 +4872,41 @@
   <script>
     // _accessToken, _currentUser, _userReady, authFetch, authRefresh, getAuthHeaders declared in Auth Bootstrap above
 
+    function extensionDownloadClick(ev) {
+      const hasSub = _currentUser && (_currentUser.is_admin || (_currentUser.subscription && _currentUser.subscription.status === 'active'));
+      if (hasSub) return true;
+      ev.preventDefault();
+      showSubscriptionPaywall();
+      return false;
+    }
+
     async function copyExtensionToken() {
-      const token = sessionStorage.getItem('Getify_token');
-      if (!token) {
-        alert('No token found. Please log in again.');
+      const hasSub = _currentUser && (_currentUser.is_admin || (_currentUser.subscription && _currentUser.subscription.status === 'active'));
+      if (!hasSub) { showSubscriptionPaywall(); return; }
+      const btn = document.getElementById('btn-copy-token');
+      const orig = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = 'Generating…';
+      let token = null;
+      try {
+        const res = await authFetch('/api/v1/auth/extension-token', { method: 'POST' });
+        if (!res.ok) throw new Error('Failed to issue token');
+        token = (await res.json()).token;
+      } catch {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+        showToast('Could not generate extension token. Try again.', 'error');
         return;
       }
-      const btn = document.getElementById('btn-copy-token');
       try {
         await navigator.clipboard.writeText(token);
-        const orig = btn.innerHTML;
         btn.innerHTML = '✓ Copied!';
         btn.style.background = 'var(--parchment)';
         btn.style.color = 'var(--terracotta)';
-        setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; btn.style.background = 'var(--ivory)'; }, 2000);
+        setTimeout(() => { btn.disabled = false; btn.innerHTML = orig; btn.style.color = ''; btn.style.background = 'var(--ivory)'; }, 2000);
       } catch {
+        btn.disabled = false;
+        btn.innerHTML = orig;
         prompt('Copy this token and paste it into the extension Settings:', token);
       }
     }

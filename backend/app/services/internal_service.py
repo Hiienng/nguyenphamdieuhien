@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-Internal Ads Data Pipeline — business logic.
+EtseeMate Ads Data Pipeline — business logic.
 
 Handles: upload → extract → confirm → discard → rollback → history → snapshot.
 """
@@ -161,6 +161,7 @@ async def validate_image(filename: str, content: bytes) -> str | None:
 async def save_uploaded_files(
     file_contents: list[tuple],
     db: AsyncSession,
+    tenant_id: str | None = None,
 ) -> tuple[str, int, list[dict]]:
     """
     Save uploaded images to a local temp directory and record in DB.
@@ -175,6 +176,7 @@ async def save_uploaded_files(
         status="uploading",
         file_count=len(file_contents),
         total_files=len(file_contents),
+        tenant_id=tenant_id,
     )
     db.add(batch)
     await db.commit()
@@ -221,7 +223,7 @@ async def run_extraction(batch_id: str, db: AsyncSession = None) -> dict:
 
 
 async def _run_extraction_impl(batch_id: str, db: AsyncSession) -> dict:
-    from .internal_extractor import extract_batch_streaming, _merge_results
+    from .EtseeMate_extractor import extract_batch_streaming, _merge_results
     from . import imagekit_service
 
     result = await db.execute(
@@ -566,7 +568,7 @@ async def confirm_import(
     sync_result = await sync_listings_from_report(db)
     logger.info("sync_listings_from_report: %s", sync_result)
 
-    # 7. Enqueue new listing_ids into crawl_queue for internal crawler
+    # 7. Enqueue new listing_ids into crawl_queue for EtseeMate crawler
     from .crawler_ops import ensure_crawler_tables, enqueue_listings
     await ensure_crawler_tables(db)
     new_listing_ids = list({row["listing_id"] for row in listing_report if row.get("listing_id")})
@@ -636,13 +638,17 @@ async def rollback_batch(batch_id: str, db: AsyncSession) -> None:
 
 # ── History ──────────────────────────────────────────────────────────────────
 
-async def get_history(db: AsyncSession, limit: int = 20) -> list[dict]:
-    """Return recent import batches."""
-    result = await db.execute(
-        select(ImportBatch)
-        .order_by(ImportBatch.created_at.desc())
-        .limit(limit)
-    )
+async def get_history(db: AsyncSession, limit: int = 20, tenant_id: str | None = None) -> list[dict]:
+    """Return recent import batches for a specific tenant.
+
+    tenant_id is required in practice — kept Optional only so legacy callers
+    without a user context don't crash; production routes always pass it.
+    """
+    stmt = select(ImportBatch)
+    if tenant_id is not None:
+        stmt = stmt.where(ImportBatch.tenant_id == tenant_id)
+    stmt = stmt.order_by(ImportBatch.created_at.desc()).limit(limit)
+    result = await db.execute(stmt)
     batches = result.scalars().all()
     items = []
     for b in batches:

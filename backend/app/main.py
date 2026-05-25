@@ -76,6 +76,20 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+# Global exception handler: ensure all errors return JSON so frontend JSON.parse() never crashes.
+from fastapi.responses import JSONResponse as _JSONResponse
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled exception on %s %s: %s", request.method, request.url.path, exc)
+    return _JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal server error: {type(exc).__name__}: {str(exc)}"},
+    )
+
+
 app.add_middleware(RetryOnInvalidCacheMiddleware)
 app.add_middleware(NoCacheMiddleware)
 app.add_middleware(
@@ -104,12 +118,12 @@ async def favicon():
     return Response(content=None, status_code=204)
 
 
-# Redirect common misspellings: /etsymate.html -> /etseemate.html
+# Redirect common misspellings: /etsymate.html -> /EtseeMate.html
 @app.get("/etsymate.html")
 @app.get("/etsyMate.html")
 async def redirect_etsymate():
     from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/etseemate.html", status_code=301)
+    return RedirectResponse(url="/EtseeMate.html", status_code=301)
 
 
 @app.get("/health")
@@ -122,18 +136,53 @@ _docs_dir = Path(__file__).resolve().parents[2] / "docs"
 if _docs_dir.exists():
     app.mount("/md-docs", StaticFiles(directory=str(_docs_dir)), name="docs")
 
-# Extension download — served with octet-stream so Chrome doesn't block .xpi
-_ext_xpi = Path(__file__).resolve().parents[2] / "extension-keyword-main" / "Archive.pxi"
+# Extension download — zipped on-the-fly from source so we never commit a binary.
+# .xpi is just a renamed .zip; Firefox accepts both for Load Temporary Add-on.
+_ext_src_dir = Path(__file__).resolve().parents[2] / "extension-keyword-main"
+# Skip dev/docs and any pre-built archives — only ship runtime files.
+_EXT_SKIP_NAMES = {"CLAUDE.md", "README.md", ".DS_Store", ".gitignore", "temp"}
+_EXT_SKIP_SUFFIXES = {".xpi", ".zip", ".md"}
+_ext_zip_cache: dict = {"sig": None, "bytes": None}
+
+
+def _build_extension_zip() -> bytes:
+    import io
+    import zipfile
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for path in sorted(_ext_src_dir.rglob("*")):
+            if not path.is_file():
+                continue
+            if path.name in _EXT_SKIP_NAMES or path.suffix.lower() in _EXT_SKIP_SUFFIXES:
+                continue
+            if any(part in _EXT_SKIP_NAMES for part in path.relative_to(_ext_src_dir).parts):
+                continue
+            zf.write(path, arcname=path.relative_to(_ext_src_dir).as_posix())
+    return buf.getvalue()
+
 
 @app.get("/extension/download")
 async def download_extension():
-    if not _ext_xpi.exists():
-        from fastapi import HTTPException as _HTTPException
-        raise _HTTPException(404, "Extension file not found")
-    return FileResponse(
-        path=str(_ext_xpi),
-        media_type="application/octet-stream",
-        filename="EtseeMate-extension.xpi",
+    from fastapi import HTTPException as _HTTPException
+    if not _ext_src_dir.exists():
+        raise _HTTPException(404, "Extension source not found")
+    # Cache by fingerprint of (path, mtime, size) so edits invalidate automatically.
+    sig = tuple(
+        (str(p.relative_to(_ext_src_dir)), p.stat().st_mtime_ns, p.stat().st_size)
+        for p in sorted(_ext_src_dir.rglob("*"))
+        if p.is_file()
+        and p.name not in _EXT_SKIP_NAMES
+        and p.suffix.lower() not in _EXT_SKIP_SUFFIXES
+        and not any(part in _EXT_SKIP_NAMES for part in p.relative_to(_ext_src_dir).parts)
+    )
+    if _ext_zip_cache["sig"] != sig:
+        _ext_zip_cache["bytes"] = _build_extension_zip()
+        _ext_zip_cache["sig"] = sig
+    return Response(
+        content=_ext_zip_cache["bytes"],
+        media_type="application/x-xpinstall",
+        headers={"Content-Disposition": 'attachment; filename="EtseeMate-extension.xpi"'},
     )
 
 # Serve frontend static files — must be AFTER API routes
