@@ -1,4 +1,4 @@
-# Getify Ads Spy
+# EtseeMate Ads Spy
 
 Browser extension for manually collecting Etsy Ads listing and keyword report data from the signed-in Etsy Ads dashboard.
 

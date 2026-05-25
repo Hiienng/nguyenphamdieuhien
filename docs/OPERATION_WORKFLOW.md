@@ -16,9 +16,9 @@ flowchart TD
     %% ── Bước 1 ───────────────────────────────────────────────
     subgraph S1["Bước 1 — Upload nội bộ"]
         direction TB
-        UP["POST /internal/upload\ninternal.py"]
-        EX["POST /internal/extract\nClaude Vision × 5 concurrent"]
-        CF["POST /internal/confirm\ninternal_service.py"]
+        UP["POST /EtseeMate/upload\nEtseeMate.py"]
+        EX["POST /EtseeMate/extract\nClaude Vision × 5 concurrent"]
+        CF["POST /EtseeMate/confirm\nEtseeMate_service.py"]
         UP --> EX --> CF
     end
 
@@ -27,7 +27,7 @@ flowchart TD
         LR[("listing_report")]
         KR[("keyword_report")]
         LS[("listings")]
-        ILD[("internal_listing_details")]
+        ILD[("EtseeMate_listing_details")]
         RE[("references_engine")]
     end
 
@@ -37,8 +37,8 @@ flowchart TD
     end
 
     %% ── Bước 2b ──────────────────────────────────────────────
-    subgraph S2B["Bước 2b — Internal Crawler (sau ETL)"]
-        ILC["internal_listing_crawler.py\n+ _detail_extract.js\nCDP · human scroll · checkpoint"]
+    subgraph S2B["Bước 2b — EtseeMate Crawler (sau ETL)"]
+        ILC["EtseeMate_listing_crawler.py\n+ _detail_extract.js\nCDP · human scroll · checkpoint"]
     end
 
     %% ── Bước 3 ───────────────────────────────────────────────
@@ -107,16 +107,16 @@ flowchart TD
 
 **Trigger:** User bấm nút trên Chrome Extension → gửi ảnh screenshot màn hình Etsy Ads lên backend.
 
-**Tool:** FastAPI endpoints tại `nguyenphamdieuhien.online/backend/app/api/routes/internal.py`
-**Logic:** `nguyenphamdieuhien.online/backend/app/services/internal_service.py`
+**Tool:** FastAPI endpoints tại `nguyenphamdieuhien.online/backend/app/api/routes/EtseeMate.py`
+**Logic:** `nguyenphamdieuhien.online/backend/app/services/EtseeMate_service.py`
 
 | Sub-bước | Endpoint | Ghi chú |
 |---|---|---|
-| Upload ảnh | `POST /api/v1/internal/upload` | Validate size (10KB–20MB), dimension ≥200×200, tạo `import_batch` |
-| Extract | `POST /api/v1/internal/extract` | Claude Vision chạy song song (tối đa 5 ảnh), parse ra metrics |
+| Upload ảnh | `POST /api/v1/EtseeMate/upload` | Validate size (10KB–20MB), dimension ≥200×200, tạo `import_batch` |
+| Extract | `POST /api/v1/EtseeMate/extract` | Claude Vision chạy song song (tối đa 5 ảnh), parse ra metrics |
 | User review | *(trên Extension UI)* | User xem preview, chỉnh sửa nếu sai |
-| Confirm | `POST /api/v1/internal/confirm` | Ghi vào DB, xóa ảnh raw |
-| (Rollback nếu cần) | `POST /api/v1/internal/rollback` | Xóa rows theo `import_time`, giữ snapshot JSON |
+| Confirm | `POST /api/v1/EtseeMate/confirm` | Ghi vào DB, xóa ảnh raw |
+| (Rollback nếu cần) | `POST /api/v1/EtseeMate/rollback` | Xóa rows theo `import_time`, giữ snapshot JSON |
 
 **DB được ghi:**
 - `etsy_pilot.listing_report` — metrics cấp listing (views, clicks, orders, revenue, spend, ROAS, price, stock, category)
@@ -151,17 +151,17 @@ python3 etl_listings.py
 
 **Trigger:** Chạy ngay sau khi ETL 2a hoàn thành (cùng GitHub Actions job, hoặc tay nếu cần).
 
-**Tool:** `etsy_star_engine/crawler/internal_listing_crawler.py`
+**Tool:** `etsy_star_engine/crawler/EtseeMate_listing_crawler.py`
 
 ```bash
 # Automated toàn bộ (production)
-python3 internal_listing_crawler.py --auto
+python3 EtseeMate_listing_crawler.py --auto
 
 # Test N listing đầu
-python3 internal_listing_crawler.py --auto 5
+python3 EtseeMate_listing_crawler.py --auto 5
 
 # Resume nếu bị gián đoạn
-python3 internal_listing_crawler.py --resume 20260504_120000
+python3 EtseeMate_listing_crawler.py --resume 20260504_120000
 ```
 
 **Yêu cầu:** Chrome đang mở với CDP (`--remote-debugging-port=9222`). Script tự launch nếu chưa mở.
@@ -176,7 +176,7 @@ python3 internal_listing_crawler.py --resume 20260504_120000
 
 **DB:**
 - Đọc: `etsy_pilot.listings`
-- Ghi: `etsy_pilot.internal_listing_details` (UPSERT theo `listing_id`)
+- Ghi: `etsy_pilot.EtseeMate_listing_details` (UPSERT theo `listing_id`)
 
 **Fields lưu:** `base_price`, `sale_price`, `discount_percent`, `currency`, `materials`, `highlights`, `shipping_status`, `origin_ship_from`, `ship_time_max_days`, `us_shipping`, `return_policy`, `design`, `ai_summary`, `rating`, `review_count`, `badge`, `shop_name`, `owner_name`, `shop_location`, `join_year`, `total_sales`, `shop_rating`, `shop_badge`, `smooth_shipping`, `speedy_replies`
 
@@ -249,9 +249,9 @@ python3 etsy_star_engine/crawler/keyword_rank_crawler.py --product "custom baby 
 
 | Bước | Tool / Script | Trigger | DB Đọc | DB Ghi |
 |---|---|---|---|---|
-| 1. Upload + Extract | `internal.py` + `internal_service.py` | Extension → API | `import_batch` | `listing_report`, `keyword_report` |
+| 1. Upload + Extract | `EtseeMate.py` + `EtseeMate_service.py` | Extension → API | `import_batch` | `listing_report`, `keyword_report` |
 | 2a. ETL | `etl_listings.py` | GitHub Actions (Thứ 2) | `listing_report` | `listings` |
-| 2b. Crawl nội bộ | `internal_listing_crawler.py` | Sau ETL | `listings` | `internal_listing_details` |
+| 2b. Crawl nội bộ | `EtseeMate_listing_crawler.py` | Sau ETL | `listings` | `EtseeMate_listing_details` |
 | 3. Tải lại báo cáo | `references.py` + `references_service.py` | User bấm Portal | `listings`, `market_listing` | `references_engine` |
 | (Market crawl) | `market_batch_scraper.py` | Thủ công / cron | `vm01_keywords.json` | `market_listing*`, `market_shop` |
 | (Rank tracking) | `keyword_rank_crawler.py` | Thủ công / cron | `keyword_report` | `keyword_rank_snapshot` |

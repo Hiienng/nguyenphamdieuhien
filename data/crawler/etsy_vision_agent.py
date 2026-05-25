@@ -140,7 +140,7 @@ class EtsyVisionAgent:
         return result
 
     # ------------------------------------------------------------------
-    # Internal
+    # EtseeMate
     # ------------------------------------------------------------------
 
     def _extract(self, image_paths: list[str], search_tag: str = None) -> list[dict]:

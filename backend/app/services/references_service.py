@@ -1,5 +1,5 @@
 """
-References service — pair internal listings với top-N market listings cùng
+References service — pair EtseeMate listings với top-N market listings cùng
 category, rank theo tag_ranking ASC.
 
 Schema mapping (market_listing):
@@ -28,7 +28,7 @@ from ..core.config import get_settings
 logger = logging.getLogger(__name__)
 
 
-# Map internal category → market product_type keywords to match against
+# Map EtseeMate category → market product_type keywords to match against
 _CATEGORY_KEYWORDS: dict[str, list[str]] = {
     "onesie":   ["onesie", "bodysuit", "baby bodysuit", "baby shower onesie", "custom baby onesie",
                  "monogram onesie", "custom name onesie", "personalized baby onesie", "baby onesie"],
@@ -257,9 +257,9 @@ async def refresh_references(
              + (" AND listing_id = :lid" if listing_id else "")),
         {"lid": listing_id} if listing_id else {},
     )
-    internal_listings = [dict(r._mapping) for r in listings_result]
+    EtseeMate_listings = [dict(r._mapping) for r in listings_result]
 
-    if not internal_listings:
+    if not EtseeMate_listings:
         return {"upserted": 0, "listings_with_ref": 0, "total_refs": 0, "top_n": top_n, "scope": listing_id or "all"}
 
     # Ensure product_type column exists (idempotent — crawler có thể không biết về cột này)
@@ -316,7 +316,7 @@ async def refresh_references(
         return "blanket" if cat in ("blanket", "blankets") else cat
 
     rows = []
-    for lst in internal_listings:
+    for lst in EtseeMate_listings:
         target = _canon(lst["category"])
         matches = [m for m in market_rows if (m.get("product_type") or "").lower() == target]
         matches.sort(key=lambda m: (m.get("tag_ranking") or 99999, -(m.get("review_count") or 0)))

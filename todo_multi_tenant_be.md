@@ -113,7 +113,7 @@ Sửa từng service, thêm `tenant_id: UUID` param vào mọi query method:
   - INSERT: set `tenant_id = tenant_id`
 - [ ] `backend/app/services/performance_service.py`
   - `get_listings_dashboard(tenant_id)` — filter `listings_int_ext.tenant_id`
-- [ ] `backend/app/services/internal_service.py`
+- [ ] `backend/app/services/EtseeMate_service.py`
   - Upload/confirm batch: set `import_batch.tenant_id`
   - Tất cả queries: filter theo `tenant_id`
 - [ ] `backend/app/services/reporting_etl.py`
@@ -130,7 +130,7 @@ Sửa từng router, inject `tenant_id = Depends(get_tenant_id)`:
 
 - [ ] `backend/app/api/routes/listings.py` — tất cả endpoints
 - [ ] `backend/app/api/routes/performance.py` — `/listings`, `/refresh`
-- [ ] `backend/app/api/routes/internal.py` — upload, extract, confirm, discard, rollback, history
+- [ ] `backend/app/api/routes/EtseeMate.py` — upload, extract, confirm, discard, rollback, history
 - [ ] `backend/app/api/routes/thresholds.py` — CRUD
 - [ ] `backend/app/api/routes/scenarios.py` — CRUD
 - [ ] `backend/app/api/routes/references.py` — list, refresh

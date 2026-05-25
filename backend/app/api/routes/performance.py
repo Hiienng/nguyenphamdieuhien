@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from ...core.database import get_db, MarketSessionLocal
-from ...core.auth_middleware import require_subscription, get_tenant_db_for_user
+from ...core.auth_middleware import require_subscription, get_tenant_db_for_user, require_active_subscription
 from ...models.user import User
 from ...schemas.performance import ListingDashboardItem
 from ...services import performance_service, reporting_etl

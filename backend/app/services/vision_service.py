@@ -209,11 +209,11 @@ def _parse_features(
 async def _save_features(
     features: ThumbnailFeatures,
     badge: str | None,
-    internal_db: AsyncSession,
+    EtseeMate_db: AsyncSession,
     ml_label: int | None = None,
 ) -> None:
     """Persist a ThumbnailFeatures record to the thumbnail_features table."""
-    await internal_db.execute(
+    await EtseeMate_db.execute(
         text("""
             INSERT INTO thumbnail_features (
                 source, listing_id, image_url, product_type, badge,
@@ -293,7 +293,7 @@ async def _save_features(
 async def generate_knowledge(
     product_type: str,
     top_n: int,
-    internal_db: AsyncSession,
+    EtseeMate_db: AsyncSession,
     market_db: AsyncSession,
 ) -> dict:
     """
@@ -353,11 +353,11 @@ async def generate_knowledge(
         feat.ml_label = ml_label
         all_features.append(feat)
         try:
-            await _save_features(feat, badge=badge, internal_db=internal_db, ml_label=ml_label)
+            await _save_features(feat, badge=badge, EtseeMate_db=EtseeMate_db, ml_label=ml_label)
         except Exception as exc:
             logger.warning("Failed to save features for %s: %s", url, exc)
     if all_features:
-        await internal_db.commit()
+        await EtseeMate_db.commit()
 
     # ── Step 3: Detect target_audience segments from titles (text-only) ─────
     titles_formatted = "\n".join(f"- {t}" for t in titles if t)
@@ -417,7 +417,7 @@ async def generate_knowledge(
         }
 
         # ── Step 5: Upsert into thumbnail_knowledge ──────────────────────────
-        await internal_db.execute(
+        await EtseeMate_db.execute(
             text("""
                 INSERT INTO thumbnail_knowledge
                     (product_type, target_audience, patterns, sample_urls, sample_count, generated_at)
@@ -438,7 +438,7 @@ async def generate_knowledge(
                 "sample_count": len(seg_features),
             },
         )
-        await internal_db.commit()
+        await EtseeMate_db.commit()
         upserted.append({"target_audience": segment, "patterns": patterns, "sample_count": len(seg_features)})
 
     return {
@@ -487,7 +487,7 @@ async def evaluate_thumbnail(
     image_bytes: bytes,
     image_media_type: str,
     product_type: str,
-    internal_db: AsyncSession,
+    EtseeMate_db: AsyncSession,
 ) -> ThumbnailEvalResponse:
     """
     Evaluate a seller's thumbnail image against thumbnail_knowledge for the given product_type.
@@ -502,7 +502,7 @@ async def evaluate_thumbnail(
         )
 
     # ── Step 1: Load knowledge from DB ────────────────────────────────────
-    result = await internal_db.execute(
+    result = await EtseeMate_db.execute(
         text("SELECT target_audience, patterns FROM thumbnail_knowledge WHERE product_type = :pt"),
         {"pt": product_type},
     )

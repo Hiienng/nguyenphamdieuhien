@@ -29,7 +29,7 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-INTERNAL_DB = os.environ["DATABASE_URL"].replace("postgresql://", "postgres://")
+EtseeMate_DB = os.environ["DATABASE_URL"].replace("postgresql://", "postgres://")
 MARKET_DB   = os.environ["ETSY_MARKET_DB"].replace("postgresql://", "postgres://")
 GEMINI_KEY  = os.environ.get("GEMINI_API_KEY_paid_thumbnail")
 
@@ -148,7 +148,7 @@ async def extract_and_save(pool: asyncpg.Pool, row: dict) -> bool:
 
 async def main(limit: int | None, product_type: str | None) -> None:
     logger.info("Connecting to DBs...")
-    internal_pool = await asyncpg.create_pool(INTERNAL_DB, ssl="require")
+    EtseeMate_pool = await asyncpg.create_pool(EtseeMate_DB, ssl="require")
     market_pool   = await asyncpg.create_pool(MARKET_DB,   ssl="require")
 
     # Fetch market listings
@@ -167,10 +167,10 @@ async def main(limit: int | None, product_type: str | None) -> None:
 
     done = skipped = failed = 0
     for i, row in enumerate(rows):
-        if await already_extracted(internal_pool, row["image_url"]):
+        if await already_extracted(EtseeMate_pool, row["image_url"]):
             skipped += 1
             continue
-        ok = await extract_and_save(internal_pool, dict(row))
+        ok = await extract_and_save(EtseeMate_pool, dict(row))
         if ok:
             done += 1
             logger.info("[%d/%d] ✓ %s", i+1, len(rows), row["image_url"][:70])
@@ -181,7 +181,7 @@ async def main(limit: int | None, product_type: str | None) -> None:
         # Small delay to avoid Gemini rate limit
         await asyncio.sleep(0.5)
 
-    await internal_pool.close()
+    await EtseeMate_pool.close()
     await market_pool.close()
     logger.info("Done — extracted: %d | skipped: %d | failed: %d", done, skipped, failed)
 

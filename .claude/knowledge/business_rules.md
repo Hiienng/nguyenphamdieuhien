@@ -90,7 +90,7 @@ Tôi phải làm gì ngay bây giờ?       ← scenario engine (keep/improve/sc
 
 **Defer sau MVP:**
 - Multi-shop management → sau khi prove value single-shop
-- Internal listing detail crawler → optional, seller tự quyết định rủi ro
+- EtseeMate listing detail crawler → optional, seller tự quyết định rủi ro
 
 ---
 

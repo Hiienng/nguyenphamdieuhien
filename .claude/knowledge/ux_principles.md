@@ -44,7 +44,7 @@ Trigger → Action → Variable Reward → Investment
 
 **Trigger**
 - *External*: Email "listing X đang drop ROAS", notification "market trend mới"
-- *Internal*: Cảm giác lo lắng khi chạy ads mà không biết hiệu quả → seller tự mở app
+- *EtseeMate*: Cảm giác lo lắng khi chạy ads mà không biết hiệu quả → seller tự mở app
 - **Áp dụng:** Dashboard email digest hàng tuần. Empty state luôn có trigger rõ ràng.
 
 **Action** — phải đơn giản nhất có thể (Fogg: Motivation × Ability)

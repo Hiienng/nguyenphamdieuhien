@@ -1,5 +1,5 @@
 -- Migration 003: thumbnail_features table for rich visual feature extraction
--- Run once against internal PostgreSQL DB
+-- Run once against EtseeMate PostgreSQL DB
 
 CREATE TABLE IF NOT EXISTS thumbnail_features (
     id                    SERIAL PRIMARY KEY,

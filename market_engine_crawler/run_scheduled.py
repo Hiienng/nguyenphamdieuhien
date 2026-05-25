@@ -10,10 +10,10 @@ For each job:
 
 Usage:
     python3 run_scheduled.py market_discovery
-    python3 run_scheduled.py internal_sweep
+    python3 run_scheduled.py EtseeMate_sweep
     python3 run_scheduled.py keyword_rank
 
-Env vars (loaded from ~/.etseemate-crawler.env via launchd EnvironmentVariables):
+Env vars (loaded from ~/.EtseeMate-crawler.env via launchd EnvironmentVariables):
     DATABASE_URL                  — Neon connection string
     CHROME_PATH                   — /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
     CRAWLER_NOTIFY_*              — email config for captcha alerts
@@ -53,7 +53,7 @@ HERE = Path(__file__).resolve().parent
 
 JOBS = {
     "market_discovery": [sys.executable, str(HERE / "market_batch_scraper.py"), "--auto", "30"],
-    "internal_sweep":   [sys.executable, str(HERE / "internal_listing_crawler.py"), "--auto"],
+    "EtseeMate_sweep":   [sys.executable, str(HERE / "EtseeMate_listing_crawler.py"), "--auto"],
     "keyword_rank":     [sys.executable, str(HERE / "keyword_rank_crawler.py"), "--auto"],
 }
 

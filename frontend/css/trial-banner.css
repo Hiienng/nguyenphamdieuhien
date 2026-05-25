@@ -1,0 +1,170 @@
+/* ─── Trial Banner Styling ─────────────────────────────────────── */
+
+.trial-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+  font-family: var(--font-sans);
+  border: 1px solid;
+}
+
+/* Active Trial (Warning/Info state) */
+.trial-banner-active {
+  background: #fff8e1;
+  border-color: #ffe0b2;
+  color: #f57c00;
+}
+
+/* Expired Trial (Error state) */
+.trial-banner-expired {
+  background: #ffebee;
+  border-color: #ef9a9a;
+  color: #c62828;
+}
+
+.trial-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.trial-text {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.trial-text strong {
+  font-weight: 600;
+}
+
+.trial-link {
+  margin-left: auto;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 500;
+  transition: opacity 0.2s;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.trial-link:hover {
+  opacity: 0.8;
+}
+
+.trial-link.btn-primary {
+  background: var(--terracotta);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 12px;
+  border: none;
+}
+
+.trial-link.btn-primary:hover {
+  opacity: 0.9;
+}
+
+/* Trial banner container */
+#trial-banner-container {
+  min-height: 0;
+}
+
+/* Modal Styles for Trial Expired */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(20, 20, 19, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: var(--ivory);
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 400px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-warm);
+}
+
+.modal-content h2 {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  color: var(--near-black);
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.modal-content p {
+  color: var(--olive);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.modal-content button {
+  width: 100%;
+  padding: 10px 16px;
+  background: var(--terracotta);
+  color: var(--ivory);
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: opacity 0.2s;
+}
+
+.modal-content button:hover {
+  opacity: 0.9;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .trial-banner {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+
+  .trial-icon {
+    font-size: 1rem;
+  }
+
+  .trial-link {
+    margin-left: 0;
+    margin-top: 8px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .trial-link.btn-primary {
+    margin-left: 0;
+  }
+
+  .modal-content {
+    margin: 16px;
+  }
+}

@@ -31,6 +31,7 @@ class ListingDashboardItem(BaseModel):
     free_shipping: bool | None = None
     is_ad: bool | None = None
     tag_ranking: int | None = None
+    image_url: str | None = None
     # scenario (from scenarios_rules JOIN)
     scenario_action: str | None = None
     scenario_label: str | None = None
@@ -41,5 +42,5 @@ class ListingDashboardItem(BaseModel):
     references: list[dict] | None = None
     # keywords: list of dicts from keyword_report at latest import_time
     keywords: list[dict] | None = None
-    # history: daily internal metrics per listing
+    # history: daily EtseeMate metrics per listing
     history: list[dict] | None = None

@@ -187,7 +187,7 @@ What makes Claude's design truly distinctive is its warm neutral palette. Every 
 - Base unit: 8px
 - Scale: 3px, 4px, 6px, 8px, 10px, 12px, 16px, 20px, 24px, 30px
 - Button padding: asymmetric (0px 12px 0px 8px) or balanced (8px 16px)
-- Card internal padding: approximately 24–32px
+- Card EtseeMate padding: approximately 24–32px
 - Section vertical spacing: generous (estimated 80–120px between major sections)
 
 ### Grid & Container

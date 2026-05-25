@@ -246,7 +246,7 @@ async def get_dashboard_listings(db: AsyncSession, market_db: AsyncSession, tena
     if listing_ids:
         try:
             mkt_sql = text("""
-                SELECT listing_id, price, discount, rating, review_count, badge, free_shipping, is_ad, tag_ranking
+                SELECT listing_id, price, discount, rating, review_count, badge, free_shipping, is_ad, tag_ranking, image_url
                 FROM market_listing
                 WHERE listing_id = ANY(:ids)
             """)
@@ -266,6 +266,7 @@ async def get_dashboard_listings(db: AsyncSession, market_db: AsyncSession, tena
         r["free_shipping"] = own.get("free_shipping")
         r["is_ad"] = own.get("is_ad")
         r["tag_ranking"] = own.get("tag_ranking")
+        r["image_url"] = own.get("image_url")
 
     return rows
 

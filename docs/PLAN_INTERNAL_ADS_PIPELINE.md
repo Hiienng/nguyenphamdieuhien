@@ -1,4 +1,4 @@
-# Plan: Internal Ads Data Pipeline
+# Plan: EtseeMate Ads Data Pipeline
 
 > Feature: Upload Etsy Ads screenshots -> Extract -> Review -> Import DB
 > Date: 2026-04-18
@@ -15,17 +15,17 @@ User chụp Etsy Ads dashboard (mỗi ~7 ngày)
 [EtseeMate.html] Drag & Drop ảnh vào upload zone
         |
         v
-POST /api/v1/internal/upload
-  -> Lưu ảnh vào data/raw/internal/{batch_id}/
+POST /api/v1/EtseeMate/upload
+  -> Lưu ảnh vào data/raw/EtseeMate/{batch_id}/
   -> Tạo record trong import_batch (status=uploaded)
   -> Return batch_id
         |
         v
-POST /api/v1/internal/extract   {batch_id}
+POST /api/v1/EtseeMate/extract   {batch_id}
   -> Gemini Vision đọc từng ảnh
   -> Phân loại: listing_summary | keyword_table
   -> Merge data theo listing_id
-  -> Lưu 2 JSON vào data/raw/internal/{batch_id}/
+  -> Lưu 2 JSON vào data/raw/EtseeMate/{batch_id}/
   -> Update import_batch (status=extracted)
   -> Return {listing_report: [...], keyword_report: [...]}
         |
@@ -34,11 +34,11 @@ POST /api/v1/internal/extract   {batch_id}
   -> User kiểm tra số, sửa nếu cần
         |
         v
-POST /api/v1/internal/confirm   {batch_id, listing_report, keyword_report}
+POST /api/v1/EtseeMate/confirm   {batch_id, listing_report, keyword_report}
   -> Xoá data cũ trong DB cùng listing_id + period
   -> Insert data mới từ payload (đã qua user review)
   -> Lưu snapshot JSON vào data/processed/snapshots/{batch_id}.json
-  -> Xoá ảnh raw trong data/raw/internal/{batch_id}/
+  -> Xoá ảnh raw trong data/raw/EtseeMate/{batch_id}/
   -> Update import_batch (status=confirmed)
   -> Return {imported: true, rows: {listing: N, keyword: M}}
         |
@@ -48,14 +48,14 @@ POST /api/v1/internal/confirm   {batch_id, listing_report, keyword_report}
 
 ### Discard flow (user thấy data sai, không muốn import):
 ```
-POST /api/v1/internal/discard   {batch_id}
-  -> Xoá ảnh raw trong data/raw/internal/{batch_id}/
+POST /api/v1/EtseeMate/discard   {batch_id}
+  -> Xoá ảnh raw trong data/raw/EtseeMate/{batch_id}/
   -> Update import_batch (status=discarded)
 ```
 
 ### Rollback flow (đã confirm nhưng phát hiện sai sau đó):
 ```
-POST /api/v1/internal/rollback   {batch_id}
+POST /api/v1/EtseeMate/rollback   {batch_id}
   -> Đọc snapshot JSON từ data/processed/snapshots/{batch_id}.json
   -> Xoá data batch đó trong DB (theo batch_id)
   -> Update import_batch (status=rolled_back)
@@ -140,14 +140,14 @@ import_batch (1) ──< keyword_report (N)
 ```
 
 - `batch_id` là FK duy nhất, dùng để rollback/delete theo batch
-- Không FK tới bảng `listings` (vì listing_id ở đây là Etsy ID string, không phải UUID internal)
+- Không FK tới bảng `listings` (vì listing_id ở đây là Etsy ID string, không phải UUID EtseeMate)
 
 ---
 
 ## 3. API Endpoints
 
-### Đặt tại: `backend/app/api/routes/internal.py`
-### Prefix: `/api/v1/internal`
+### Đặt tại: `backend/app/api/routes/EtseeMate.py`
+### Prefix: `/api/v1/EtseeMate`
 
 | Method | Path | Input | Output | Mô tả |
 |--------|------|-------|--------|-------|
@@ -179,16 +179,16 @@ await session.execute(
 
 ---
 
-## 4. Gemini Prompt — Internal Ads Screenshots
+## 4. Gemini Prompt — EtseeMate Ads Screenshots
 
 ### Khác biệt với market prompt hiện có:
 
-| | Market (hiện có) | Internal Ads (mới) |
+| | Market (hiện có) | EtseeMate Ads (mới) |
 |---|---|---|
 | Source | Etsy search results page | Etsy Ads dashboard |
 | Data | Product cards (title, price, rating...) | Performance metrics (views, clicks, ROAS...) |
 | Layout | Grid of product cards | Summary header + daily table OR keyword table |
-| Prompt file | `data/crawler/vision_extractor.py` | `backend/app/services/internal_extractor.py` (MỚI) |
+| Prompt file | `data/crawler/vision_extractor.py` | `backend/app/services/EtseeMate_extractor.py` (MỚI) |
 
 ### 4.1 Prompt cho Listing Performance screenshots
 
@@ -282,13 +282,13 @@ Backend gửi ảnh kèm prompt ngắn để Gemini tự phân loại:
 
 ## 5. Frontend UI
 
-### Đặt tại: section mới trong `EtseeMate.html` (tab "Internal Data" hoặc modal)
+### Đặt tại: section mới trong `EtseeMate.html` (tab "EtseeMate Data" hoặc modal)
 
 ### 5.1 Upload Zone
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  📁 Internal Ads Data                           │
+│  📁 EtseeMate Ads Data                           │
 │                                                 │
 │  ┌───────────────────────────────────────────┐  │
 │  │                                           │  │
@@ -370,7 +370,7 @@ Backend gửi ảnh kèm prompt ngắn để Gemini tự phân loại:
 
 ```python
 # Khi confirm thành công:
-batch_dir = Path(f"data/raw/internal/{batch_id}")
+batch_dir = Path(f"data/raw/EtseeMate/{batch_id}")
 if batch_dir.exists():
     shutil.rmtree(batch_dir)  # xoá toàn bộ folder ảnh
 ```
@@ -415,26 +415,26 @@ if batch_dir.exists():
 ```
 backend/app/
 ├── api/routes/
-│   └── internal.py              ← NEW: 7 endpoints
+│   └── EtseeMate.py              ← NEW: 7 endpoints
 ├── models/
 │   ├── import_batch.py          ← NEW: ImportBatch model
 │   ├── listing_report.py        ← NEW: ListingReport model
 │   └── keyword_report.py        ← NEW: KeywordReport model
 ├── schemas/
-│   └── internal.py              ← NEW: request/response schemas
+│   └── EtseeMate.py              ← NEW: request/response schemas
 ├── services/
-│   └── internal_service.py      ← NEW: business logic
-│   └── internal_extractor.py    ← NEW: Gemini prompt + extract + merge
+│   └── EtseeMate_service.py      ← NEW: business logic
+│   └── EtseeMate_extractor.py    ← NEW: Gemini prompt + extract + merge
 ```
 
 ### Sửa file có sẵn:
 
 | File | Thay đổi |
 |------|----------|
-| `backend/app/main.py` | Thêm `include_router(internal_router)` |
+| `backend/app/main.py` | Thêm `include_router(EtseeMate_router)` |
 | `backend/app/core/config.py` | Thêm `GEMINI_API_KEY` setting |
 | `backend/requirements.txt` | Thêm `google-generativeai`, `Pillow`, `python-multipart` |
-| `EtseeMate.html` | Thêm Internal Data section/tab + JS upload/preview/confirm |
+| `EtseeMate.html` | Thêm EtseeMate Data section/tab + JS upload/preview/confirm |
 | `.env.example` | Thêm `GEMINI_API_KEY` |
 
 ---
@@ -456,9 +456,9 @@ aiofiles>=24.1.0              # Async file operations
 | Phase | Agent | Scope | Output |
 |-------|-------|-------|--------|
 | 1 | **Backend** | Models + DB migration | 3 model files, alembic migration |
-| 2 | **Backend** | Schemas + Service | internal.py schemas, internal_service.py |
-| 3 | **Backend** | Gemini Extractor | internal_extractor.py (2 prompts + merge logic) |
-| 4 | **Backend** | API Routes | internal.py routes (7 endpoints) |
+| 2 | **Backend** | Schemas + Service | EtseeMate.py schemas, EtseeMate_service.py |
+| 3 | **Backend** | Gemini Extractor | EtseeMate_extractor.py (2 prompts + merge logic) |
+| 4 | **Backend** | API Routes | EtseeMate.py routes (7 endpoints) |
 | 5 | **Frontend** | UI Components | Upload zone, preview tables, history panel |
 | 6 | **Testing** | Integration test | Upload → Extract → Confirm → Rollback flow |
 

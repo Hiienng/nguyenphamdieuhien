@@ -45,7 +45,7 @@ EtseeMate là **analytics SaaS** — không phải e-commerce. Dữ liệu chủ
 Seller Browser
     │
     ▼
-FastAPI (Render) ──── PostgreSQL Neon (internal DB)
+FastAPI (Render) ──── PostgreSQL Neon (EtseeMate DB)
     │                      ├── listings, import_batch
     │                      ├── listings_int_ext (materialized)
     │                      ├── keywords (materialized)
@@ -113,7 +113,7 @@ Seller upload screenshot PNG/XLSX
     → Preview data lưu vào import_batch.preview_data (JSONB)
     → Seller confirm → merge vào manual_listing_report / manual_keyword_report
     → reporting_etl.rebuild_reporting() tái tạo listings_int_ext + keywords
-    → crawl_queue enqueue listing_ids mới cho internal crawler
+    → crawl_queue enqueue listing_ids mới cho EtseeMate crawler
 ```
 
 **Idempotency quan trọng:** Import cùng 1 file 2 lần phải không tạo duplicate. Dùng `ingest_signature` (sha256) đã có trong `refresh_state`.
@@ -134,7 +134,7 @@ Seller mở Performance Hub
 Mac local (24/7) chạy launchd schedule
     → market_batch_scraper.py crawl Etsy
     → Ghi vào market_listing (ETSY_MARKET_DB, Neon riêng)
-    → Ghi crawl_run log vào internal DB
+    → Ghi crawl_run log vào EtseeMate DB
     → references_service.refresh() backfill product_type
 ```
 
@@ -149,4 +149,4 @@ Mac local (24/7) chạy launchd schedule
 3. **FE không được gửi seller_id lên API** — backend inject từ JWT token
 4. **Mọi bảng user data phải có tenant_id** — kể từ sprint multi-tenant
 5. **Không hardcode connection string** — đọc từ env var qua `get_settings()`
-6. **Crawler Mac không kết nối internal DB trực tiếp** — chỉ ghi vào market DB riêng
+6. **Crawler Mac không kết nối EtseeMate DB trực tiếp** — chỉ ghi vào market DB riêng

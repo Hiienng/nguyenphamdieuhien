@@ -10,7 +10,7 @@ Pipeline:
 
 Trigger points:
     - POST /api/v1/performance/refresh  (user click "Tải lại")
-    - POST /api/v1/internal/confirm     (auto after a manual import lands)
+    - POST /api/v1/EtseeMate/confirm     (auto after a manual import lands)
 
 Concurrency:
     - PG advisory lock (key = 0x4953524C — "ISRL") prevents two rebuilds in parallel.
@@ -433,7 +433,7 @@ _INSERT_KEYWORDS_SQL = text("""
 
 
 async def rebuild_reporting(db: AsyncSession, tenant_id: str) -> dict:
-    """Full rebuild of reporting tables for a single tenant. Internal data only —
+    """Full rebuild of reporting tables for a single tenant. EtseeMate data only —
     market enrichment (price/rating/...) happens at serving time via market_db."""
     t0 = time.monotonic()
 

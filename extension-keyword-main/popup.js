@@ -1,14 +1,12 @@
 // ===========================================================================
-// Getify Ads Spy — Popup Logic
+// EtseeMate Ads Spy — Popup Logic
 // Reads captured sessions from storage, renders UI, handles export/clear.
 // ===========================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
   // --- SETTINGS ELEMENTS ---
   const settingsPanel = document.getElementById("settings-panel");
-  const settingsToggle = document.getElementById("settings-toggle");
-  const settingsArrow = document.getElementById("settings-arrow");
-  const settingsBody = document.getElementById("settings-body");
+  const btnSettingsClose = document.getElementById("btn-settings-close");
   const inputApiUrl = document.getElementById("input-api-url");
   const inputToken = document.getElementById("input-token");
   const inputVmName = document.getElementById("input-vm-name");
@@ -41,8 +39,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnMarkKeywordDone = document.getElementById("btn-mark-keyword-done");
   const btnResetKeywordQueue = document.getElementById("btn-reset-keyword-queue");
 
-  const KEYWORD_QUEUE_STORAGE_KEY = "getify_keyword_queue_v1";
-  const KEYWORD_TEMPLATE_STORAGE_KEY = "getify_keyword_url_template_v1";
+  const KEYWORD_QUEUE_STORAGE_KEY = "EtseeMate_keyword_queue_v1";
+  const KEYWORD_TEMPLATE_STORAGE_KEY = "EtseeMate_keyword_url_template_v1";
   const DEFAULT_KEYWORD_URL_TEMPLATE =
     "https://www.etsy.com/your/shops/me/advertising/listings/{listing_id}";
 
@@ -161,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const result = {
       metadata: {
         exported_at: new Date().toISOString(),
-        source: "Getify Ads Spy Extension",
+        source: "EtseeMate Ads Spy Extension",
         raw_responses_count: sessions.length,
         date_range: {
           start: null,
@@ -282,7 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     fillDerivedSummary(result);
 
-    console.log("[Getify] daily rows raw:", result.listing_daily_rows ? result.listing_daily_rows.length : 0,
+    console.log("[EtseeMate] daily rows raw:", result.listing_daily_rows ? result.listing_daily_rows.length : 0,
       "| sessions with graphStats:", sessions.filter(s => {
         const b = s && s.body;
         return b && (Array.isArray(b.graphStats) || (b.data && Array.isArray(b.data.graphStats)));
@@ -317,7 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function buildListingReportRows(cleanData, options) {
     const opts = options || {};
-    const importer = opts.importer || "getify_json";
+    const importer = opts.importer || "EtseeMate_json";
 
     const metadataRange =
       (cleanData.metadata && cleanData.metadata.date_range) || {};
@@ -372,7 +370,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function buildKeywordReportRows(cleanData, options) {
     const opts = options || {};
-    const importer = opts.importer || "getify_json";
+    const importer = opts.importer || "EtseeMate_json";
 
     const rows = [];
     const keywords = cleanData.keywords || [];
@@ -508,7 +506,7 @@ document.addEventListener("DOMContentLoaded", () => {
         spend: (spendCents / 100).toFixed(2),
         roas: Number(roasVal || 0).toFixed(2),
         import_time: importTime,
-        importer: "getify_json_daily",
+        importer: "EtseeMate_json_daily",
       });
     }
   }
@@ -1382,7 +1380,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = `getify-ads-export-${ts}.json`;
+    a.download = `EtseeMate-ads-export-${ts}.json`;
     a.click();
     URL.revokeObjectURL(url);
   });
@@ -1464,8 +1462,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "Chưa cấu hình API URL hoặc Token. Mở Settings để nhập.",
         "error"
       );
-      settingsBody.classList.add("visible");
-      settingsArrow.classList.add("open");
+      settingsPanel.classList.add("visible");
       return;
     }
 
@@ -1551,8 +1548,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "Chưa cấu hình API URL hoặc Token. Mở Settings để nhập.",
         "error"
       );
-      settingsBody.classList.add("visible");
-      settingsArrow.classList.add("open");
+      settingsPanel.classList.add("visible");
       return;
     }
 
@@ -1682,32 +1678,35 @@ document.addEventListener("DOMContentLoaded", () => {
   // SETTINGS PANEL
   // =====================================================================
 
-  // Toggle settings panel
-  settingsToggle.addEventListener("click", () => {
-    const isOpen = settingsBody.classList.contains("visible");
-    settingsBody.classList.toggle("visible");
-    settingsArrow.classList.toggle("open");
+  // --- SETTINGS MODAL ---
+  function openSettings() {
+    settingsPanel.classList.add("visible");
+    setTimeout(() => inputApiUrl.focus(), 50);
+  }
+  function closeSettings() {
+    settingsPanel.classList.remove("visible");
+  }
+
+  btnSettings.addEventListener("click", openSettings);
+  btnSettingsClose.addEventListener("click", closeSettings);
+
+  // Close when clicking outside the modal card
+  settingsPanel.addEventListener("click", (e) => {
+    if (e.target === settingsPanel) closeSettings();
   });
 
-  // Settings button in controls bar
-  btnSettings.addEventListener("click", () => {
-    const isOpen = settingsBody.classList.contains("visible");
-    settingsBody.classList.toggle("visible");
-    settingsArrow.classList.toggle("open");
-    if (!isOpen) {
-      inputApiUrl.focus();
+  // Close on Escape
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && settingsPanel.classList.contains("visible")) {
+      closeSettings();
     }
   });
 
   // Toggle token visibility
   btnToggleVisibility.addEventListener("click", () => {
-    if (inputToken.type === "password") {
-      inputToken.type = "text";
-      btnToggleVisibility.textContent = "Hide";
-    } else {
-      inputToken.type = "password";
-      btnToggleVisibility.textContent = "👁️";
-    }
+    inputToken.type = inputToken.type === "password" ? "text" : "password";
+    btnToggleVisibility.style.color =
+      inputToken.type === "text" ? "var(--accent-orange)" : "";
   });
 
   // Save API config
@@ -1819,16 +1818,23 @@ document.addEventListener("DOMContentLoaded", () => {
     saveKeywordUrlTemplate();
   });
 
+  const DEFAULT_API_URL = "https://nguyenphamdieuhien.online";
+
   // Load saved API config on popup open
   function loadDbConfig() {
     chrome.runtime.sendMessage({ action: "GET_DB_CONFIG" }, (response) => {
-      if (response && response.apiUrl) inputApiUrl.value = response.apiUrl;
+      inputApiUrl.value = (response && response.apiUrl) || DEFAULT_API_URL;
       if (response && response.token) inputToken.value = response.token;
       if (response && response.vmName && inputVmName) inputVmName.value = response.vmName;
     });
   }
 
   // --- INIT ---
+  try {
+    const ver = chrome.runtime.getManifest().version;
+    const el = document.getElementById("brand-version");
+    if (el) el.textContent = "v" + ver;
+  } catch (e) { /* noop */ }
   loadKeywordUrlTemplate();
   renderKeywordQueue();
   loadData();

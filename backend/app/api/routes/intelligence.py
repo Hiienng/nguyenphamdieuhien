@@ -10,7 +10,12 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...core.database import get_db, MarketSessionLocal
-from ...core.auth_middleware import get_current_active_user, require_credit
+from ...core.auth_middleware import (
+    get_current_active_user,
+    require_credits,
+    require_subscription,
+    consume_or_refund,
+)
 from ...models.user import User
 from ...schemas.vision_schema import (
     KnowledgeGenerateRequest,
@@ -19,7 +24,6 @@ from ...schemas.vision_schema import (
     ThumbnailEvalResponse,
 )
 from ...services import vision_service
-from ...services.billing_service import deduct_credit
 
 router = APIRouter(tags=["intelligence"])
 
@@ -27,22 +31,25 @@ router = APIRouter(tags=["intelligence"])
 # POST /thumbnail-knowledge/generate
 # ---------------------------------------------------------------------------
 
-@router.post("/thumbnail-knowledge/generate")
+@router.post("/thumbnail-knowledge/generate", dependencies=[Depends(require_credits(1))])
 async def generate_thumbnail_knowledge(
     body: KnowledgeGenerateRequest,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_subscription),
 ):
     """
     Query top trending market listings for a product type, extract visual patterns
     via Claude Vision, and upsert results into the thumbnail_knowledge table.
+    Costs 1 credit on success (refunded on failure).
     """
-    async with MarketSessionLocal() as market_db:
-        result = await vision_service.generate_knowledge(
-            product_type=body.product_type,
-            top_n=body.top_n,
-            internal_db=db,
-            market_db=market_db,
-        )
+    async with consume_or_refund(user.id, 1, "thumbnail-knowledge.generate", db):
+        async with MarketSessionLocal() as market_db:
+            result = await vision_service.generate_knowledge(
+                product_type=body.product_type,
+                top_n=body.top_n,
+                EtseeMate_db=db,
+                market_db=market_db,
+            )
     return result
 
 
@@ -83,16 +90,21 @@ async def list_thumbnail_knowledge(
 # POST /thumbnail-eval
 # ---------------------------------------------------------------------------
 
-@router.post("/thumbnail-eval", response_model=ThumbnailEvalResponse)
+@router.post(
+    "/thumbnail-eval",
+    response_model=ThumbnailEvalResponse,
+    dependencies=[Depends(require_credits(1))],
+)
 async def evaluate_thumbnail(
     image: UploadFile = File(..., description="Thumbnail image to evaluate"),
     product_type: str = Form(..., description="Product type (e.g. 'onesie', 'mug')"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_credit),
+    user: User = Depends(require_subscription),  # Trial or paid sub required
 ):
     """
     Upload a thumbnail image and receive an AI evaluation scored against
     the knowledge base for the given product_type.
+    Costs 1 credit on success (refunded on failure).
     """
     # Validate content type
     allowed_types = {"image/jpeg", "image/png", "image/webp", "image/gif"}
@@ -107,11 +119,11 @@ async def evaluate_thumbnail(
     if not image_bytes:
         raise HTTPException(status_code=422, detail="Uploaded image is empty.")
 
-    result = await vision_service.evaluate_thumbnail(
-        image_bytes=image_bytes,
-        image_media_type=content_type,
-        product_type=product_type,
-        internal_db=db,
-    )
-    await deduct_credit(user.id, db)
+    async with consume_or_refund(user.id, 1, "thumbnail-eval", db):
+        result = await vision_service.evaluate_thumbnail(
+            image_bytes=image_bytes,
+            image_media_type=content_type,
+            product_type=product_type,
+            EtseeMate_db=db,
+        )
     return result

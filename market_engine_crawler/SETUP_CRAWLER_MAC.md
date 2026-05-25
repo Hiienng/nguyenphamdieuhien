@@ -76,10 +76,10 @@ open -a "Google Chrome"
 
 ## Phần 2 — Secrets
 
-### 2.1. File `~/.etseemate-crawler.env`
+### 2.1. File `~/.EtseeMate-crawler.env`
 
 ```bash
-cat > ~/.etseemate-crawler.env <<'EOF'
+cat > ~/.EtseeMate-crawler.env <<'EOF'
 # Neon — cùng URL với backend production (xem .env của Mac dev hoặc Render dashboard)
 export DATABASE_URL="postgresql://USER:PASS@HOST.neon.tech/etsy_pilot?sslmode=require"
 
@@ -98,10 +98,10 @@ export BACKEND_URL="https://nguyenphamdieuhien.online"
 # Forces no-TTY path inside crawlers
 export CRAWLER_UNATTENDED=1
 EOF
-chmod 600 ~/.etseemate-crawler.env
+chmod 600 ~/.EtseeMate-crawler.env
 
 # Source mỗi shell mới
-echo '[[ -f ~/.etseemate-crawler.env ]] && source ~/.etseemate-crawler.env' >> ~/.zshrc
+echo '[[ -f ~/.EtseeMate-crawler.env ]] && source ~/.EtseeMate-crawler.env' >> ~/.zshrc
 source ~/.zshrc
 ```
 
@@ -133,41 +133,41 @@ for f in $SRC/*.plist; do
 done
 
 # Load tất cả
-for f in $PLIST_DIR/com.etseemate.crawler.*.plist; do
+for f in $PLIST_DIR/com.EtseeMate.crawler.*.plist; do
   launchctl unload "$f" 2>/dev/null
   launchctl load -w "$f"
 done
 
 # Verify
-launchctl list | grep etseemate
+launchctl list | grep EtseeMate
 ```
 
-Kết quả: 3 scheduled jobs hiện ra (internal crawler không còn chạy theo schedule):
-- `com.etseemate.crawler.gitsync` — git pull mỗi 5p
-- `com.etseemate.crawler.market` — Mon 02:00 hằng tuần
-- `com.etseemate.crawler.rank` — daily 04:00
+Kết quả: 3 scheduled jobs hiện ra (EtseeMate crawler không còn chạy theo schedule):
+- `com.EtseeMate.crawler.gitsync` — git pull mỗi 5p
+- `com.EtseeMate.crawler.market` — Mon 02:00 hằng tuần
+- `com.EtseeMate.crawler.rank` — daily 04:00
 
-> **Note (2026-05-15):** `com.etseemate.crawler.internal` — **KHÔNG còn chạy định kỳ**.
-> `StartInterval` đã bị disable trong plist. Internal crawler chỉ chạy khi
-> `crawl_queue` có item (queue-driven). Xem mục "Internal Crawler — Queue-Driven Mode" bên dưới.
+> **Note (2026-05-15):** `com.EtseeMate.crawler.EtseeMate` — **KHÔNG còn chạy định kỳ**.
+> `StartInterval` đã bị disable trong plist. EtseeMate crawler chỉ chạy khi
+> `crawl_queue` có item (queue-driven). Xem mục "EtseeMate Crawler — Queue-Driven Mode" bên dưới.
 
 ### Chạy thử ngay (không chờ lịch)
 
 ```bash
-# Internal crawler — chỉ chạy khi crawl_queue có item
-python3 internal_listing_crawler.py --queue
-tail -f /tmp/crawler-internal.log
+# EtseeMate crawler — chỉ chạy khi crawl_queue có item
+python3 EtseeMate_listing_crawler.py --queue
+tail -f /tmp/crawler-EtseeMate.log
 ```
 
 ---
 
-## Internal Crawler — Queue-Driven Mode (thay thế schedule từ 2026-05-15)
+## EtseeMate Crawler — Queue-Driven Mode (thay thế schedule từ 2026-05-15)
 
-Internal crawler **không còn chạy định kỳ**. Thay vào đó:
+EtseeMate crawler **không còn chạy định kỳ**. Thay vào đó:
 
 1. Mỗi khi user `confirm_import` một batch trong EtseeMate, backend tự động enqueue
    các `listing_id` mới vào bảng `crawl_queue` (status = `pending`).
-2. Internal crawler chạy theo lệnh thủ công hoặc được trigger bởi `run_scheduled.py`
+2. EtseeMate crawler chạy theo lệnh thủ công hoặc được trigger bởi `run_scheduled.py`
    khi queue có item.
 
 ### Chạy thủ công
@@ -176,10 +176,10 @@ Internal crawler **không còn chạy định kỳ**. Thay vào đó:
 cd ~/Downloads/etsy_pilot/nguyenphamdieuhien.online/market_engine_crawler
 
 # Pop tất cả pending items từ crawl_queue (batch mặc định: 50)
-python3 internal_listing_crawler.py --queue
+python3 EtseeMate_listing_crawler.py --queue
 
 # Giới hạn batch size
-python3 internal_listing_crawler.py --queue 20
+python3 EtseeMate_listing_crawler.py --queue 20
 ```
 
 ### Kiểm tra queue status
@@ -193,7 +193,7 @@ SELECT listing_id, queued_at, attempts, status FROM crawl_queue ORDER BY queued_
 
 - Trước đây crawler chạy mỗi 30 phút bất kể có listing mới hay không → tốn tài nguyên, tăng risk bị Etsy block.
 - Nay crawler chỉ chạy khi có việc thực sự cần làm (confirmed batch → crawl_queue có item).
-- `launchd/com.etseemate.crawler.internal.plist` vẫn giữ file để tham khảo, nhưng
+- `launchd/com.EtseeMate.crawler.EtseeMate.plist` vẫn giữ file để tham khảo, nhưng
   `StartInterval` đã bị comment out — **không load plist này lên launchd**.
 
 ---
@@ -204,7 +204,7 @@ SELECT listing_id, queued_at, attempts, status FROM crawl_queue ORDER BY queued_
 
 ```bash
 tail -f /tmp/crawler-market.log
-tail -f /tmp/crawler-internal.log
+tail -f /tmp/crawler-EtseeMate.log
 tail -f /tmp/crawler-rank.log
 tail -f /tmp/gitsync.log
 ```
@@ -223,14 +223,14 @@ ORDER BY started_at DESC LIMIT 20;
 
 Nếu cần restart hard:
 ```bash
-launchctl unload ~/Library/LaunchAgents/com.etseemate.crawler.internal.plist
-launchctl load -w  ~/Library/LaunchAgents/com.etseemate.crawler.internal.plist
+launchctl unload ~/Library/LaunchAgents/com.EtseeMate.crawler.EtseeMate.plist
+launchctl load -w  ~/Library/LaunchAgents/com.EtseeMate.crawler.EtseeMate.plist
 ```
 
 ### Tạm dừng tất cả
 
 ```bash
-for f in ~/Library/LaunchAgents/com.etseemate.crawler.*.plist; do
+for f in ~/Library/LaunchAgents/com.EtseeMate.crawler.*.plist; do
   launchctl unload "$f"
 done
 ```
@@ -252,7 +252,7 @@ done
 
 ### Tăng/giảm thời gian chờ
 
-Sửa `CRAWLER_CAPTCHA_WAIT` trong `~/.etseemate-crawler.env`, lần run kế tiếp dùng giá trị mới.
+Sửa `CRAWLER_CAPTCHA_WAIT` trong `~/.EtseeMate-crawler.env`, lần run kế tiếp dùng giá trị mới.
 
 ---
 
@@ -261,7 +261,7 @@ Sửa `CRAWLER_CAPTCHA_WAIT` trong `~/.etseemate-crawler.env`, lần run kế ti
 | Triệu chứng | Nguyên nhân | Cách xử |
 |---|---|---|
 | `crawl_run` không có row | DATABASE_URL sai hoặc psycopg chưa cài | `pip install 'psycopg[binary]'` + check env |
-| launchd job không chạy | plist sai cú pháp hoặc path wrong | `plutil -lint ~/Library/LaunchAgents/com.etseemate.*.plist` |
+| launchd job không chạy | plist sai cú pháp hoặc path wrong | `plutil -lint ~/Library/LaunchAgents/com.EtseeMate.*.plist` |
 | Chrome không launch | Đường dẫn CHROME_PATH sai trên Mac mới | sửa `CHROME_PATH` constant trong 3 crawler scripts (tạm thời, sẽ refactor ra env sau) |
 | Email không tới | App Password chưa enable hoặc less-secure-apps off | Google Account → Security → 2FA → App passwords |
 | Git pull conflict | Có local change trên crawler Mac | Crawler Mac KHÔNG được modify code; nếu có conflict, `git reset --hard origin/main` |

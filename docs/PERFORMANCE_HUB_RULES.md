@@ -66,13 +66,13 @@ Mỗi chỉ số = 1 card gồm:
 ```sql
 -- Best performers
 SELECT listing_id, title, product, ctr, cr, roas
-FROM internal_listing
+FROM EtseeMate_listing
 WHERE ctr >= 2 AND cr >= 4 AND roas >= 2
 ORDER BY (ctr/2 + cr/4 + roas/2) DESC LIMIT 8;
 
 -- Quick win
 SELECT listing_id, title, product, ctr, cr, roas
-FROM internal_listing
+FROM EtseeMate_listing
 WHERE cr >= 4 AND ctr < 2
 ORDER BY cr DESC, ctr ASC LIMIT 8;
 ```
@@ -105,7 +105,7 @@ Sắp xếp: quick win trước, chiến lược sau, cần dữ liệu cuối
 
 ## 9. Nguồn dữ liệu
 
-- Bảng: `internal_listing` (Neon PostgreSQL)
+- Bảng: `EtseeMate_listing` (Neon PostgreSQL)
 - Snapshot hiện tại: 128 listings, 3 sản phẩm, tất cả Closed
 - CTR/CR/ROAS: đã populate trong DB — tham chiếu range thực từ screenshot Etsy Ads
 - Ghi rõ ngày snapshot trong subtitle header section

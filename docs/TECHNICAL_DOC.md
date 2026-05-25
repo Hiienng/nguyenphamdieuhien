@@ -12,14 +12,14 @@ Frontend (Vanilla HTML/CSS/JS)           Backend (FastAPI)              Storage
 ──────────────────────────────           ───────────────────            ───────
 EtseeMate.html                   ── fetch ──> /api/v1/listings              Postgres (Neon)
   · Performance Hub          ── fetch ──> /api/v1/performance             · listings
-  · Research Hub             ── fetch ──> /api/v1/internal                · listing_report
-  · Internal Import          ── fetch ──> /api/v1/market                  · keyword_report
+  · Research Hub             ── fetch ──> /api/v1/EtseeMate                · listing_report
+  · EtseeMate Import          ── fetch ──> /api/v1/market                  · keyword_report
   · Listings CRUD                                                         · import_batch
                                                                           · market_listing
 data/processed/                                                           · scenarios_rules
   performance_dashboard.json <── write ── services/performance_service
-data/raw/internal/{batch}/   <─── rw ──── services/internal_service
-data/processed/snapshots/    <── write ── services/internal_service     External APIs
+data/raw/EtseeMate/{batch}/   <─── rw ──── services/EtseeMate_service
+data/processed/snapshots/    <── write ── services/EtseeMate_service     External APIs
                                                                           · Claude Vision
 data/crawler/output/         <── write ── data/crawler/*                  · Gemini Vision
 ```
@@ -71,7 +71,7 @@ Tất cả bảng cùng nằm trên Neon Postgres. Base = SQLAlchemy declarative
 - Nguồn: `listing_report` — lấy **latest non-null value per field** (correlated subquery per column).
 - UPSERT: INSERT mới nếu `listing_id` chưa có; UPDATE nếu đã có nhưng field đang null (`COALESCE` — không bao giờ xoá dữ liệu có sẵn).
 
-### 1.8 `references_engine` — top-3 market reference per internal listing
+### 1.8 `references_engine` — top-3 market reference per EtseeMate listing
 
 Populate **on-demand** qua endpoint `POST /api/v1/references/refresh` (service: [backend/app/services/references_service.py](../backend/app/services/references_service.py)). Không chạy trong cron ETL — user trigger khi cần.
 
@@ -154,7 +154,7 @@ Model: [backend/app/models/keyword_report.py](../backend/app/models/keyword_repo
 | `import_time` | `TIMESTAMPTZ` | YES |   |
 | `importer` | `VARCHAR(64)` | YES |   |
 
-### 1.4 `import_batch` — quản lý batch Internal Ads Import
+### 1.4 `import_batch` — quản lý batch EtseeMate Ads Import
 
 Model: [backend/app/models/import_batch.py](../backend/app/models/import_batch.py)
 
@@ -250,13 +250,13 @@ Không có ràng buộc FK cứng — join thực hiện ở tầng SQL/service 
 |   |   | `/stats/count` | GET | Listings CRUD |
 | `/api/v1/performance` | [performance.py](../backend/app/api/routes/performance.py) | `/listings` | GET | Performance Hub |
 |   |   | `/refresh` | POST | Performance Hub |
-| `/api/v1/internal` | [internal.py](../backend/app/api/routes/internal.py) | `/upload` | POST | Internal Import |
-|   |   | `/extract` | POST | Internal Import |
-|   |   | `/confirm` | POST | Internal Import |
-|   |   | `/discard` | POST | Internal Import |
-|   |   | `/rollback` | POST | Internal Import |
-|   |   | `/history` | GET | Internal Import |
-|   |   | `/snapshot/{batch_id}` | GET | Internal Import |
+| `/api/v1/EtseeMate` | [EtseeMate.py](../backend/app/api/routes/EtseeMate.py) | `/upload` | POST | EtseeMate Import |
+|   |   | `/extract` | POST | EtseeMate Import |
+|   |   | `/confirm` | POST | EtseeMate Import |
+|   |   | `/discard` | POST | EtseeMate Import |
+|   |   | `/rollback` | POST | EtseeMate Import |
+|   |   | `/history` | GET | EtseeMate Import |
+|   |   | `/snapshot/{batch_id}` | GET | EtseeMate Import |
 | `/api/v1/market` | [market.py](../backend/app/api/routes/market.py) | `/samples` | GET | Research Hub |
 | `/api/v1/references` | [references.py](../backend/app/api/routes/references.py) | `/refresh` | POST | On-demand sinh `references_engine` |
 |   |   | `/` | GET | List references |
@@ -287,7 +287,7 @@ Mỗi feature có một sơ đồ luồng Mermaid trong [flows/](flows/).
 - **Hiển thị:** bubble chart (size = revenue, trục = CR × ROAS), bảng candidates.
 - **Flow diagram:** [flows/03_listing_scaleup.md](flows/03_listing_scaleup.md).
 
-### 3.4 Internal Ads Import (pill `perf-sub-import`)
+### 3.4 EtseeMate Ads Import (pill `perf-sub-import`)
 - **Mục tiêu:** đưa screenshot báo cáo ads Etsy vào DB.
 - **Pipeline:**
   1. **Upload** — drag-drop PNG/JPG/WebP, validate (10KB–20MB, ≥200×200).
@@ -296,7 +296,7 @@ Mỗi feature có một sơ đồ luồng Mermaid trong [flows/](flows/).
   4. **Confirm** — `DELETE WHERE (listing_id, period, no_vm)` → `INSERT`; snapshot ra `data/processed/snapshots/{batch_id}.json`; xoá raw images.
   5. **Discard / Rollback** — huỷ trước khi confirm / revert sau khi confirm (load snapshot).
 - **State:** `import_batch.status`.
-- **Flow diagram:** [flows/04_internal_import.md](flows/04_internal_import.md).
+- **Flow diagram:** [flows/04_EtseeMate_import.md](flows/04_EtseeMate_import.md).
 
 ### 3.5 Research Hub — Market Trend Intelligence
 - **Mục tiêu:** phân tích dữ liệu Etsy crawl để chọn sản phẩm may được (sewable).
@@ -350,5 +350,5 @@ Frontend được serve bằng FastAPI static (`backend/app/main.py`) — truy c
 - [PERFORMANCE_HUB_RULES.md](../PERFORMANCE_HUB_RULES.md) — spec chi tiết Performance Hub
 - [RESEARCH_HUB_RULES.md](../RESEARCH_HUB_RULES.md) — spec Research Hub
 - [docs/DESIGN.md](DESIGN.md) — design system
-- [docs/PLAN_INTERNAL_ADS_PIPELINE.md](PLAN_INTERNAL_ADS_PIPELINE.md) — spec gốc pipeline Internal Import
+- [docs/PLAN_EtseeMate_ADS_PIPELINE.md](PLAN_EtseeMate_ADS_PIPELINE.md) — spec gốc pipeline EtseeMate Import
 - [data-dictionary.html](../data-dictionary.html) — data dictionary dạng HTML

@@ -8,7 +8,7 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.etseemate.crawler.market</string>
+  <string>com.EtseeMate.crawler.market</string>
 
   <key>ProgramArguments</key>
   <array>

@@ -1,15 +1,34 @@
 // ===========================================================================
-// Getify Ads Spy — Service Worker (Background)
+// EtseeMate Ads Spy — Service Worker (Background)
 // Data warehouse: stores captured API responses in chrome.storage.local.
 // Database: connects directly to Neon PostgreSQL via HTTP SQL API.
 // No local relay server needed.
 // ===========================================================================
 
 const MAX_AGE_DAYS = 30;
-const STORAGE_KEY = "getify_sessions";
-const DB_CONFIG_KEY = "getify_db_config";
+const STORAGE_KEY = "EtseeMate_sessions";
+const DB_CONFIG_KEY = "EtseeMate_db_config";
 
 // Note: webNavigation auto-clear listeners removed — Etsy Ads dashboard is a SPA and fires history events on filter/tab clicks, which was wiping captured rows before the user could push to DB. Manual Clear button + MAX_AGE_DAYS cleanup in handleCapture still apply.
+
+// --- TOOLBAR ACTION → TOGGLE FIREFOX SIDEBAR ---
+// The panel lives in the Firefox sidebar (see manifest sidebar_action).
+// Clicking the toolbar icon toggles it. Firefox's sidebarAction.toggle() is
+// the simplest API — handles open/close automatically.
+
+const _sidebar = (typeof browser !== "undefined" && browser.sidebarAction)
+  ? browser.sidebarAction
+  : (typeof chrome !== "undefined" && chrome.sidebarAction ? chrome.sidebarAction : null);
+
+chrome.action.onClicked.addListener(() => {
+  if (!_sidebar || typeof _sidebar.toggle !== "function") {
+    console.error("[EtseeMate] sidebarAction.toggle unavailable — Firefox 57+ required");
+    return;
+  }
+  _sidebar.toggle().catch((err) =>
+    console.error("[EtseeMate] sidebar toggle error:", err)
+  );
+});
 
 // --- MESSAGE HANDLER ---
 
@@ -85,7 +104,7 @@ async function handleCapture(data) {
     // Update badge count
     updateBadge(cleaned.length);
   } catch (e) {
-    console.error("[Getify] Storage write error:", e);
+    console.error("[EtseeMate] Storage write error:", e);
   }
 }
 
@@ -177,7 +196,7 @@ async function handleIngestListing(rows, apiUrl, token, importer, sendResponse) 
       return;
     }
     const vmName = importer || "extension";
-    const res = await fetch(apiUrl.replace(/\/+$/, "") + "/api/v1/internal/ingest/listing", {
+    const res = await fetch(apiUrl.replace(/\/+$/, "") + "/api/v1/EtseeMate/ingest/listing", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -208,7 +227,7 @@ async function handleIngestKeyword(rows, apiUrl, token, importer, sendResponse) 
       return;
     }
     const vmName = importer || "extension";
-    const res = await fetch(apiUrl.replace(/\/+$/, "") + "/api/v1/internal/ingest/keyword", {
+    const res = await fetch(apiUrl.replace(/\/+$/, "") + "/api/v1/EtseeMate/ingest/keyword", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

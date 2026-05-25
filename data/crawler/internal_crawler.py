@@ -1,11 +1,11 @@
 """
-Internal Listing Crawler
-Đọc screenshots từ Etsy Ads dashboard (data/raw/internal/<date>-<vm>/),
+EtseeMate Listing Crawler
+Đọc screenshots từ Etsy Ads dashboard (data/raw/EtseeMate/<date>-<vm>/),
 extract performance metrics bằng Claude Vision, upsert vào bảng listing_report.
 
 Cách dùng:
     cd data/crawler
-    python internal_crawler.py --folder ../raw/internal/20-04-2026-VM01
+    python EtseeMate_crawler.py --folder ../raw/EtseeMate/20-04-2026-VM01
 
 Mỗi ảnh chứa 1 tab metric của 1 listing — header luôn hiển thị đủ 6 metrics tổng.
 Script dedup theo listing_id (giữ record đầu đủ data nhất) trước khi upsert.
@@ -283,7 +283,7 @@ def upsert_listing_reports(records: list[dict], no_vm: str) -> int:
                      lifetime_orders, lifetime_revenue,
                      period, views, clicks, orders, revenue, spend, roas,
                      import_time, importer)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'internal_crawler')
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'EtseeMate_crawler')
             """, (
                 lid, r.get("title"), no_vm, price, r.get("stock"), r.get("section"),
                 r.get("lifetime_orders"), lt_rev, period,
@@ -319,7 +319,7 @@ def parse_vm(folder: Path) -> str:
 
 def run(folder: Path, dry_run: bool = False):
     print("=" * 62)
-    print(f"  Internal Listing Crawler — {folder.name}")
+    print(f"  EtseeMate Listing Crawler — {folder.name}")
     print("=" * 62)
 
     images = sorted(
@@ -362,11 +362,11 @@ def run(folder: Path, dry_run: bool = False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Internal listing screenshot crawler")
+    parser = argparse.ArgumentParser(description="EtseeMate listing screenshot crawler")
     parser.add_argument(
         "--folder",
         required=True,
-        help="Path tới folder chứa screenshots, ví dụ: ../raw/internal/20-04-2026-VM01",
+        help="Path tới folder chứa screenshots, ví dụ: ../raw/EtseeMate/20-04-2026-VM01",
     )
     parser.add_argument(
         "--dry-run",

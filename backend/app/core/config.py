@@ -14,7 +14,7 @@ _ENV_FILES = (
 
 
 class Settings(BaseSettings):
-    # Database (Neon PostgreSQL) — internal data
+    # Database (Neon PostgreSQL) — EtseeMate data
     DATABASE_URL: str = ""
     # Market data DB (etsy_star_engine output)
     ETSY_MARKET_DB: str = ""
@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     CLAUDE_MODEL: str = "claude-sonnet-4-6"
 
     # AI Vision — 2 dedicated keys, one per pipeline
-    GEMINI_API_KEY_paid_imagereport: str = ""   # internal_extractor — Etsy Ads screenshot OCR
+    GEMINI_API_KEY_paid_imagereport: str = ""   # EtseeMate_extractor — Etsy Ads screenshot OCR
     GEMINI_API_KEY_paid_thumbnail: str = ""     # vision_service — thumbnail evaluation/knowledge
     GEMINI_MODEL: str = "gemini-2.5-flash-lite"  # cheapest vision model available
     HUGGINGFACE_API_KEY: str = ""
@@ -40,15 +40,25 @@ class Settings(BaseSettings):
     # JWT Auth
     JWT_SECRET_KEY: str = ""
     JWT_ALGORITHM: str = "HS256"
-    JWT_ACCESS_EXPIRE_MIN: int = 30
-    JWT_REFRESH_EXPIRE_DAYS: int = 7
+    JWT_ACCESS_EXPIRE_MIN: int = 15
+    JWT_REFRESH_EXPIRE_DAYS: int = 30
 
-    # Stripe
+    # Stripe (legacy — to be removed once Polar migration is verified)
     STRIPE_SECRET_KEY: str = ""
     STRIPE_PUBLISHABLE_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
     STRIPE_PRICE_SUBSCRIPTION: str = ""   # recurring $9.9/month price ID
     STRIPE_PRICE_CREDIT_DEPOSIT: str = "" # one-time $9.9 price ID
+
+    # Polar.sh (active payment gateway)
+    POLAR_ACCESS_TOKEN: str = ""
+    POLAR_ORG_ID: str = ""
+    POLAR_WEBHOOK_SECRET: str = ""
+    POLAR_PRODUCT_BASIC_MONTHLY: str = ""   # $9/mo recurring product ID
+    POLAR_PRODUCT_TOPUP_5: str = ""         # $5 one-time = 15 credits
+    POLAR_PRODUCT_TOPUP_10: str = ""        # $10 one-time = 40 credits
+    POLAR_SUCCESS_URL: str = "https://nguyenphamdieuhien.online/EtseeMate.html?payment=success"
+    POLAR_ENV: str = "sandbox"              # "sandbox" or "production"
 
     # App
     APP_ENV: str = "development"

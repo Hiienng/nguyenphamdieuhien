@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from ...core.database import get_db, MarketSessionLocal
-from ...services import references_service
+from ...services import references_service, onboarding_service
 
 router = APIRouter(prefix="/references", tags=["references"])
 
@@ -26,6 +26,22 @@ async def refresh(
 async def list_all(db: AsyncSession = Depends(get_db)):
     try:
         return await references_service.get_references(db)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e), "trace": traceback.format_exc()})
+
+
+# IMPORTANT: Static paths MUST be declared BEFORE dynamic /{listing_id} route,
+# otherwise FastAPI matches "product-categories" as a listing_id and returns empty list.
+@router.get("/product-categories", tags=["references"])
+async def get_product_categories():
+    """
+    Get list of valid product categories for onboarding.
+    Public endpoint, no auth required.
+    Response: { categories: [{ id, name, label }, ...] }
+    """
+    try:
+        categories = await onboarding_service.get_product_categories_formatted()
+        return {"categories": categories}
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e), "trace": traceback.format_exc()})
 

@@ -77,7 +77,7 @@ def finish_run(
         )
 
 
-# ── crawl_queue helpers (Flow 2: internal_listing_crawler) ────────────────
+# ── crawl_queue helpers (Flow 2: EtseeMate_listing_crawler) ────────────────
 
 def fetch_pending_queue(limit: int = 20) -> list[tuple[str, int]]:
     """Pop up to `limit` listing_ids whose next_after has passed. Returns

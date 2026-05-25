@@ -1,8 +1,8 @@
 """
-Internal Listing Detail Crawler
+EtseeMate Listing Detail Crawler
 ================================
 Đọc tất cả URLs từ bảng `listings` (etsy_pilot DB),
-crawl detail page từng listing, lưu vào `internal_listing_details` (cùng DB).
+crawl detail page từng listing, lưu vào `EtseeMate_listing_details` (cùng DB).
 
 Dùng chung anti-detect engine với market_batch_scraper.py:
   - CDP + real Chrome (no automation flags)
@@ -30,13 +30,13 @@ Modes:
   --queue N   Queue mode, tối đa N items mỗi lần chạy (default: 50)
 
 Usage:
-    python3 internal_listing_crawler.py
-    python3 internal_listing_crawler.py --auto
-    python3 internal_listing_crawler.py --auto 10
-    python3 internal_listing_crawler.py --resume 20260504_120000
-    python3 internal_listing_crawler.py --init-schema
-    python3 internal_listing_crawler.py --queue
-    python3 internal_listing_crawler.py --queue 20
+    python3 EtseeMate_listing_crawler.py
+    python3 EtseeMate_listing_crawler.py --auto
+    python3 EtseeMate_listing_crawler.py --auto 10
+    python3 EtseeMate_listing_crawler.py --resume 20260504_120000
+    python3 EtseeMate_listing_crawler.py --init-schema
+    python3 EtseeMate_listing_crawler.py --queue
+    python3 EtseeMate_listing_crawler.py --queue 20
 """
 
 import asyncio
@@ -82,7 +82,7 @@ DELAY_MAX        = 20
 # ─────────────────────────── DB setup ─────────────────────────────────────────
 
 SCHEMA_SQL = """
-CREATE TABLE IF NOT EXISTS internal_listing_details (
+CREATE TABLE IF NOT EXISTS EtseeMate_listing_details (
     listing_id          VARCHAR(20)   PRIMARY KEY,
     base_price          NUMERIC(14,2),
     sale_price          NUMERIC(14,2),
@@ -225,7 +225,7 @@ def upsert_detail(cur, listing_id: str, d: dict):
     currency = "VND" if (sale and sale > 1000) or (base and base > 1000) else "USD"
 
     cur.execute("""
-        INSERT INTO internal_listing_details (
+        INSERT INTO EtseeMate_listing_details (
             listing_id, base_price, sale_price, discount_percent, currency,
             materials, highlights, shipping_status, origin_ship_from,
             ship_time_max_days, us_shipping, return_policy, design, ai_summary,
@@ -374,7 +374,7 @@ async def check_blocked(page: Page) -> bool:
 async def handle_captcha(page: Page) -> bool:
     if not sys.stdin.isatty() or os.getenv("CRAWLER_UNATTENDED") == "1":
         from captcha_notify import handle_captcha as _notify
-        cleared = await _notify(page, job="internal_sweep")
+        cleared = await _notify(page, job="EtseeMate_sweep")
         if not cleared:
             return False
         await asyncio.sleep(2)
@@ -436,7 +436,7 @@ async def scrape_listing(page: Page, url: str) -> dict | None:
 # ─────────────────────────── main loop ────────────────────────────────────────
 
 async def run(listings: list[dict], run_ts: str, auto_mode: bool, auto_limit: int = 0, init_schema: bool = False, queue_mode: bool = False):
-    checkpoint_path = OUTPUT_DIR / f"internal_checkpoint_{run_ts}.json"
+    checkpoint_path = OUTPUT_DIR / f"EtseeMate_checkpoint_{run_ts}.json"
     done_ids        = load_checkpoint(checkpoint_path)
 
     pending = [l for l in listings if l["listing_id"] not in done_ids]
@@ -450,7 +450,7 @@ async def run(listings: list[dict], run_ts: str, auto_mode: bool, auto_limit: in
                   else ("QUEUE AUTO ALL" if queue_mode
                   else (f"AUTO {auto_limit}" if (auto_mode and auto_limit)
                   else ("AUTO ALL" if auto_mode else "HUMAN-IN-LOOP"))))
-    banner(f"Internal Listing Crawler [{mode_label}] — {len(pending)} listings")
+    banner(f"EtseeMate Listing Crawler [{mode_label}] — {len(pending)} listings")
 
     # Track per-run done/failed ids for queue mode updates
     queue_done_ids: list[str] = []
@@ -570,7 +570,7 @@ async def run(listings: list[dict], run_ts: str, auto_mode: bool, auto_limit: in
 
     conn.close()
 
-    banner(f"Done — {total} listings saved to internal_listing_details")
+    banner(f"Done — {total} listings saved to EtseeMate_listing_details")
 
 
 # ─────────────────────────── entry point ──────────────────────────────────────
@@ -580,11 +580,11 @@ if __name__ == "__main__":
 
     # ── --queue mode: poll crawl_queue instead of full listings table ──────────
     # Usage:
-    #   python3 internal_listing_crawler.py --queue
-    #   python3 internal_listing_crawler.py --queue 20   (batch_size limit)
+    #   python3 EtseeMate_listing_crawler.py --queue
+    #   python3 EtseeMate_listing_crawler.py --queue 20   (batch_size limit)
     # In this mode the script is triggered on-demand (e.g. by run_scheduled.py
     # or manually) whenever crawl_queue has pending items.  The launchd
-    # StartInterval schedule has been disabled — see com.etseemate.crawler.internal.plist.
+    # StartInterval schedule has been disabled — see com.EtseeMate.crawler.EtseeMate.plist.
     if "--queue" in args:
         queue_mode  = True
         auto_mode   = True   # queue mode is always automated

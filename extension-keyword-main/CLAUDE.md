@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-**Getify Ads Spy** — a Firefox/Chrome browser extension (Manifest V3) that passively intercepts Etsy Ads API responses, stores them locally, and lets the user export or push them directly to a Neon PostgreSQL database via HTTP SQL. It also includes an automated bot that iterates through a queue of listings, auto-expands keyword tables, and saves keyword + daily stats to the DB.
+**EtseeMate Ads Spy** — a Firefox/Chrome browser extension (Manifest V3) that passively intercepts Etsy Ads API responses, stores them locally, and lets the user export or push them directly to a Neon PostgreSQL database via HTTP SQL. It also includes an automated bot that iterates through a queue of listings, auto-expands keyword tables, and saves keyword + daily stats to the DB.
 
 There is **no build system**, no `package.json`, no bundler. The extension is pure vanilla JS loaded unpacked from this directory.
 
@@ -77,7 +77,7 @@ Several mechanisms work together to avoid Etsy/DataDome detection:
 | Layer | Where | Mechanism |
 |-------|-------|-----------|
 | Network hook spoofing | `interceptor.js` | `Function.prototype.toString` returns `[native code]` for patched `fetch`/`XHR`/`createElement` |
-| Camouflaged messaging | `interceptor.js` + `bridge.js` | `postMessage` type `__RDT_UPD_a9f3c` mimics React DevTools internals |
+| Camouflaged messaging | `interceptor.js` + `bridge.js` | `postMessage` type `__RDT_UPD_a9f3c` mimics React DevTools EtseeMates |
 | Gaussian timing | `background.js`, `content.js` | `humanJitter` on all human-facing delays |
 | Session breaks | `background.js` | 3–8 min pause every 8–14 listings |
 | Tab focus | `background.js` | `chrome.tabs.update({ active: true })` before `EXPAND_KEYWORDS` so `visibilityState` is `"visible"` |
@@ -90,22 +90,22 @@ Several mechanisms work together to avoid Etsy/DataDome detection:
 
 - **Backend**: Neon PostgreSQL, accessed via HTTP SQL (`POST https://<host>/sql` with `Neon-Connection-String` header — no TCP, no Node.js required).
 - **Tables**: `listing_report` (daily per-listing ad stats) and `keyword_report` (per-keyword stats). Keywords require the listing to exist in `listing_report` first.
-- **Connection string** is stored in `chrome.storage.local` under `getify_db_config`.
+- **Connection string** is stored in `chrome.storage.local` under `EtseeMate_db_config`.
 
 ### Storage keys (`chrome.storage.local`)
 
 | Key | Contents |
 |-----|----------|
-| `getify_sessions` | Array of captured API response entries (auto-cleared on navigation, max 30 days) |
-| `getify_db_config` | `{ connectionString }` |
-| `getify_keyword_queue_v2` | Array of `{ listing_id, title, status }` queue items |
-| `getify_keyword_url_template_v1` | URL template string containing `{listing_id}` |
+| `EtseeMate_sessions` | Array of captured API response entries (auto-cleared on navigation, max 30 days) |
+| `EtseeMate_db_config` | `{ connectionString }` |
+| `EtseeMate_keyword_queue_v2` | Array of `{ listing_id, title, status }` queue items |
+| `EtseeMate_keyword_url_template_v1` | URL template string containing `{listing_id}` |
 
 ## Key design constraints
 
 - `interceptor.js` must stay in the **MAIN world** to patch `fetch`/`XHR` before the page's own scripts run. It cannot use `chrome.*` APIs.
 - `bridge.js` must stay in the **ISOLATED world** to access `chrome.runtime`. It only receives messages from `interceptor.js` via `postMessage`.
-- The message type `__RDT_UPD_a9f3c` is intentionally camouflaged as a React DevTools internal message — do not change it without updating both `interceptor.js` and `bridge.js`.
+- The message type `__RDT_UPD_a9f3c` is intentionally camouflaged as a React DevTools EtseeMate message — do not change it without updating both `interceptor.js` and `bridge.js`.
 - `config.js` is listed first in `manifest.json`'s `background.scripts` array so `APP_CONFIG` is defined before `background.js` runs.
 - The bot reuses a single tab (navigating it rather than opening new tabs) to mimic natural browsing. The tab ID is tracked in `bot.tabId`.
 - Keyword inserts are guarded by a pre-check: all `listing_id`s must already exist in `listing_report`. Inserting keywords before their listing throws an explicit error.

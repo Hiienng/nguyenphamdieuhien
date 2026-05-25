@@ -17,7 +17,7 @@ from sqlalchemy import select  # noqa: E402
 
 from app.core.database import AsyncSessionLocal  # noqa: E402
 from app.models.import_batch import ImportBatch  # noqa: E402
-from app.services.internal_service import confirm_import  # noqa: E402
+from app.services.EtseeMate_service import confirm_import  # noqa: E402
 
 
 MONTHS = {
@@ -298,8 +298,8 @@ async def _run(folder: Path, batch_id: str, no_vm: str | None) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="OCR import screenshots from a local raw/internal folder.")
-    parser.add_argument("--folder", required=True, help="Path to the raw/internal batch folder.")
+    parser = argparse.ArgumentParser(description="OCR import screenshots from a local raw/EtseeMate folder.")
+    parser.add_argument("--folder", required=True, help="Path to the raw/EtseeMate batch folder.")
     parser.add_argument("--no-vm", default=None, help="Optional VM code override.")
     parser.add_argument("--batch-id", default=None, help="Optional import batch id override.")
     args = parser.parse_args()

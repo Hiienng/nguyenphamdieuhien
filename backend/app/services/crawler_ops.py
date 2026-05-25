@@ -3,11 +3,11 @@ Crawler operations layer.
 
 Two tables:
     crawl_run    — append-only ledger of every crawler job invocation.
-    crawl_queue  — pending listings for internal_listing_crawler (Flow 2).
+    crawl_queue  — pending listings for EtseeMate_listing_crawler (Flow 2).
 
 Used by:
     - market_engine_crawler/run_scheduled.py (writes crawl_run via Python sync helpers)
-    - internal_service.confirm_import        (enqueues new listings)
+    - EtseeMate_service.confirm_import        (enqueues new listings)
     - FE Operations card                     (reads via /api/v1/ops/*)
 
 The crawler scripts run on a separate Mac and write directly to Neon — they

@@ -1,4 +1,4 @@
-# Flow 04 — Internal Ads Import
+# Flow 04 — EtseeMate Ads Import
 
 Feature: chuyển screenshot báo cáo ads Etsy → DB (`listing_report` + `keyword_report`) qua 3 stage + 2 đường hồi phục.
 UI pill: `perf-sub-import`.
@@ -7,12 +7,12 @@ UI pill: `perf-sub-import`.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> uploaded: POST /internal/upload
-    uploaded --> extracted: POST /internal/extract<br/>(Claude/Gemini Vision)
-    uploaded --> discarded: POST /internal/discard
-    extracted --> confirmed: POST /internal/confirm
-    extracted --> discarded: POST /internal/discard
-    confirmed --> rolled_back: POST /internal/rollback
+    [*] --> uploaded: POST /EtseeMate/upload
+    uploaded --> extracted: POST /EtseeMate/extract<br/>(Claude/Gemini Vision)
+    uploaded --> discarded: POST /EtseeMate/discard
+    extracted --> confirmed: POST /EtseeMate/confirm
+    extracted --> discarded: POST /EtseeMate/discard
+    confirmed --> rolled_back: POST /EtseeMate/rollback
     discarded --> [*]
     rolled_back --> [*]
 ```
@@ -24,11 +24,11 @@ sequenceDiagram
     autonumber
     actor U as User
     participant FE as EtseeMate.html (JS)
-    participant API as /api/v1/internal
-    participant SVC as internal_service
-    participant EXT as internal_extractor
+    participant API as /api/v1/EtseeMate
+    participant SVC as EtseeMate_service
+    participant EXT as EtseeMate_extractor
     participant VIS as Claude/Gemini Vision
-    participant FS as data/raw/internal/<br/>{batch_id}/
+    participant FS as data/raw/EtseeMate/<br/>{batch_id}/
     participant SNAP as data/processed/<br/>snapshots/{batch_id}.json
     participant DB as Postgres
 
@@ -73,9 +73,9 @@ sequenceDiagram
     autonumber
     actor U as User
     participant FE as EtseeMate.html (JS)
-    participant API as /api/v1/internal
-    participant SVC as internal_service
-    participant FS as data/raw/internal/
+    participant API as /api/v1/EtseeMate
+    participant SVC as EtseeMate_service
+    participant FS as data/raw/EtseeMate/
     participant SNAP as snapshots/
     participant DB as Postgres
 
@@ -133,8 +133,8 @@ flowchart LR
 
 | Path | Lifecycle |
 |---|---|
-| `data/raw/internal/{batch_id}/*.png` | Tạo khi upload, xoá khi confirm/discard |
-| `data/raw/internal/{batch_id}/extracted.json` | Tạo khi extract |
+| `data/raw/EtseeMate/{batch_id}/*.png` | Tạo khi upload, xoá khi confirm/discard |
+| `data/raw/EtseeMate/{batch_id}/extracted.json` | Tạo khi extract |
 | `data/processed/snapshots/{batch_id}.json` | Tạo khi confirm (để rollback) |
 
 ## Khoá tự nhiên khi ghi DB

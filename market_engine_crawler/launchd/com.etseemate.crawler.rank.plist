@@ -6,7 +6,7 @@
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.etseemate.crawler.rank</string>
+  <string>com.EtseeMate.crawler.rank</string>
 
   <key>ProgramArguments</key>
   <array>

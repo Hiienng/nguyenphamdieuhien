@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Getify Ads Spy",
-  "version": "1.0.0",
+  "name": "EtseeMate Ads Spy",
+  "version": "2.0.0",
   "description": "Passively captures Etsy Ads API responses for analytics",
   "browser_specific_settings": {
     "gecko": {
-      "id": "getify-ads-spy@getify.ai",
+      "id": "EtseeMate-ads-spy@EtseeMate.ai",
       "strict_min_version": "128.0"
     }
   },
@@ -32,12 +32,18 @@
     "scripts": ["background.js"]
   },
   "action": {
-    "default_popup": "popup.html",
+    "default_title": "EtseeMate Ads Spy",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
+  },
+  "sidebar_action": {
+    "default_title": "EtseeMate Ads Spy",
+    "default_panel": "popup.html",
+    "default_icon": "icons/icon48.png",
+    "open_at_install": false
   },
   "icons": {
     "16": "icons/icon16.png",

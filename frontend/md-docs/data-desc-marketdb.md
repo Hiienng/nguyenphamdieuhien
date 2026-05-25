@@ -134,9 +134,9 @@ market_shop (shop_name)
 
 ---
 
-## Quan hệ với Internal DB
+## Quan hệ với EtseeMate DB
 
-`market_listing.listing_id` được JOIN với `references_engine.reference_listing_id` và `listings.listing_id` trong Internal DB để hiển thị dữ liệu đối thủ tham chiếu trên Performance Hub.
+`market_listing.listing_id` được JOIN với `references_engine.reference_listing_id` và `listings.listing_id` trong EtseeMate DB để hiển thị dữ liệu đối thủ tham chiếu trên Performance Hub.
 
 ---
 

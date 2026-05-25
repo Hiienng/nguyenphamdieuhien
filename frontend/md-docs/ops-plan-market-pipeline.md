@@ -1,4 +1,4 @@
-# Ops Plan — Market Crawl, Internal Market Sweep, Product Type Tagging
+# Ops Plan — Market Crawl, EtseeMate Market Sweep, Product Type Tagging
 
 > Cập nhật: 2026-05-11 · Scope: 3 luồng tự động hoá còn thiếu sau khi reporting layer đã ổn định
 
@@ -9,7 +9,7 @@
 ```
                     ┌──────────────────────────────────────┐
                     │  Master list: `listings`             │
-                    │  (internal_listing_id + url + title) │
+                    │  (EtseeMate_listing_id + url + title) │
                     └────────────┬─────────────────────────┘
                                  │
         ┌────────────────────────┼────────────────────────┐
@@ -17,7 +17,7 @@
         ▼                        ▼                        ▼
   [Flow 1]                 [Flow 2]                 [Flow 3]
   Market discovery         Sweep market data        Product type tagging
-  crawl by keyword         cho từng internal_id     từ title (LLM/regex)
+  crawl by keyword         cho từng EtseeMate_id     từ title (LLM/regex)
         │                        │                        │
         ▼                        ▼                        ▼
   market_listing*          market_listing           listings.product_type
@@ -34,7 +34,7 @@
 | Component | Có sẵn | Thiếu |
 |---|---|---|
 | `market_batch_scraper.py` — crawl theo keyword từ JSON file | ✅ | Chưa có cron, chưa wire vào DB job-queue, chỉ chạy local CLI |
-| `internal_listing_crawler.py` — crawl detail cho từng internal listing | ✅ | Chưa schedule định kỳ, chưa enqueue khi `listings` thêm row mới |
+| `EtseeMate_listing_crawler.py` — crawl detail cho từng EtseeMate listing | ✅ | Chưa schedule định kỳ, chưa enqueue khi `listings` thêm row mới |
 | `keyword_rank_crawler.py` — crawl rank của keyword | ✅ | Chưa wire vào ETL, dữ liệu vào `keyword_rank_snapshot` nhưng không ai dùng |
 | Product type tagger | ❌ | Chưa tồn tại — `product_type` chỉ có ở `listing_extense` và `references_engine` (crawl ra), chưa gán cho `listings` của ta |
 | Crawler ↔ backend integration | ❌ | Crawler đang chạy độc lập với FastAPI service, không trigger được từ FE |
@@ -45,8 +45,8 @@
 ## Mục tiêu
 
 1. **Flow 1 — Market discovery**: lịch hàng tuần tự động crawl thị trường theo danh sách keyword đang theo dõi (VM01 + mở rộng). Output đi vào `market_listing*` để Research Hub và Listing Improvement có data tươi.
-2. **Flow 2 — Internal market sweep**: mỗi khi có internal listing mới (thêm vào `listings`), tự enqueue crawl 1 lần detail. Định kỳ refresh giá / discount / rating (1×/tuần).
-3. **Flow 3 — Product type tagging**: gán nhãn `product_type` cho mỗi internal listing dựa vào `title` (+ optional `category`). Lưu vào `listings.product_type` (cột mới). Trigger sau crawl Flow 2 hoặc khi listing được thêm.
+2. **Flow 2 — EtseeMate market sweep**: mỗi khi có EtseeMate listing mới (thêm vào `listings`), tự enqueue crawl 1 lần detail. Định kỳ refresh giá / discount / rating (1×/tuần).
+3. **Flow 3 — Product type tagging**: gán nhãn `product_type` cho mỗi EtseeMate listing dựa vào `title` (+ optional `category`). Lưu vào `listings.product_type` (cột mới). Trigger sau crawl Flow 2 hoặc khi listing được thêm.
 4. **Quan sát**: 1 bảng `crawl_run` để dashboard show status, last run, success/fail count.
 
 ---
@@ -69,7 +69,7 @@
 -- Job ledger: mỗi lần job chạy ghi 1 row
 CREATE TABLE crawl_run (
     id            SERIAL PRIMARY KEY,
-    job_name      VARCHAR(64) NOT NULL,    -- 'market_discovery' | 'internal_sweep' | 'product_type_tag' | 'keyword_rank'
+    job_name      VARCHAR(64) NOT NULL,    -- 'market_discovery' | 'EtseeMate_sweep' | 'product_type_tag' | 'keyword_rank'
     started_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     finished_at   TIMESTAMPTZ,
     status        VARCHAR(16) NOT NULL DEFAULT 'running',  -- running | success | partial | failed
@@ -81,7 +81,7 @@ CREATE TABLE crawl_run (
 );
 CREATE INDEX idx_crawl_run_job_name ON crawl_run (job_name, started_at DESC);
 
--- Queue cho internal listings cần crawl/refresh (Flow 2)
+-- Queue cho EtseeMate listings cần crawl/refresh (Flow 2)
 CREATE TABLE crawl_queue (
     listing_id   VARCHAR(32) PRIMARY KEY,
     queued_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -129,32 +129,32 @@ ALTER TABLE listings ADD COLUMN IF NOT EXISTS product_type_tagged_at TIMESTAMPTZ
 
 ---
 
-## Flow 2 — Internal market sweep (listing-driven)
+## Flow 2 — EtseeMate market sweep (listing-driven)
 
-Mỗi internal listing nên có 1 row tương ứng trong `market_listing` (cùng `listing_id`) để Listing Improvement enrich price/rating. Hiện tại pipeline serving đang LEFT JOIN `market_listing WHERE listing_id = ANY(...)` — nếu không có thì price/rating đều null.
+Mỗi EtseeMate listing nên có 1 row tương ứng trong `market_listing` (cùng `listing_id`) để Listing Improvement enrich price/rating. Hiện tại pipeline serving đang LEFT JOIN `market_listing WHERE listing_id = ANY(...)` — nếu không có thì price/rating đều null.
 
 ### Trigger
-1. **Sự kiện:** khi có row mới insert vào `listings` (từ `/internal/confirm` hoặc seed) → enqueue vào `crawl_queue` với `reason='new_listing'`.
+1. **Sự kiện:** khi có row mới insert vào `listings` (từ `/EtseeMate/confirm` hoặc seed) → enqueue vào `crawl_queue` với `reason='new_listing'`.
 2. **Định kỳ:** Cron daily — chọn tất cả listing có `last_attempt > 7 days ago OR last_attempt IS NULL`, set lại `next_after=now()`.
 
 ### Worker
 - Cron mỗi 30 phút (`*/30 * * * *`): pop tối đa 20 listings từ `crawl_queue WHERE status='pending' AND next_after <= now() ORDER BY queued_at`.
-- Chạy `internal_listing_crawler.py` với list các URL → upsert vào `market_listing` (own rows) + `market_listing_details`.
+- Chạy `EtseeMate_listing_crawler.py` với list các URL → upsert vào `market_listing` (own rows) + `market_listing_details`.
 - Update queue: success → `status='done'`; fail → `attempts +=1`, `next_after = now() + interval '1 hour' * 2^attempts` (backoff exponential).
 
 ### Implement
-1. Thêm hook ở `internal_service.confirm_import`: sau khi insert listings mới → `INSERT INTO crawl_queue (listing_id, reason) ... ON CONFLICT DO NOTHING`.
-2. Modify `internal_listing_crawler.py`: accept `--from-queue` flag → đọc queue thay vì full `listings`.
-3. Render Cron service `etsy-pilot-cron-internal-sweep`, schedule `*/30 * * * *`.
+1. Thêm hook ở `EtseeMate_service.confirm_import`: sau khi insert listings mới → `INSERT INTO crawl_queue (listing_id, reason) ... ON CONFLICT DO NOTHING`.
+2. Modify `EtseeMate_listing_crawler.py`: accept `--from-queue` flag → đọc queue thay vì full `listings`.
+3. Render Cron service `etsy-pilot-cron-EtseeMate-sweep`, schedule `*/30 * * * *`.
 
 ### Hiệu ứng phụ tốt
-Sau Flow 2, mọi internal listing đều có market_listing row → FE Listing Improvement bỏ được tình trạng price/rating null.
+Sau Flow 2, mọi EtseeMate listing đều có market_listing row → FE Listing Improvement bỏ được tình trạng price/rating null.
 
 ---
 
 ## Flow 3 — Product type tagging
 
-**Mục tiêu:** mỗi internal listing có `product_type` rõ ràng (vd: `"baby blanket"`, `"baby onesie"`, `"phone case"`) để filter / group ở FE và để map references đúng.
+**Mục tiêu:** mỗi EtseeMate listing có `product_type` rõ ràng (vd: `"baby blanket"`, `"baby onesie"`, `"phone case"`) để filter / group ở FE và để map references đúng.
 
 ### Cách tiếp cận
 
@@ -222,7 +222,7 @@ POST /api/v1/ops/queue/enqueue  → manual add listing_id vào queue
 | Phase | Scope | Time | Output |
 |---|---|---|---|
 | **P0 — Infra base** (1 ngày) | DDL `crawl_run`, `crawl_queue`, `product_type_dict`, ALTER `listings`. Endpoint `/ops/health`, `/ops/crawl-runs`. FE card observability đơn giản. | 1 ngày | Visible quan sát, không cần job mới chạy thật |
-| **P1 — Flow 2** (2-3 ngày) | Wire enqueue ở `/internal/confirm`. Modify `internal_listing_crawler.py --from-queue`. Render Cron 30-min. | 2-3 ngày | Internal market data auto-fresh; CPC/price không còn null |
+| **P1 — Flow 2** (2-3 ngày) | Wire enqueue ở `/EtseeMate/confirm`. Modify `EtseeMate_listing_crawler.py --from-queue`. Render Cron 30-min. | 2-3 ngày | EtseeMate market data auto-fresh; CPC/price không còn null |
 | **P2 — Flow 3** (2 ngày) | `product_type_dict` seed + tagger service. Update `listings_int_ext` SQL. FE filter product_type chuẩn. | 2 ngày | Listing có product_type rõ → references_engine map tốt hơn |
 | **P3 — Flow 1** (3-5 ngày) | Migrate `market_batch_scraper` lên Render Cron, integrate `crawl_run`. Đánh giá khả thi headless. | 3-5 ngày | Market discovery tự động, không cần chạy local |
 | **P4 — Polish** (1-2 ngày) | Manual trigger UI, alerting (Slack webhook khi run failed), partial-success handling | 1-2 ngày | Production-grade |

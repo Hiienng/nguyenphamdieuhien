@@ -16,7 +16,7 @@ from sqlalchemy import select  # noqa: E402
 
 from app.core.database import AsyncSessionLocal  # noqa: E402
 from app.models.import_batch import ImportBatch  # noqa: E402
-from app.services.internal_service import (  # noqa: E402
+from app.services.EtseeMate_service import (  # noqa: E402
     confirm_import,
     run_extraction,
     save_uploaded_files,
@@ -105,11 +105,11 @@ async def _load_folder(folder: Path, no_vm: str | None, confirm_batch: bool) -> 
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Import screenshots from a local raw/internal folder.")
+    parser = argparse.ArgumentParser(description="Import screenshots from a local raw/EtseeMate folder.")
     parser.add_argument(
         "--folder",
         required=True,
-        help="Path to the raw/internal batch folder, e.g. ../data/raw/internal/04-05-2026-VM01",
+        help="Path to the raw/EtseeMate batch folder, e.g. ../data/raw/EtseeMate/04-05-2026-VM01",
     )
     parser.add_argument(
         "--no-vm",
