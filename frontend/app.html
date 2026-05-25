@@ -1852,7 +1852,7 @@
 <body>
   <!-- ── Auth Bootstrap (must run before any other script) ── -->
   <script>
-    let _accessToken = sessionStorage.getItem('Getify_token') || null;
+    let _accessToken = sessionStorage.getItem('EtseeMate_token') || null;
     let _currentUser = null;
     // DEBUG: log token presence to diagnose blank page
     console.log('[Bootstrap] token:', _accessToken ? 'PRESENT (' + _accessToken.substring(0,20) + '...)' : 'NULL');
@@ -1891,13 +1891,13 @@
         if (!res.ok) { _authRedirectToLanding(); return false; }
         const data = await res.json();
         _accessToken = data.access_token;
-        sessionStorage.setItem('Getify_token', _accessToken);
+        sessionStorage.setItem('EtseeMate_token', _accessToken);
         return true;
       } catch { return false; }
     }
 
     function _authRedirectToLanding() {
-      sessionStorage.removeItem('Getify_token');
+      sessionStorage.removeItem('EtseeMate_token');
       window.location.replace('/');
     }
   </script>
@@ -2845,7 +2845,7 @@
     // Restore last active tab on load — no paywall at tab level
     (async () => {
       await _userReady;
-      const savedTab = sessionStorage.getItem('Getify_active_tab') || 'performance';
+      const savedTab = sessionStorage.getItem('EtseeMate_active_tab') || 'performance';
       _activateTab(savedTab);
     })();
 
@@ -2853,7 +2853,7 @@
       tab.addEventListener('click', () => {
         const target = tab.dataset.tab;
         _activateTab(target);
-        sessionStorage.setItem('Getify_active_tab', target);
+        sessionStorage.setItem('EtseeMate_active_tab', target);
       });
     });
 
@@ -3348,12 +3348,12 @@
     }
 
     // Restore saved pill
-    const savedPill = sessionStorage.getItem('Getify_active_pill') || 'improvement';
+    const savedPill = sessionStorage.getItem('EtseeMate_active_pill') || 'improvement';
     _activatePill(savedPill);
 
     async function _perfPillClick(target) {
       _activatePill(target);
-      sessionStorage.setItem('Getify_active_pill', target);
+      sessionStorage.setItem('EtseeMate_active_pill', target);
       if (target === 'rules' && !window._rulesLoaded) {
         window._rulesLoaded = true;
         thrLoadFromDB();
@@ -4913,7 +4913,7 @@
 
     async function authLogout() {
       await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
-      sessionStorage.removeItem('Getify_token');
+      sessionStorage.removeItem('EtseeMate_token');
       _accessToken = null;
       _currentUser = null;
       window.location.replace('/');
