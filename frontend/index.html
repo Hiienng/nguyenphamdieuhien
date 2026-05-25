@@ -1,230 +1,698 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Getify — Biết listing nào đang kiếm tiền, và phải làm gì tiếp theo</title>
-  <meta name="description" content="Getify phân tích ROAS · CTR · CR từng listing Etsy Ads của bạn — và nói thẳng cần scale listing nào, cắt listing nào.">
+
+  <!-- ============================================
+       PRIMARY SEO
+       ============================================ -->
+  <title>EtseeMate &amp; Mythreel.studio — AI tools for Etsy sellers and content creators | Nguyen Pham Dieu Hien</title>
+  <meta name="description" content="Independent studio building AI-powered tools: EtseeMate optimizes Etsy listings (thumbnail AI scoring, title and tag generation, ROAS analytics) and Mythreel.studio turns text into voice-over and animated video for TikTok, YouTube, and education creators.">
+  <meta name="keywords" content="Etsy listing optimizer, Etsy SEO tool, Etsy thumbnail AI, Etsy title generator, Etsy tag generator, Etsy ROAS tracker, Etsy ads analytics, text to voice generator, text to animated video, AI voiceover for TikTok, AI video for YouTube creators, educational video generator, EtseeMate, Mythreel.studio, datanlanh, StarshipMath, Nguyen Pham Dieu Hien">
+  <meta name="author" content="Nguyen Pham Dieu Hien">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <link rel="canonical" href="https://nguyenphamdieuhien.online/">
+
+  <!-- ============================================
+       OPEN GRAPH (Facebook, LinkedIn, Slack, etc.)
+       ============================================ -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Nguyen Pham Dieu Hien">
+  <meta property="og:title" content="EtseeMate &amp; Mythreel.studio — AI tools for Etsy sellers and content creators">
+  <meta property="og:description" content="EtseeMate optimizes Etsy listings with AI thumbnail scoring, title/tag generation, and ROAS analytics. Mythreel.studio turns text into voice-over and animated video for TikTok, YouTube, and education creators.">
+  <meta property="og:url" content="https://nguyenphamdieuhien.online/">
+  <meta property="og:image" content="https://nguyenphamdieuhien.online/assets/og-cover.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+
+  <!-- ============================================
+       TWITTER / X CARD
+       ============================================ -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="EtseeMate &amp; Mythreel.studio — AI tools for Etsy sellers and creators">
+  <meta name="twitter:description" content="EtseeMate: AI thumbnail scoring, title/tag generation, ROAS analytics for Etsy sellers. Mythreel.studio: text to voice-over and animated video for TikTok, YouTube, and educators.">
+  <meta name="twitter:image" content="https://nguyenphamdieuhien.online/assets/og-cover.png">
+
+  <!-- ============================================
+       GEO / AEO — STRUCTURED DATA FOR AI ASSISTANTS
+       (Gemini, ChatGPT, Claude, Perplexity all read JSON-LD)
+       ============================================ -->
+
+  <!-- Person + Organization -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Person",
+        "@id": "https://nguyenphamdieuhien.online/#person",
+        "name": "Nguyen Pham Dieu Hien",
+        "url": "https://nguyenphamdieuhien.online/",
+        "jobTitle": "Independent Maker, Product Builder",
+        "description": "Independent maker building AI-powered tools for Etsy sellers, content creators, and education developers.",
+        "knowsAbout": [
+          "Etsy listing optimization",
+          "AI thumbnail analysis",
+          "Etsy SEO",
+          "Text-to-speech generation",
+          "AI animated video generation",
+          "Educational technology"
+        ]
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://nguyenphamdieuhien.online/#org",
+        "name": "Nguyen Pham Dieu Hien Studio",
+        "url": "https://nguyenphamdieuhien.online/",
+        "founder": { "@id": "https://nguyenphamdieuhien.online/#person" },
+        "description": "A small independent studio building useful AI products: EtseeMate (Etsy listing optimizer), Mythreel.studio (text-to-voice and animated video), StarshipMath (math game for kids), and Hapihos Design.",
+        "makesOffer": [
+          { "@type": "Offer", "itemOffered": { "@id": "https://nguyenphamdieuhien.online/#etseemate" } },
+          { "@type": "Offer", "itemOffered": { "@id": "https://nguyenphamdieuhien.online/#voiceanimate" } }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <!-- EtseeMate — SoftwareApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "@id": "https://nguyenphamdieuhien.online/#etseemate",
+    "name": "EtseeMate",
+    "alternateName": ["Etsee Mate", "EtseeMate AI"],
+    "url": "https://nguyenphamdieuhien.online/app.html",
+    "applicationCategory": "BusinessApplication",
+    "applicationSubCategory": "Etsy Listing Optimization, E-commerce SEO, Ads Analytics",
+    "operatingSystem": "Web Browser (Chrome, Safari, Firefox, Edge)",
+    "description": "EtseeMate is an AI-powered listing optimization tool for Etsy sellers. It scores thumbnails against top-selling listings in the same category, generates SEO-optimized titles, descriptions, and all 13 Etsy tags based on bestseller patterns, and tracks ROAS, CTR, and ad spend per listing by uploading the Etsy Ads CSV report — no OAuth required.",
+    "featureList": [
+      "AI thumbnail scoring against category bestsellers",
+      "Etsy title generator following bestseller patterns",
+      "Etsy description generator",
+      "Etsy 13-tag generator",
+      "ROAS, CTR, and ad spend analytics per listing",
+      "CSV upload — no Etsy OAuth or API access required",
+      "Bestseller pattern analysis by Etsy category"
+    ],
+    "audience": {
+      "@type": "Audience",
+      "audienceType": "Etsy sellers, handmade product shops, print-on-demand sellers, Etsy ad buyers"
+    },
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Free Trial",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "7-day free trial with 3 credits, no credit card required"
+      },
+      {
+        "@type": "Offer",
+        "name": "Basic Subscription",
+        "price": "9",
+        "priceCurrency": "USD",
+        "description": "Monthly subscription, 5 credits per month, cancel anytime"
+      },
+      {
+        "@type": "Offer",
+        "name": "Top-up 15 credits",
+        "price": "5",
+        "priceCurrency": "USD"
+      },
+      {
+        "@type": "Offer",
+        "name": "Top-up 40 credits",
+        "price": "10",
+        "priceCurrency": "USD",
+        "description": "Best value at $0.25 per credit"
+      }
+    ],
+    "creator": { "@id": "https://nguyenphamdieuhien.online/#person" }
+  }
+  </script>
+
+  <!-- Mythreel.studio — SoftwareApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "@id": "https://mythreel.studo/",
+    "name": "Mythreel.studio",
+    "alternateName": ["Voice Animate Studio", "Automated Video"],
+    "url": "https://mythreel.studo/",
+    "applicationCategory": "MultimediaApplication",
+    "applicationSubCategory": "Text-to-Speech, AI Video Generation, Content Creator Tool",
+    "operatingSystem": "Web Browser",
+    "description": "Mythreel.studio is a web app that turns text into natural-sounding voice-over and animated video. Built for TikTok and YouTube content creators, education developers, and centers or teams that need to convert written text into spoken voice-over and visual video quickly — without recording equipment or animation skills.",
+    "featureList": [
+      "Text-to-voice generation with natural-sounding AI voices",
+      "Text-to-animated-video generation",
+      "Optimized for TikTok short-form vertical video",
+      "Optimized for YouTube long-form and Shorts",
+      "Education-friendly: convert lesson scripts to narrated video",
+      "Voice-over for centers, schools, and training teams"
+    ],
+    "audience": {
+      "@type": "Audience",
+      "audienceType": "TikTok content creators, YouTube creators, educators, e-learning developers, training centers, schools"
+    },
+    "creator": { "@id": "https://nguyenphamdieuhien.online/#person" }
+  }
+  </script>
+
+  <!-- WebSite — search action + branding -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": "https://nguyenphamdieuhien.online/#website",
+    "url": "https://nguyenphamdieuhien.online/",
+    "name": "Nguyen Pham Dieu Hien — Independent Maker",
+    "description": "Portfolio of independent AI products: EtseeMate for Etsy sellers, Mythreel.studio for content creators, StarshipMath for kids, and Hapihos Design.",
+    "publisher": { "@id": "https://nguyenphamdieuhien.online/#org" },
+    "inLanguage": "en"
+  }
+  </script>
+
+  <!-- FAQ — answers AI assistants quote directly -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is EtseeMate?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "EtseeMate is an AI-powered listing optimization tool for Etsy sellers. It scores thumbnails before publishing, generates SEO-optimized titles, descriptions, and 13 tags based on bestseller patterns in your category, and tracks ROAS, CTR, and ad spend per listing from your Etsy Ads CSV report — no OAuth required."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Who is EtseeMate for?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "EtseeMate is built for Etsy sellers of any shop size — handmade sellers, print-on-demand shops, digital product sellers, and anyone running Etsy Ads who wants to know which listings are actually profitable. It works even if you only have 3 listings."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How is EtseeMate different from eRank?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "eRank focuses on keyword research. EtseeMate focuses on turning keywords into a listing that converts: AI thumbnail scoring, title and description writing based on bestseller patterns, and ROAS analytics per listing. Most sellers use both tools together."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is Mythreel.Studio?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Mythreel.Studio is a web app that turns text into voice-over and animated video. It is built for TikTok creators, YouTube creators, education developers, and training centers or schools that need to convert written content into narrated video without recording equipment or animation skills. Available at https://mythreel.studo/"
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Who should use Mythreel.Studio?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Mythreel.studio is designed for TikTok and YouTube content creators producing short-form and long-form video, educators and e-learning developers turning lesson scripts into narrated video, and training centers or schools that need bulk voice-over production from text."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I need to connect my Etsy account to use EtseeMate?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. EtseeMate does not require OAuth or Etsy API access. You download your Etsy Ads CSV report from the Etsy seller dashboard and upload it — your Etsy credentials stay with Etsy."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How much does EtseeMate cost?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "EtseeMate offers a 7-day free trial with 3 credits, no credit card required. The Basic subscription is $9/month with 5 credits monthly. Credit top-ups are available: $5 for 15 credits or $10 for 40 credits (best value at $0.25/credit). Credits from top-ups never expire."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="/css/landing.css">
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --parchment: #f5f4ed; --ivory: #faf9f5; --near-black: #141413;
-      --charcoal: #4d4c48; --stone: #87867f; --warm-gray: #5e5d59;
-      --warm-silver: #b0aea5; --terracotta: #c96442;
-      --border-warm: #e8e6dc;
-      --font-serif: Georgia, 'Times New Roman', serif;
-      --font-sans: system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
-    }
     html { scroll-behavior: smooth; }
-    body { font-family: var(--font-sans); background: var(--parchment); color: var(--near-black); line-height: 1.6; }
-    .lp-nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 32px; border-bottom: 1px solid var(--border-warm); background: var(--parchment); position: sticky; top: 0; z-index: 100; }
-    .lp-nav-brand { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 500; color: var(--near-black); text-decoration: none; }
-    .lp-nav-brand span { color: var(--terracotta); }
-    .lp-nav-links { display: flex; align-items: center; gap: 16px; }
-    .lp-nav-signin { font-family: var(--font-sans); font-size: 0.85rem; color: var(--stone); cursor: pointer; background: none; border: none; }
-    .lp-nav-signin:hover { color: var(--charcoal); }
-    .lp-cta-primary { display: inline-block; font-family: var(--font-sans); font-size: 1rem; font-weight: 600; color: var(--ivory); background: var(--terracotta); border: none; border-radius: 10px; padding: 14px 36px; cursor: pointer; text-decoration: none; transition: opacity 0.15s; }
-    .lp-cta-primary:hover { opacity: 0.88; }
-    .lp-hero { max-width: 900px; margin: 0 auto; padding: 80px 24px 64px; text-align: center; }
-    .lp-hero-headline { font-family: var(--font-serif); font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 500; line-height: 1.15; color: var(--near-black); margin-bottom: 20px; }
-    .lp-hero-sub { font-family: var(--font-sans); font-size: clamp(1rem, 2vw, 1.15rem); color: var(--warm-gray); line-height: 1.6; max-width: 620px; margin: 0 auto 36px; }
-    .lp-friction { font-family: var(--font-sans); font-size: 0.78rem; color: var(--stone); margin-top: 12px; }
-    .lp-stats { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; margin-top: 52px; padding-top: 40px; border-top: 1px solid var(--border-warm); }
-    .lp-stat-number { font-family: var(--font-serif); font-size: 2.2rem; font-weight: 500; color: var(--terracotta); line-height: 1; }
-    .lp-stat-label { font-family: var(--font-sans); font-size: 0.80rem; color: var(--stone); margin-top: 4px; }
-    .lp-pain { background: var(--near-black); padding: 72px 24px; }
-    .lp-pain-inner { max-width: 760px; margin: 0 auto; }
-    .lp-pain-tag { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 20px; }
-    .lp-pain-title { font-family: var(--font-serif); font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 500; color: var(--ivory); margin-bottom: 36px; line-height: 1.3; }
-    .lp-pain-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 16px; }
-    .lp-pain-item { font-family: var(--font-sans); font-size: 0.95rem; color: var(--warm-silver); padding: 16px 20px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: rgba(255,255,255,0.03); line-height: 1.5; }
-    .lp-pain-item::before { content: "— "; color: var(--terracotta); font-weight: 700; }
-    .lp-desire { max-width: 900px; margin: 0 auto; padding: 72px 24px; }
-    .lp-desire-tag { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 20px; }
-    .lp-desire-title { font-family: var(--font-serif); font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 500; color: var(--near-black); margin-bottom: 40px; line-height: 1.3; }
-    .lp-diff-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
-    .lp-diff-card { background: var(--ivory); border: 1px solid var(--border-warm); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 8px; }
-    .lp-diff-num { font-family: var(--font-serif); font-size: 1.8rem; font-weight: 500; color: var(--terracotta); }
-    .lp-diff-title { font-family: var(--font-sans); font-size: 0.92rem; font-weight: 600; color: var(--near-black); }
-    .lp-diff-desc { font-family: var(--font-sans); font-size: 0.82rem; color: var(--warm-gray); line-height: 1.5; }
-    .lp-ba { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 40px; }
-    @media (max-width: 600px) { .lp-ba { grid-template-columns: 1fr; } }
-    .lp-ba-card { border-radius: 10px; padding: 20px; }
-    .lp-ba-before { background: #fdf2f2; border: 1px solid #f5c6c6; }
-    .lp-ba-after  { background: #f2f9f5; border: 1px solid #b8e0c8; }
-    .lp-ba-label { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
-    .lp-ba-before .lp-ba-label { color: #b53333; }
-    .lp-ba-after  .lp-ba-label { color: #2d7a4f; }
-    .lp-ba-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-    .lp-ba-list li { font-family: var(--font-sans); font-size: 0.84rem; color: var(--charcoal); line-height: 1.4; }
-    .lp-action { background: var(--near-black); padding: 80px 24px; text-align: center; }
-    .lp-action-title { font-family: var(--font-serif); font-size: clamp(1.6rem, 3.5vw, 2.4rem); font-weight: 500; color: var(--ivory); margin-bottom: 16px; line-height: 1.2; }
-    .lp-action-sub { font-family: var(--font-sans); font-size: 0.92rem; color: var(--warm-silver); margin-bottom: 36px; max-width: 480px; margin-left: auto; margin-right: auto; }
-    #lp-sticky-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 999; background: var(--near-black); border-top: 1px solid rgba(255,255,255,0.1); padding: 12px 24px; display: none; align-items: center; justify-content: space-between; gap: 16px; }
-    .lp-sticky-text { font-family: var(--font-sans); font-size: 0.88rem; color: var(--warm-silver); }
-    #auth-overlay { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(20,20,19,0.6); backdrop-filter: blur(4px); align-items: center; justify-content: center; }
-    #auth-overlay.open { display: flex; }
-    .auth-box { background: var(--ivory); border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 400px; box-shadow: 0 8px 40px rgba(0,0,0,0.2); position: relative; }
-    .auth-close { position: absolute; top: 16px; right: 18px; background: none; border: none; font-size: 1.3rem; color: var(--stone); cursor: pointer; }
-    .auth-brand { font-family: var(--font-serif); font-size: 1.1rem; color: var(--near-black); margin-bottom: 4px; }
-    .auth-brand span { color: var(--terracotta); }
-    .auth-heading { font-family: var(--font-serif); font-size: 1.6rem; font-weight: 500; margin: 6px 0 24px; color: var(--near-black); }
-    .auth-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
-    .auth-label { font-family: var(--font-sans); font-size: 0.80rem; font-weight: 500; color: var(--charcoal); }
-    .auth-input { font-family: var(--font-sans); font-size: 0.95rem; padding: 10px 14px; border: 1px solid var(--border-warm); border-radius: 8px; background: var(--parchment); color: var(--near-black); outline: none; transition: border-color 0.15s; }
-    .auth-input:focus { border-color: var(--terracotta); }
-    .auth-error { font-family: var(--font-sans); font-size: 0.80rem; color: #b53333; min-height: 18px; }
-    .auth-btn { width: 100%; font-family: var(--font-sans); font-size: 0.95rem; font-weight: 600; color: var(--ivory); background: var(--terracotta); border: none; border-radius: 10px; padding: 12px; cursor: pointer; margin-top: 4px; transition: opacity 0.15s; }
-    .auth-btn:hover { opacity: 0.88; }
-    .auth-switch { font-family: var(--font-sans); font-size: 0.84rem; color: var(--stone); text-align: center; margin-top: 16px; }
-    .auth-switch a { color: var(--terracotta); text-decoration: none; cursor: pointer; }
+    body { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ============================================
+       PORTFOLIO-SPECIFIC STYLES
+       Inherits tokens from /css/landing.css
+       ============================================ */
+
+    .lp-portfolio-hero {
+      padding: clamp(28px, 4vh, 48px) 0 clamp(20px, 3vh, 32px);
+      text-align: left;
+    }
+    .lp-portfolio-hero .lp-container {
+      max-width: 1100px;
+    }
+    .lp-portfolio-eyebrow {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      color: var(--terracotta, #c45a3f);
+      font-size: 0.95rem;
+      letter-spacing: 0.02em;
+      margin: 0 0 10px;
+    }
+    .lp-portfolio-headline {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+      line-height: 1.2;
+      color: var(--ink, #2c2a26);
+      margin: 0 0 14px;
+      font-weight: 400;
+      max-width: 760px;
+    }
+    .lp-portfolio-sub {
+      font-size: 1.02rem;
+      line-height: 1.55;
+      color: var(--ink-soft, #56544f);
+      max-width: 620px;
+      margin: 0;
+    }
+
+    /* Projects grid */
+    .lp-projects {
+      padding: clamp(16px, 2.5vh, 28px) 0 clamp(56px, 9vh, 96px);
+    }
+    .lp-projects-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(24px, 4vw, 48px);
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    @media (max-width: 768px) {
+      .lp-projects-grid { grid-template-columns: 1fr; }
+    }
+
+    .lp-project-card {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+      background: transparent;
+      transition: transform 0.25s ease;
+    }
+    .lp-project-card:hover {
+      transform: translateY(-4px);
+    }
+    .lp-project-card[aria-disabled="true"] {
+      cursor: default;
+      opacity: 0.78;
+    }
+    .lp-project-card[aria-disabled="true"]:hover {
+      transform: none;
+    }
+
+    .lp-project-thumb {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: var(--spacing-md, 16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 1.6rem;
+      color: rgba(255,255,255,0.92);
+      letter-spacing: 0.02em;
+      box-shadow: 0 2px 12px rgba(44, 42, 38, 0.08);
+    }
+    .lp-project-thumb--etsee {
+      background: linear-gradient(135deg, #c45a3f 0%, #8a3a25 100%);
+    }
+    .lp-project-thumb--starship {
+      background: linear-gradient(135deg, #1e2a5e 0%, #5b3a8c 60%, #c45a3f 100%);
+    }
+    .lp-project-thumb--voice {
+      background: linear-gradient(135deg, #2e7d6a 0%, #1a4a52 100%);
+    }
+    .lp-project-thumb--hapihos {
+      background: linear-gradient(135deg, #d4b483 0%, #87867f 100%);
+    }
+
+    .lp-project-badge {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: rgba(255,255,255,0.95);
+      color: var(--ink, #2c2a26);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .lp-project-badge--soon {
+      background: rgba(44, 42, 38, 0.85);
+      color: #f5f1e8;
+    }
+
+    .lp-project-name {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 1.5rem;
+      color: var(--ink, #2c2a26);
+      margin: 0 0 8px;
+      font-weight: 500;
+    }
+    .lp-project-desc {
+      font-size: 1rem;
+      line-height: 1.55;
+      color: var(--ink-soft, #56544f);
+      margin: 0 0 12px;
+    }
+    .lp-project-link {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      color: var(--terracotta, #c45a3f);
+      font-size: 0.98rem;
+    }
+    .lp-project-card:hover .lp-project-link {
+      text-decoration: underline;
+    }
+    .lp-project-card[aria-disabled="true"] .lp-project-link {
+      color: var(--ink-soft, #87867f);
+      font-style: italic;
+    }
+
+    .lp-projects-divider {
+      border: 0;
+      border-top: 1px solid rgba(44, 42, 38, 0.08);
+      margin: 0 auto clamp(12px, 2vh, 20px);
+      max-width: 1200px;
+    }
   </style>
 </head>
 <body>
 
-<nav class="lp-nav">
-  <a href="/" class="lp-nav-brand">Getify<span>.</span></a>
-  <div class="lp-nav-links">
-    <button class="lp-cta-primary" style="padding:9px 22px;font-size:0.88rem" onclick="showAuth('login')">Đăng nhập</button>
-    <!-- <button class="lp-cta-primary" style="padding:9px 22px;font-size:0.88rem" onclick="showAuth('register')">Dùng thử miễn phí</button> -->
-  </div>
+<!-- ============================================
+     STICKY NAVIGATION BAR
+     ============================================ -->
+<header class="lp-header">
+  <nav class="lp-nav" role="navigation" aria-label="Main navigation">
+    <a href="/" class="lp-nav-brand">
+      nguyenphamdieuhien<span class="lp-nav-brand-dot">.</span>
+    </a>
+    <div class="lp-nav-links">
+      <a href="#projects" class="lp-nav-link">Projects</a>
+      <a href="#about" class="lp-nav-link">About</a>
+    </div>
+    <button class="lp-btn-primary" onclick="openAuthModal('register')" aria-label="Try EtseeMate Free">
+      Try EtseeMate
+    </button>
+  </nav>
+</header>
 
-</nav>
-
-<section class="lp-hero" id="lp-hero">
-  <!-- <h1 class="lp-hero-headline">Biết listing nào đang thật sự kiếm tiền —<br>và phải làm gì tiếp theo.</h1>
-  <p class="lp-hero-sub">Getify phân tích ROAS · CTR · CR từng listing Etsy Ads của bạn — và nói thẳng cần scale listing nào, cắt listing nào.</p> -->
-  <button class="lp-cta-primary" onclick="showAuth('login')">Đăng nhập</button>
-  <!-- <p class="lp-friction">Không cần thẻ tín dụng · Miễn phí 30 ngày · Hủy bất cứ lúc nào</p> -->
-  <!-- <div class="lp-stats">
-    <div class="lp-stat"><div class="lp-stat-number">2.3×</div><div class="lp-stat-label">ROAS trung bình sau 30 ngày</div></div>
-    <div class="lp-stat"><div class="lp-stat-number">&lt;5'</div><div class="lp-stat-label">Để ra quyết định scale / cắt</div></div>
-    <div class="lp-stat"><div class="lp-stat-number">180+</div><div class="lp-stat-label">Market listings làm benchmark</div></div>
-  </div> -->
-</section>
-
-<!-- Commented out: pain, desire, ba, action sections -->
-<!--
-<section class="lp-pain">
-  <div class="lp-pain-inner">
-    <p class="lp-pain-tag">Vấn đề quen thuộc</p>
-    <h2 class="lp-pain-title">Bạn đang đổ tiền vào Etsy Ads mà không biết đồng nào đang sinh lời.</h2>
-    <ul class="lp-pain-list">
-      <li class="lp-pain-item">Bạn đang chạy Etsy Ads nhưng không biết listing nào thật sự có lãi — chỉ thấy tổng spend tăng</li>
-      <li class="lp-pain-item">eRank cho điểm A nhưng listing vẫn không bán được — vì họ không đo ROAS, chỉ đo keyword</li>
-      <li class="lp-pain-item">Mỗi tháng nhìn báo cáo Etsy mà không biết phải làm gì tiếp theo — scale cái nào, cắt cái nào</li>
-    </ul>
-  </div>
-</section>
-
-<section class="lp-desire">
-  <p class="lp-desire-tag">Tại sao Getify khác</p>
-  <h2 class="lp-desire-title">3 thứ không tool Etsy nào khác có.</h2>
-  <div class="lp-diff-grid">
-    <div class="lp-diff-card"><div class="lp-diff-num">01</div><div class="lp-diff-title">ROAS · CTR · CR từng listing</div><div class="lp-diff-desc">Data chỉ có trong Etsy Ads dashboard — không có API public. Getify lấy qua OCR screenshot bạn upload. Không tool nào khác làm được điều này.</div></div>
-    <div class="lp-diff-card"><div class="lp-diff-num">02</div><div class="lp-diff-title">Market data fresh — không stale</div><div class="lp-diff-desc">eRank dùng Google Keyword Planner cũ 1–2 tháng. Getify crawl trực tiếp Etsy hàng tuần — bạn thấy cái đang trending thật sự hôm nay.</div></div>
-    <div class="lp-diff-card"><div class="lp-diff-num">03</div><div class="lp-diff-title">Scenario engine: biết phải làm gì</div><div class="lp-diff-desc">Mọi tool dừng lại ở "đây là số liệu". Getify nói thêm "đây là việc bạn cần làm" — dựa trên ma trận ROAS × CTR × CR của từng listing.</div></div>
-  </div>
-  <div class="lp-ba">
-    <div class="lp-ba-card lp-ba-before"><p class="lp-ba-label">Không có Getify</p><ul class="lp-ba-list"><li>Xem báo cáo tổng — không biết listing nào đang lỗ</li><li>Đoán mò cắt hoặc scale dựa trên cảm giác</li><li>Keyword A trên eRank nhưng ROAS vẫn âm</li><li>Mất 2–3 giờ / tuần phân tích thủ công trong Excel</li></ul></div>
-    <div class="lp-ba-card lp-ba-after"><p class="lp-ba-label">Với Getify</p><ul class="lp-ba-list"><li>Thấy ROAS từng listing — biết cái nào đang kiếm tiền</li><li>Scenario engine nói thẳng: scale / cải thiện / cắt</li><li>Market data fresh — biết sản phẩm nào đang trending thật</li><li>Ra quyết định trong < 5 phút, không cần Excel</li></ul></div>
+<!-- ============================================
+     HERO
+     ============================================ -->
+<section class="lp-portfolio-hero" id="about" aria-label="Introduction">
+  <div class="lp-container">
+    <p class="lp-portfolio-eyebrow">Independent maker · A small studio</p>
+    <h1 class="lp-portfolio-headline">
+      Building small, useful products for sellers, creators, and learners.
+    </h1>
+    <p class="lp-portfolio-sub">
+      A collection of products I&rsquo;m building &mdash; from Etsy listing tools
+      to math games for kids and voice/video generators for content creators.
+      Each one starts with a real problem someone is trying to solve.
+    </p>
   </div>
 </section>
 
-<section class="lp-action">
-  <h2 class="lp-action-title">Bắt đầu phân tích shop của bạn.</h2>
-  <p class="lp-action-sub">Upload 1 screenshot báo cáo Etsy Ads — Getify cho bạn thấy listing nào đang thật sự có lãi ngay trong session đầu tiên.</p>
-  <button class="lp-cta-primary" onclick="showAuth('login')">Đăng nhập để bắt đầu</button>
-</section>
--->
+<hr class="lp-projects-divider">
 
-<div id="lp-sticky-bar">
-  <span class="lp-sticky-text">Getify — Biết listing nào đang thật sự kiếm tiền.</span>
-  <button class="lp-cta-primary" style="padding:9px 22px;font-size:0.85rem;white-space:nowrap" onclick="showAuth('login')">Đăng nhập</button>
+<!-- ============================================
+     PROJECTS GRID
+     ============================================ -->
+<section class="lp-projects" id="projects" aria-label="Projects">
+  <div class="lp-container">
+    <div class="lp-projects-grid">
+
+      <!-- 1. EtseeMate -->
+      <a href="#" class="lp-project-card" onclick="openEtseeMate(event)">
+        <div class="lp-project-thumb lp-project-thumb--etsee">
+          EtseeMate
+        </div>
+        <h2 class="lp-project-name">EtseeMate</h2>
+        <p class="lp-project-desc">
+          Listing optimization for Etsy sellers &mdash; score thumbnails with AI,
+          generate titles and tags, and track ROAS per listing.
+        </p>
+        <span class="lp-project-link">Open app &rarr;</span>
+      </a>
+
+      <!-- 2. StarshipMath -->
+      <a href="/starshipmath.html" class="lp-project-card">
+        <div class="lp-project-thumb lp-project-thumb--starship">
+          StarshipMath
+        </div>
+        <h2 class="lp-project-name">StarshipMath</h2>
+        <p class="lp-project-desc">
+          A cosmic math adventure for kids &mdash; arithmetic, decimals, and logic
+          challenges wrapped in a space exploration game.
+        </p>
+        <span class="lp-project-link">Play now &rarr;</span>
+      </a>
+
+      <!-- 3. Mythreel.studio -->
+      <a href="https://www.mythreel.studio/" class="lp-project-card" target="_blank" rel="noopener">
+        <div class="lp-project-thumb lp-project-thumb--voice">
+          Mythreel.studio
+        </div>
+        <h2 class="lp-project-name">Mythreel.studio</h2>
+        <p class="lp-project-desc">
+          Turn text into real Vietnamese voice and animated video &mdash; built for TikTok and
+          YouTube creators, education developers, and centers that need fast
+          voiceover production.
+        </p>
+        <span class="lp-project-link">Open app &rarr;</span>
+      </a>
+
+      <!-- 4. Hapihos Design -->
+      <a href="https://datanlanh.space/" class="lp-project-card" target="_blank" rel="noopener">
+        <div class="lp-project-thumb lp-project-thumb--hapihos">
+          Hapihos Design
+        </div>
+        <h2 class="lp-project-name">Hapihos Design</h2>
+        <p class="lp-project-desc">
+          Visit Hapihos Design.
+        </p>
+        <span class="lp-project-link">Visit datanlanh.space &rarr;</span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================================
+     FOOTER
+     ============================================ -->
+<footer class="lp-footer lp-bg-dark">
+  <div class="lp-container">
+    <div class="lp-footer-grid">
+      <div class="lp-footer-col">
+        <div class="lp-footer-brand">nguyenphamdieuhien</div>
+        <p class="lp-footer-desc">Independent maker &mdash; small products, real problems.</p>
+      </div>
+
+      <div class="lp-footer-col">
+        <nav class="lp-footer-nav" role="navigation" aria-label="Footer links">
+          <a href="#projects" class="lp-footer-link">Projects</a>
+          <a href="/app.html" class="lp-footer-link">EtseeMate</a>
+          <a href="/starshipmath.html" class="lp-footer-link">StarshipMath</a>
+          <a href="https://www.mythreel.studio/" class="lp-footer-link" target="_blank" rel="noopener">Mythreel.studio</a>
+          <a href="https:/www.datanlanh.space/" class="lp-footer-link" target="_blank" rel="noopener">Hapihos Design</a>
+        </nav>
+      </div>
+
+      <div class="lp-footer-col">
+        <div class="lp-footer-social">
+          <a href="#" class="lp-footer-link" aria-label="Email">Email</a>
+          <a href="#" class="lp-footer-link" aria-label="Twitter">Twitter</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="lp-footer-bottom">
+      <p class="lp-footer-copyright">© 2026 nguyenphamdieuhien. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- ============================================
+     AUTH MODAL (Sign Up / Login) — EtseeMate
+     ============================================ -->
+<div id="auth-modal" class="lp-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="lp-modal-content">
+    <button class="lp-modal-close" onclick="closeAuthModal()" aria-label="Close modal">×</button>
+
+    <!-- Sign Up Form -->
+    <div id="modal-signup" class="lp-modal-form">
+      <h2 id="modal-title" class="lp-modal-heading">Create your account</h2>
+      <p class="lp-modal-sub">No credit card required. 7-day free trial, 3 credits included.</p>
+
+      <form id="signup-form" onsubmit="handleSignup(event)">
+        <div class="lp-form-group">
+          <label for="signup-email" class="lp-form-label">Email address</label>
+          <input
+            id="signup-email"
+            type="email"
+            class="lp-form-input"
+            placeholder="you@example.com"
+            required
+            aria-label="Email address"
+          >
+        </div>
+
+        <div class="lp-form-group">
+          <label for="signup-password" class="lp-form-label">Password</label>
+          <input
+            id="signup-password"
+            type="password"
+            class="lp-form-input"
+            placeholder="At least 8 characters"
+            minlength="8"
+            required
+            aria-label="Password"
+          >
+          <small class="lp-form-hint">At least 8 characters</small>
+        </div>
+
+        <div class="lp-form-group">
+          <label for="signup-confirm" class="lp-form-label">Confirm password</label>
+          <input
+            id="signup-confirm"
+            type="password"
+            class="lp-form-input"
+            placeholder="Re-enter your password"
+            required
+            aria-label="Confirm password"
+          >
+        </div>
+
+        <div id="signup-error" class="lp-form-error" role="alert" style="display: none;"></div>
+
+        <button type="submit" class="lp-btn-primary lp-btn-full" id="signup-btn">
+          Create account
+        </button>
+
+        <p class="lp-form-switch">
+          Already have an account?
+          <button type="button" class="lp-form-switch-link" onclick="switchAuthMode('login')">
+            Sign in
+          </button>
+        </p>
+      </form>
+    </div>
+
+    <!-- Sign In Form -->
+    <div id="modal-signin" class="lp-modal-form">
+      <h2 id="modal-title" class="lp-modal-heading">Welcome back</h2>
+      <p class="lp-modal-sub">Sign in to access your dashboard</p>
+
+      <form id="signin-form" onsubmit="handleSignin(event)">
+        <div class="lp-form-group">
+          <label for="signin-email" class="lp-form-label">Email address</label>
+          <input
+            id="signin-email"
+            type="email"
+            class="lp-form-input"
+            placeholder="you@example.com"
+            required
+            aria-label="Email address"
+          >
+        </div>
+
+        <div class="lp-form-group">
+          <label for="signin-password" class="lp-form-label">Password</label>
+          <input
+            id="signin-password"
+            type="password"
+            class="lp-form-input"
+            placeholder="••••••••"
+            required
+            aria-label="Password"
+          >
+        </div>
+
+        <div id="signin-error" class="lp-form-error" role="alert" style="display: none;"></div>
+
+        <button type="submit" class="lp-btn-primary lp-btn-full" id="signin-btn">
+          Sign in
+        </button>
+
+        <p class="lp-form-switch">
+          Don't have an account?
+          <button type="button" class="lp-form-switch-link" onclick="switchAuthMode('signup')">
+            Create one free
+          </button>
+        </p>
+      </form>
+    </div>
+  </div>
 </div>
 
-<div id="auth-overlay">
-  <div id="auth-login-box" class="auth-box" style="display:none">
-    <button class="auth-close" onclick="closeAuth()">×</button>
-    <p class="auth-brand">Getify<span>.</span></p>
-    <h1 class="auth-heading">Đăng nhập</h1>
-    <div class="auth-field"><label class="auth-label">Email</label><input id="login-email" class="auth-input" type="email" placeholder="you@example.com" autocomplete="email"></div>
-    <div class="auth-field"><label class="auth-label">Mật khẩu</label><input id="login-password" class="auth-input" type="password" placeholder="••••••••" autocomplete="current-password"><p id="login-error" class="auth-error"></p></div>
-    <button id="login-btn" class="auth-btn">Đăng nhập</button>
-    <!-- <p class="auth-switch">Chưa có tài khoản? <a onclick="showAuth('register')">Dùng thử miễn phí</a></p> -->
-  </div>
-  <div id="auth-register-box" class="auth-box" style="display:none">
-    <button class="auth-close" onclick="closeAuth()">×</button>
-    <p class="auth-brand">Getify<span>.</span></p>
-    <h1 class="auth-heading">Tạo tài khoản</h1>
-    <div class="auth-field"><label class="auth-label">Email</label><input id="reg-email" class="auth-input" type="email" placeholder="you@example.com" autocomplete="email"></div>
-    <div class="auth-field"><label class="auth-label">Mật khẩu</label><input id="reg-password" class="auth-input" type="password" placeholder="Tối thiểu 8 ký tự" autocomplete="new-password"></div>
-    <div class="auth-field"><label class="auth-label">Xác nhận mật khẩu</label><input id="reg-confirm" class="auth-input" type="password" placeholder="Nhập lại mật khẩu" autocomplete="new-password"><p id="register-error" class="auth-error"></p></div>
-    <button id="register-btn" class="auth-btn">Tạo tài khoản</button>
-    <p class="auth-switch">Đã có tài khoản? <a onclick="showAuth('login')">Đăng nhập</a></p>
-  </div>
-</div>
-
+<script src="/js/landing.js"></script>
 <script>
-  (function() {
-    if (sessionStorage.getItem('Getify_token')) window.location.replace('/app');
+  // EtseeMate card: if logged in, go to app; otherwise open signup/login modal
+  function openEtseeMate(e) {
+    if (e) e.preventDefault();
+    const token = sessionStorage.getItem('EtseeMate_token') || localStorage.getItem('EtseeMate_token');
+    if (token) {
+      window.location.href = '/app.html';
+    } else {
+      if (typeof openAuthModal === 'function') {
+        openAuthModal('login');
+      } else {
+        window.location.href = '/app.html';
+      }
+    }
+  }
+
+  // Auto-open auth modal when redirected from /app.html without token
+  // e.g. /?auth=login or /?auth=register
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('auth');
+    if (mode === 'login' || mode === 'register') {
+      const tryOpen = () => {
+        if (typeof openAuthModal === 'function') {
+          openAuthModal(mode);
+          // Clean URL so refresh doesn't re-open
+          history.replaceState(null, '', window.location.pathname);
+        } else {
+          setTimeout(tryOpen, 50);
+        }
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', tryOpen);
+      } else {
+        tryOpen();
+      }
+    }
   })();
-
-  new IntersectionObserver(([e]) => {
-    document.getElementById('lp-sticky-bar').style.display = e.isIntersecting ? 'none' : 'flex';
-  }, { threshold: 0 }).observe(document.getElementById('lp-hero'));
-
-  function showAuth(mode) {
-    document.getElementById('auth-overlay').classList.add('open');
-    document.getElementById('auth-login-box').style.display    = mode === 'login'    ? '' : 'none';
-    document.getElementById('auth-register-box').style.display = mode === 'register' ? '' : 'none';
-  }
-  function closeAuth() { document.getElementById('auth-overlay').classList.remove('open'); }
-  document.getElementById('auth-overlay').addEventListener('click', e => { if (e.target.id === 'auth-overlay') closeAuth(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAuth(); });
-
-  async function apiPost(path, body) {
-    const res = await fetch(path, { method: 'POST', credentials: 'include', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
-    return { res, data: await res.json().catch(() => ({})) };
-  }
-
-  document.getElementById('login-btn').addEventListener('click', async () => {
-    const email = document.getElementById('login-email').value.trim();
-    const pass  = document.getElementById('login-password').value;
-    const errEl = document.getElementById('login-error');
-    errEl.textContent = '';
-    if (!email || !pass) { errEl.textContent = 'Vui lòng nhập email và mật khẩu.'; return; }
-    const btn = document.getElementById('login-btn');
-    btn.disabled = true; btn.textContent = 'Đang đăng nhập...';
-    try {
-      const { res, data } = await apiPost('/api/v1/auth/login', { email, password: pass });
-      if (!res.ok) { errEl.textContent = data.detail || 'Đăng nhập thất bại.'; return; }
-      sessionStorage.setItem('Getify_token', data.access_token);
-      window.location.href = '/app';
-    } catch { errEl.textContent = 'Lỗi kết nối. Thử lại.'; }
-    finally { btn.disabled = false; btn.textContent = 'Đăng nhập'; }
-  });
-  document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('login-btn').click(); });
-
-  document.getElementById('register-btn').addEventListener('click', async () => {
-    const email = document.getElementById('reg-email').value.trim();
-    const pass  = document.getElementById('reg-password').value;
-    const conf  = document.getElementById('reg-confirm').value;
-    const errEl = document.getElementById('register-error');
-    errEl.textContent = '';
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'Email không hợp lệ.'; return; }
-    if (pass.length < 8) { errEl.textContent = 'Mật khẩu phải ít nhất 8 ký tự.'; return; }
-    if (pass !== conf)   { errEl.textContent = 'Mật khẩu không khớp.'; return; }
-    const btn = document.getElementById('register-btn');
-    btn.disabled = true; btn.textContent = 'Đang tạo tài khoản...';
-    try {
-      const { res, data } = await apiPost('/api/v1/auth/register', { email, password: pass });
-      if (!res.ok) { errEl.textContent = data.detail || 'Đăng ký thất bại.'; return; }
-      sessionStorage.setItem('Getify_token', data.access_token);
-      window.location.href = '/app';
-    } catch { errEl.textContent = 'Lỗi kết nối. Thử lại.'; }
-    finally { btn.disabled = false; btn.textContent = 'Tạo tài khoản'; }
-  });
 </script>
 </body>
 </html>

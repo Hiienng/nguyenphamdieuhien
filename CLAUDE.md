@@ -1,5 +1,30 @@
 # Project Rules — Etsy Listing Manager
 
+## BẮT ĐẦU MỌI SESSION — CHẠY TRƯỚC KHI LÀM BẤT CỨ ĐIỀU GÌ
+
+1. Chạy `git log --oneline -5` để biết commit gần nhất
+2. Đọc `.claude/system_context.md` để lấy trạng thái kiến trúc hiện tại
+3. **Không dựa vào conversation history để suy đoán trạng thái code** — history có thể cũ
+
+> Nếu bạn là user: nhắn "Sync context trước khi làm việc." khi mở lại session cũ.
+
+---
+
+## Quy tắc chung — KHÔNG được vi phạm
+2. **NGHIÊM CẤM** — nghiêm cấm ghi ra log các keys lưu tại .env
+1. **Đọc file trước khi sửa** — không sửa blind
+2. **Không tạo file mới nếu đã có file phù hợp** để mở rộng
+3. **Không đặt file sai layer** — logic ML không vào BE, route không vào service
+4. **Không dùng `git add -A`** — stage từng file cụ thể
+5. **Không commit `.env`** — chỉ commit `.env.example`
+6. **Không xóa `data/raw/`** — đây là nguồn dữ liệu gốc
+7. **Không tạo file không phải code** khi user không chủ động yêu cầu
+8. Khi thêm dependency: cập nhật đúng `requirements.txt` của layer tương ứng
+9. Mọi thay đổi DB schema: thêm migration, không `drop` table trực tiếp
+10. Các ad-hoc code dùng 1 lần phải được xóa ngay sau khi hoàn thành
+
+---
+
 ## Tổng quan
 
 Tool quản lý Etsy listings tích hợp AI/ML để optimize title, tags, description.
@@ -71,7 +96,7 @@ nguyenphamdieuhien.online/
 
 | Biến | Dùng cho | Nơi đọc |
 |---|---|---|
-| `DATABASE_URL` | Neon PostgreSQL — Getify data (listings, reports) | `core/config.py` |
+| `DATABASE_URL` | Neon PostgreSQL — EtseeMate data (listings, reports) | `core/config.py` |
 | `ETSY_MARKET_DB` | PostgreSQL — market data DB (etsy_star_engine output, bảng `market_listing`) | `core/config.py` |
 | `ANTHROPIC_API_KEY` | Claude API | `services/claude_service.py` |
 | `CLAUDE_MODEL` | Model ID (default: `claude-sonnet-4-6`) | `core/config.py` |
@@ -80,33 +105,6 @@ nguyenphamdieuhien.online/
 | `ALLOWED_ORIGINS` | CORS (comma-separated) | `core/config.py` |
 
 **Rule:** Secret thật chỉ trong `.env` (gitignored). Chỉ commit `.env.example`.
-
----
-
-## Quy tắc khi bắt đầu task mới (mọi session, mọi agent)
-
-Trước khi viết hoặc sửa bất kỳ file nào:
-1. Chạy `git log --oneline -5` để biết commit gần nhất
-2. Đọc `.claude/system_context.md` để lấy trạng thái kiến trúc hiện tại
-3. **Không dựa vào conversation history để suy đoán trạng thái code** — history có thể cũ
-
-> Nếu bạn là user: nhắn "Sync context trước khi làm việc." khi mở lại session cũ.
-
----
-
-## Quy tắc chung cho mọi agent
-
-1. **Đọc file trước khi sửa** — không sửa blind
-2. **Không tạo file mới nếu đã có file phù hợp** để mở rộng
-3. **Không đặt file sai layer** — logic ML không vào BE, route không vào service
-4. **Không dùng `git add -A`** — stage từng file cụ thể
-5. **Không commit `.env`** — chỉ commit `.env.example`
-6. **Không xóa `data/raw/`** — đây là nguồn dữ liệu gốc
-7. Khi thêm dependency: cập nhật đúng `requirements.txt` của layer tương ứng (`backend/` hoặc `model/`)
-8. Mọi thay đổi DB schema: thêm migration, không `drop` table trực tiếp
-9. Các ad-hoc code dùng để chạy 1 lần duy nhất trong quá trình dev phải được drop ngay sau khi hoàn thành công việc
-10. **Trước khi báo "done" cho user**: luôn chạy `git status` để kiểm tra tất cả file dirty. Nếu có file liên quan task chưa commit → commit ngay. Không để tình trạng "edit nhưng quên commit" làm Render deploy partial state.
-11. **Khi rename / refactor cross-file** (đổi brand, đổi tên biến chung như token key): luôn `grep -r` toàn bộ codebase để tìm hết occurrence trước khi sửa, không sửa file-by-file dựa vào trí nhớ. Sau khi sửa, verify lại bằng `grep -r` xem còn occurrence cũ nào không. Đặc biệt cẩn thận với **key dùng chung giữa nhiều file** (sessionStorage keys, localStorage keys, cookie names, env vars) — mismatch giữa 2 file = bug nghiêm trọng.
 
 ---
 
@@ -122,31 +120,3 @@ uvicorn app.main:app --reload --port 8000
 cd model
 pip install -r requirements.txt
 ```
-
-# HỆ THỐNG ĐIỀU PHỐI HYBRID AGENT
-
-## 🎯 Nguyên Tắc Cốt Lõi
-Hệ thống hoạt động theo mô hình Hybrid. Các tác vụ lớn phức tạp sẽ được phân rã thành các task nhỏ để phân phối cho các Agent chuyên trách nhằm tối ưu hóa hiệu suất và chi phí Token.
-
-## 🤖 Bản Đồ Phân Phối Agent & Model
-Khi nhận yêu cầu, hệ thống hoặc người điều phối phải kích hoạt chính xác Agent theo sơ đồ sau:
-
-1. **Architect Agent (Model: High-Reasoning / Claude Opus)**
-   - *Mục đích:* Phân tích hệ thống, thiết kế API, viết kế hoạch.
-   - *Kích hoạt:* Khi có tính năng mới hoặc thay đổi kiến trúc lớn.
-
-2. **Backend Developer Agent (Model: High-Reasoning / Claude Sonnet)**
-   - *Mục đích:* Xử lý logic nghiệp vụ, database, thuật toán, bảo mật.
-   - *Kích hoạt:* Sửa đổi code server, API endpoints, migrations.
-
-3. **Frontend Developer Agent (Model: Fast & Cheap / Claude Haiku)**
-   - *Mục đích:* Xây dựng giao diện, viết CSS/HTML, component UI, bind dữ liệu.
-   - *Kích hoạt:* Các task thay đổi UI/UX, sửa layout, tối ưu giao diện.
-
-4. **Reviewer Agent (Model: Fast & Cheap / Claude Haiku)**
-   - *Mục đích:* Kiểm tra cú pháp, lỗi logic, quy chuẩn coding convention, kiểm tra Git Diff.
-   - *Kích hoạt:* Chạy tự động sau khi Developer Agent hoàn thành code và trước khi tạo Pull Request.
-
-## 📝 Quy Trình Làm Việc Chung (Shared Workflow)
-1. Trường hợp 1: user gọi @architect, Architect Agent sẽ lên plan todo.md và các Frontend, Backend sẽ thực hiện todo.md sau khi hoàn thành hết todo.md, Review Agent sẽ được gọi ra để kiểm tra và cập nhật file
-2. Trường hợp 2: user gọi các Agent còn lại thì các Agent tự cập nhật todo.md và gọi Reviewer Agent lên để kiểm tra phản hồi user
