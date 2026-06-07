@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Getify Ads Spy",
-  "version": "1.0.0",
+  "name": "GetifyCo Ads Spy",
+  "version": "1.1.0",
   "description": "Passively captures Etsy Ads API responses for analytics",
   "browser_specific_settings": {
     "gecko": {
@@ -11,8 +11,7 @@
   },
   "permissions": ["storage", "webNavigation"],
   "host_permissions": [
-    "https://nguyenphamdieuhien.online/*",
-    "http://localhost/*"
+    "https://*.neon.tech/*"
   ],
   "content_scripts": [
     {

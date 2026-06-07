@@ -89,43 +89,32 @@
         <span class="settings-arrow" id="settings-arrow">▼</span>
       </div>
       <div class="settings-body" id="settings-body">
-        <label class="settings-label" for="input-api-url">
-          API URL
-        </label>
-        <input
-          type="text"
-          id="input-api-url"
-          class="settings-input"
-          placeholder="https://nguyenphamdieuhien.online"
-          autocomplete="off"
-          spellcheck="false"
-        />
-        <label class="settings-label" for="input-token" style="margin-top:8px">
-          Access Token
+        <label class="settings-label" for="input-db-conn">
+          Database connection (Neon)
         </label>
         <input
           type="password"
-          id="input-token"
+          id="input-db-conn"
           class="settings-input"
-          placeholder="Paste JWT access token từ trang web"
+          placeholder="postgresql://user:pass@ep-xxx.neon.tech/dbname"
           autocomplete="off"
           spellcheck="false"
         />
         <label class="settings-label" for="input-vm-name" style="margin-top:8px">
-          VM Code
+          VM Code <span style="font-weight:400;opacity:.7">— tuỳ chọn</span>
         </label>
         <input
           type="text"
           id="input-vm-name"
           class="settings-input"
-          placeholder="VM08"
+          placeholder="VM08 (tuỳ chọn)"
           maxlength="16"
           autocomplete="off"
           spellcheck="false"
         />
         <div class="settings-hint">
-          Đăng nhập tại web app, mở DevTools → Application → Local Storage → lấy access_token.
-          Token được lưu locally trên máy bạn.
+          Dán chuỗi kết nối Neon của bạn (cùng DB mà app GetifyCo dùng). Dữ liệu được ghi
+          thẳng vào Neon của bạn — không qua server nào khác. Chuỗi này lưu locally trên máy.
         </div>
         <div class="settings-actions">
           <button id="btn-save-config" class="btn btn-save-config">

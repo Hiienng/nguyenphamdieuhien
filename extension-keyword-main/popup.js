@@ -9,8 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const settingsToggle = document.getElementById("settings-toggle");
   const settingsArrow = document.getElementById("settings-arrow");
   const settingsBody = document.getElementById("settings-body");
-  const inputApiUrl = document.getElementById("input-api-url");
-  const inputToken = document.getElementById("input-token");
+  const inputDbConn = document.getElementById("input-db-conn");
   const inputVmName = document.getElementById("input-vm-name");
   const btnSaveConfig = document.getElementById("btn-save-config");
 
@@ -1452,18 +1451,12 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Get API config from storage
+    // Database connection from storage
     const config = await new Promise((resolve) => {
       chrome.runtime.sendMessage({ action: "GET_DB_CONFIG" }, resolve);
     });
-
-    const apiUrl = config && config.apiUrl ? config.apiUrl : "";
-    const token = config && config.token ? config.token : "";
-    if (!apiUrl || !token) {
-      setDbStatus(
-        "Chưa cấu hình API URL hoặc Token. Mở Settings để nhập.",
-        "error"
-      );
+    if (!config || !config.connString) {
+      setDbStatus("Chưa nhập Database connection. Mở Settings để nhập.", "error");
       settingsBody.classList.add("visible");
       settingsArrow.classList.add("open");
       return;
@@ -1472,13 +1465,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const originalLabel = btnAddDb.textContent;
     btnAddDb.disabled = true;
     btnAddDb.textContent = "Adding to DB...";
-    setDbStatus(`Sending ${rows.length} rows to backend...`, "info");
+    setDbStatus(`Đang ghi ${rows.length} dòng vào Neon...`, "info");
 
     try {
       const importer = getVmName();
       const response = await new Promise((resolve) => {
         chrome.runtime.sendMessage(
-          { action: "INGEST_LISTING", rows, apiUrl, token, importer },
+          { action: "INGEST_LISTING", rows, importer },
           resolve
         );
       });
@@ -1490,11 +1483,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setDbStatus(`Inserted ${response.inserted || 0} rows into listing_report.`, "success");
     } catch (error) {
       const errMsg = String(error && error.message ? error.message : error);
-      const isAuthExpired = /401|Unauthorized|Invalid or expired token/i.test(errMsg);
-      const displayMsg = isAuthExpired
-        ? 'Token đã hết hạn. Hãy quay lại portal (/app), bấm "Copy Token" và paste lại vào Settings của extension.'
-        : "Insert failed: " + errMsg;
-      setDbStatus(displayMsg, "error");
+      setDbStatus("Insert failed: " + errMsg, "error");
     } finally {
       btnAddDb.textContent = originalLabel;
       btnAddDb.disabled = allSessions.length === 0;
@@ -1543,14 +1532,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const config = await new Promise((resolve) => {
       chrome.runtime.sendMessage({ action: "GET_DB_CONFIG" }, resolve);
     });
-
-    const apiUrl = config && config.apiUrl ? config.apiUrl : "";
-    const token = config && config.token ? config.token : "";
-    if (!apiUrl || !token) {
-      setDbStatus(
-        "Chưa cấu hình API URL hoặc Token. Mở Settings để nhập.",
-        "error"
-      );
+    if (!config || !config.connString) {
+      setDbStatus("Chưa nhập Database connection. Mở Settings để nhập.", "error");
       settingsBody.classList.add("visible");
       settingsArrow.classList.add("open");
       return;
@@ -1560,7 +1543,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btnAddDbKeywords.disabled = true;
     btnAddDbKeywords.textContent = "Adding to DB...";
     setDbStatus(
-      `Sending ${dailyRows.length} daily + ${keywordRows.length} keyword rows to backend...`,
+      `Đang ghi ${dailyRows.length} daily + ${keywordRows.length} keyword rows vào Neon...`,
       "info"
     );
 
@@ -1572,7 +1555,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (dailyRows.length > 0) {
         const dailyResp = await new Promise((resolve) => {
           chrome.runtime.sendMessage(
-            { action: "INGEST_LISTING", rows: dailyRows, apiUrl, token, importer },
+            { action: "INGEST_LISTING", rows: dailyRows, importer },
             resolve
           );
         });
@@ -1585,7 +1568,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (keywordRows.length > 0) {
         const kwResp = await new Promise((resolve) => {
           chrome.runtime.sendMessage(
-            { action: "INGEST_KEYWORD", rows: keywordRows, apiUrl, token, importer },
+            { action: "INGEST_KEYWORD", rows: keywordRows, importer },
             resolve
           );
         });
@@ -1604,11 +1587,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     } catch (error) {
       const errMsg = String(error && error.message ? error.message : error);
-      const isAuthExpired = /401|Unauthorized|Invalid or expired token/i.test(errMsg);
-      const displayMsg = isAuthExpired
-        ? 'Token đã hết hạn. Hãy quay lại portal (/app), bấm "Copy Token" và paste lại vào Settings của extension.'
-        : "Insert failed: " + errMsg;
-      setDbStatus(displayMsg, "error");
+      setDbStatus("Insert failed: " + errMsg, "error");
     } finally {
       btnAddDbKeywords.textContent = originalLabel;
       btnAddDbKeywords.disabled = allSessions.length === 0;
@@ -1695,45 +1674,36 @@ document.addEventListener("DOMContentLoaded", () => {
     settingsBody.classList.toggle("visible");
     settingsArrow.classList.toggle("open");
     if (!isOpen) {
-      inputApiUrl.focus();
+      inputDbConn.focus();
     }
   });
 
-  // Toggle token visibility
+  // Toggle connection-string visibility
   btnToggleVisibility.addEventListener("click", () => {
-    if (inputToken.type === "password") {
-      inputToken.type = "text";
+    if (inputDbConn.type === "password") {
+      inputDbConn.type = "text";
       btnToggleVisibility.textContent = "Hide";
     } else {
-      inputToken.type = "password";
+      inputDbConn.type = "password";
       btnToggleVisibility.textContent = "👁️";
     }
   });
 
   // Save API config
   btnSaveConfig.addEventListener("click", () => {
-    const apiUrl = inputApiUrl.value.trim();
-    const token = inputToken.value.trim();
+    const connString = inputDbConn.value.trim();
     const vmName = (inputVmName && inputVmName.value || "").trim();
-    if (!apiUrl) {
-      setSettingsStatus("API URL không được để trống.", "error");
+    if (!connString) {
+      setSettingsStatus("Database connection không được để trống.", "error");
       return;
     }
-    if (!apiUrl.startsWith("http")) {
-      setSettingsStatus("API URL phải bắt đầu bằng http:// hoặc https://", "error");
-      return;
-    }
-    if (!token) {
-      setSettingsStatus("Token không được để trống.", "error");
-      return;
-    }
-    if (!vmName) {
-      setSettingsStatus("VM Code không được để trống (vd: VM08).", "error");
+    if (!/^postgres(ql)?:\/\//.test(connString)) {
+      setSettingsStatus("Connection phải bắt đầu bằng postgresql://", "error");
       return;
     }
 
     chrome.runtime.sendMessage(
-      { action: "SAVE_DB_CONFIG", data: { apiUrl, token, vmName } },
+      { action: "SAVE_DB_CONFIG", data: { connString, vmName } },
       (response) => {
         if (response && response.ok) {
           setSettingsStatus("Đã lưu cấu hình.", "success");
@@ -1748,35 +1718,34 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   });
 
-  // Test API connection
+  // Test DB connection (Neon select 1 via background)
   btnTestConn.addEventListener("click", async () => {
-    const apiUrl = inputApiUrl.value.trim();
-    const token = inputToken.value.trim();
-    if (!apiUrl || !token) {
-      setSettingsStatus("Nhập API URL và Token trước.", "error");
+    const connString = inputDbConn.value.trim();
+    if (!connString) {
+      setSettingsStatus("Nhập Database connection trước.", "error");
       return;
     }
+    // Persist first so background uses the latest value for the test.
+    await new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        { action: "SAVE_DB_CONFIG", data: { connString, vmName: (inputVmName && inputVmName.value || "").trim() } },
+        resolve
+      );
+    });
 
     btnTestConn.disabled = true;
     btnTestConn.textContent = "Testing...";
     setSettingsStatus("Đang kiểm tra kết nối...", "info");
 
-    try {
-      const res = await fetch(apiUrl.replace(/\/+$/, "") + "/api/v1/auth/me", {
-        headers: { Authorization: "Bearer " + token },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSettingsStatus(`Kết nối OK — ${data.email || "authenticated"}`, "success");
+    chrome.runtime.sendMessage({ action: "TEST_DB_CONNECTION" }, (res) => {
+      if (res && res.ok) {
+        setSettingsStatus("Kết nối Neon OK.", "success");
       } else {
-        setSettingsStatus(`Lỗi ${res.status}: Token không hợp lệ hoặc hết hạn.`, "error");
+        setSettingsStatus("Kết nối thất bại: " + ((res && res.error) || "unknown"), "error");
       }
-    } catch (e) {
-      setSettingsStatus("Kết nối thất bại: " + e.message, "error");
-    } finally {
       btnTestConn.disabled = false;
       btnTestConn.textContent = "Test Connection";
-    }
+    });
   });
 
   function setSettingsStatus(message, type) {
@@ -1819,11 +1788,10 @@ document.addEventListener("DOMContentLoaded", () => {
     saveKeywordUrlTemplate();
   });
 
-  // Load saved API config on popup open
+  // Load saved DB config on popup open
   function loadDbConfig() {
     chrome.runtime.sendMessage({ action: "GET_DB_CONFIG" }, (response) => {
-      if (response && response.apiUrl) inputApiUrl.value = response.apiUrl;
-      if (response && response.token) inputToken.value = response.token;
+      if (response && response.connString) inputDbConn.value = response.connString;
       if (response && response.vmName && inputVmName) inputVmName.value = response.vmName;
     });
   }

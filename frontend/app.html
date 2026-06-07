@@ -1390,43 +1390,24 @@
                 </div>
               </div>
 
-              <!-- Step 2: Copy token -->
+              <!-- Step 2: Configure DB connection -->
               <div style="display:flex;gap:14px;align-items:flex-start">
                 <div style="min-width:24px;height:24px;border-radius:50%;background:var(--terracotta);color:#fff;font-family:var(--font-sans);font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">2</div>
                 <div style="flex:1">
-                  <p style="font-family:var(--font-sans);font-size:0.85rem;font-weight:600;color:var(--charcoal);margin-bottom:6px">Copy your access token</p>
-                  <button onclick="copyExtensionToken()" id="btn-copy-token"
-                    style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:var(--ivory);color:var(--charcoal);font-family:var(--font-sans);font-size:0.82rem;font-weight:500;border-radius:7px;border:1px solid var(--border-warm);cursor:pointer;transition:background 0.15s"
-                    onmouseover="this.style.background='var(--parchment)'" onmouseout="this.style.background='var(--ivory)'">
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 11V3a1 1 0 0 1 1-1h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                    Copy Token
-                  </button>
-                  <p style="font-family:var(--font-sans);font-size:0.76rem;color:var(--stone);margin-top:6px">Token is tied to your account. It expires periodically — come back here to copy a fresh one if the extension reports an auth error.</p>
-                </div>
-              </div>
-
-              <!-- Step 3: Configure extension -->
-              <div style="display:flex;gap:14px;align-items:flex-start">
-                <div style="min-width:24px;height:24px;border-radius:50%;background:var(--terracotta);color:#fff;font-family:var(--font-sans);font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">3</div>
-                <div style="flex:1">
-                  <p style="font-family:var(--font-sans);font-size:0.85rem;font-weight:600;color:var(--charcoal);margin-bottom:6px">Configure the extension</p>
+                  <p style="font-family:var(--font-sans);font-size:0.85rem;font-weight:600;color:var(--charcoal);margin-bottom:6px">Dán Database connection</p>
                   <div style="background:var(--warm-sand);border-radius:8px;border:1px solid var(--border-cream);padding:12px 14px;display:flex;flex-direction:column;gap:6px">
-                    <p style="font-family:var(--font-sans);font-size:0.80rem;color:var(--charcoal)">Open the extension popup → click <strong>Settings</strong>, then fill in:</p>
-                    <div style="display:flex;flex-direction:column;gap:4px;padding-left:8px">
-                      <p style="font-family:var(--font-mono);font-size:0.78rem;color:var(--charcoal)"><span style="color:var(--stone)">API URL</span> &nbsp;→&nbsp; <strong>https://nguyenphamdieuhien.online</strong></p>
-                      <p style="font-family:var(--font-mono);font-size:0.78rem;color:var(--charcoal)"><span style="color:var(--stone)">Token &nbsp;&nbsp;</span> &nbsp;→&nbsp; paste the token copied in step 2</p>
-                    </div>
-                    <p style="font-family:var(--font-sans);font-size:0.76rem;color:var(--stone)">Click <strong>Save</strong>, then <strong>Test Connection</strong> — you should see a confirmation with your email.</p>
+                    <p style="font-family:var(--font-sans);font-size:0.80rem;color:var(--charcoal)">Mở popup extension → <strong>Database Settings</strong> → dán <strong>Database connection</strong> (cùng chuỗi Neon mà app đang dùng) → <strong>Save</strong> → <strong>Test Connection</strong>.</p>
+                    <p style="font-family:var(--font-sans);font-size:0.76rem;color:var(--stone)">Extension ghi dữ liệu <strong>thẳng vào Neon của bạn</strong> — không cần API/token. Chuỗi kết nối lưu locally trên máy.</p>
                   </div>
                 </div>
               </div>
 
-              <!-- Step 4: Use -->
+              <!-- Step 3: Use -->
               <div style="display:flex;gap:14px;align-items:flex-start">
-                <div style="min-width:24px;height:24px;border-radius:50%;background:var(--terracotta);color:#fff;font-family:var(--font-sans);font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">4</div>
+                <div style="min-width:24px;height:24px;border-radius:50%;background:var(--terracotta);color:#fff;font-family:var(--font-sans);font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">3</div>
                 <div style="flex:1">
-                  <p style="font-family:var(--font-sans);font-size:0.85rem;font-weight:600;color:var(--charcoal);margin-bottom:4px">Browse Etsy Ads &amp; sync data</p>
-                  <p style="font-family:var(--font-sans);font-size:0.76rem;color:var(--stone)">Navigate to your Etsy Ads dashboard. The extension captures data automatically. Click <strong>Add to DB</strong> in the popup to push listing stats, or <strong>Add Keywords to DB</strong> for keyword data. Data is saved to your account only.</p>
+                  <p style="font-family:var(--font-sans);font-size:0.85rem;font-weight:600;color:var(--charcoal);margin-bottom:4px">Quét Etsy Ads &amp; đồng bộ</p>
+                  <p style="font-family:var(--font-sans);font-size:0.76rem;color:var(--stone)">Mở Etsy Ads dashboard — extension tự bắt dữ liệu. Bấm <strong>Add to DB</strong> để đẩy số liệu listing, hoặc <strong>Add Keywords to DB</strong> cho keyword. Dữ liệu vào thẳng Neon của bạn.</p>
                 </div>
               </div>
 
