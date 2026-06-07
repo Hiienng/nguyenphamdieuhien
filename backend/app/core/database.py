@@ -14,6 +14,18 @@ _engine = None
 _AsyncSessionLocal = None
 
 
+def _ssl_context():
+    """TLS context backed by certifi's CA bundle.
+
+    asyncpg's ssl=True relies on the OS trust store, which is absent in a
+    PyInstaller bundle → 'CERTIFICATE_VERIFY_FAILED'. Pointing at certifi's
+    bundled cacert.pem makes TLS to Neon work both in dev and when frozen.
+    """
+    import ssl
+    import certifi
+    return ssl.create_default_context(cafile=certifi.where())
+
+
 def _get_engine():
     global _engine, _AsyncSessionLocal
     if _engine is None:
@@ -25,7 +37,7 @@ def _get_engine():
             max_overflow=10,
             pool_pre_ping=True,
             pool_recycle=300,
-            connect_args={"ssl": True, "statement_cache_size": 0},
+            connect_args={"ssl": _ssl_context(), "statement_cache_size": 0},
         )
         _AsyncSessionLocal = async_sessionmaker(
             bind=_engine,

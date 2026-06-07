@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 """PyInstaller spec for the Getify desktop app (macOS .app + Windows .exe)."""
 import os
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 SPEC_DIR = os.path.abspath(SPECPATH)          # desktop/
 ROOT = os.path.dirname(SPEC_DIR)              # project dir (nguyenphamdieuhien)
@@ -25,6 +25,10 @@ if os.path.exists(_ext):
 _appcfg = os.path.join(ROOT, "app_config.env")
 if os.path.exists(_appcfg):
     datas.append((_appcfg, "."))
+
+# CA bundle for TLS to Neon (asyncpg ssl) — without this the frozen app gets
+# CERTIFICATE_VERIFY_FAILED because there is no OS trust store in the bundle.
+datas += collect_data_files("certifi")
 
 # --- hidden imports: uvicorn dynamic loaders + the backend package ----------
 hiddenimports = []
