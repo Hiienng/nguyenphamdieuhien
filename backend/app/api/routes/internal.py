@@ -20,7 +20,6 @@ from ...schemas.internal import (
     IngestKeywordRequest,
     IngestResponse,
 )
-from ...services import crawler_ops
 
 router = APIRouter(prefix="/internal", tags=["internal"])
 
@@ -64,13 +63,6 @@ async def ingest_listing(
         ))
         count += 1
     await db.commit()
-
-    try:
-        new_ids = list({r.listing_id for r in req.rows})
-        await crawler_ops.enqueue_listings(db, new_ids, reason="extension_ingest")
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Enqueue crawl_queue failed (ingest/listing): %s", exc)
-
     return IngestResponse(inserted=count)
 
 

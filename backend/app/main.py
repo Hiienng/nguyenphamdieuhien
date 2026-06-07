@@ -37,7 +37,7 @@ from .models import optimization_log as optimization_log_model  # noqa: F401 —
 from .models import threshold  # noqa: F401 — registers threshold_configs with Base
 from .models import listing_report, keyword_report, manual_listing_report, manual_keyword_report  # noqa: F401 — register with Base
 from .models import user  # noqa: F401 — registers users table with Base
-from .services import performance_service, reporting_etl, crawler_ops
+from .services import performance_service, reporting_etl
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -79,7 +79,6 @@ async def _background_init():
         async with AsyncSessionLocal() as session:
             await performance_service.seed_scenarios(session)
             await reporting_etl.ensure_reporting_tables(session)
-            await crawler_ops.ensure_crawler_tables(session)
     except Exception as exc:
         logger.warning("Background init failed: %s", exc)
 

@@ -156,7 +156,7 @@ _SIGNATURE_SQL = text("""
 
 async def compute_ingest_signature(db: AsyncSession) -> str:
     row = (await db.execute(_SIGNATURE_SQL)).mappings().one()
-    payload = "|".join(row[k] or "" for k in ("lr", "mlr", "kr", "mkr", "refs"))
+    payload = "|".join(row[k] or "" for k in ("lr", "mlr", "kr", "mkr"))
     return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
 
