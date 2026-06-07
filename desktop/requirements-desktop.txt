@@ -1,0 +1,4 @@
+# Desktop bundle deps = backend runtime + native window + packager.
+-r ../backend/requirements.txt
+pywebview>=5.1
+pyinstaller>=6.10

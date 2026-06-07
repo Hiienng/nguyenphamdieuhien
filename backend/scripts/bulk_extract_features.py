@@ -5,7 +5,7 @@ Skips rows already in thumbnail_features (by image_url).
 Assigns ml_label: 1 for Bestseller/Popular now, 0 for others.
 
 Usage:
-  cd nguyenphamdieuhien.online/backend
+  cd nguyenphamdieuhien/backend
   python scripts/bulk_extract_features.py [--limit 50] [--product-type onesie]
 """
 from __future__ import annotations

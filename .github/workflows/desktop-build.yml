@@ -1,0 +1,84 @@
+name: Build desktop app
+
+# Builds the Getify desktop app for macOS (.app) and Windows (.exe).
+# Trigger by pushing a tag like v1.0.0, or run manually from the Actions tab.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            artifact: Getify-macos
+          - os: windows-latest
+            artifact: Getify-windows
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.9"
+
+      # The app needs the bundled .env (DATABASE_URL etc.). Store the full file
+      # contents in a repo secret named ENV_FILE (Settings -> Secrets -> Actions).
+      - name: Write .env from secret (macOS/Linux)
+        if: runner.os != 'Windows' && env.ENV_FILE != ''
+        shell: bash
+        run: printf '%s' "$ENV_FILE" > .env
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+
+      - name: Write .env from secret (Windows)
+        if: runner.os == 'Windows' && env.ENV_FILE != ''
+        shell: pwsh
+        run: $env:ENV_FILE | Out-File -FilePath .env -Encoding utf8 -NoNewline
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+
+      - name: Install deps
+        working-directory: desktop
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-desktop.txt
+
+      - name: Build
+        working-directory: desktop
+        run: pyinstaller --noconfirm --clean Getify.spec
+
+      - name: Smoke test (headless server boot)
+        working-directory: desktop
+        shell: bash
+        env:
+          GETIFY_HEADLESS: "1"
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            ./dist/getifyco-listing-portal/getifyco-listing-portal.exe | grep "GETIFY_HEADLESS ok=1"
+          else
+            ./dist/getifyco-listing-portal.app/Contents/MacOS/getifyco-listing-portal | grep "GETIFY_HEADLESS ok=1"
+          fi
+
+      - name: Package macOS .app (zip)
+        if: runner.os == 'macOS'
+        working-directory: desktop/dist
+        run: ditto -c -k --keepParent getifyco-listing-portal.app getifyco-listing-portal-macos.zip
+
+      - name: Package Windows (zip)
+        if: runner.os == 'Windows'
+        working-directory: desktop/dist
+        shell: pwsh
+        run: Compress-Archive -Path getifyco-listing-portal\* -DestinationPath getifyco-listing-portal-windows.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            desktop/dist/getifyco-listing-portal-macos.zip
+            desktop/dist/getifyco-listing-portal-windows.zip
+          if-no-files-found: ignore

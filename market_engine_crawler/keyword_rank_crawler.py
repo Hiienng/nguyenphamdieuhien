@@ -52,7 +52,7 @@ CHROME_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 DEBUG_PORT  = 9222
 PROFILE_DIR = Path.home() / ".etsy_cdp_profile"
 
-_ENV_PATH    = ROOT / "nguyenphamdieuhien.online/.env"
+_ENV_PATH    = ROOT / "nguyenphamdieuhien/.env"
 _DB_URL      = ""   # etsy_market_db  (destination)
 _APP_DB_URL  = ""   # DATABASE_URL    (source of keywords)
 _GROQ_KEY    = ""

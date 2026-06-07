@@ -18,7 +18,6 @@ import json
 import logging
 import re
 
-import google.generativeai as genai
 import httpx
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -115,6 +114,12 @@ def _classify_titles_with_gemini_sync(titles: list[str]) -> dict[str, str]:
     """Batch-classify titles → product_type. 1 Gemini call cho tất cả."""
     settings = get_settings()
     if not settings.GEMINI_API_KEY_paid_thumbnail or not titles:
+        return {}
+
+    try:
+        import google.generativeai as genai  # lazy: optional, not bundled in desktop build
+    except Exception as e:  # noqa: BLE001
+        logger.warning("google.generativeai unavailable; skipping Gemini classification: %s", e)
         return {}
 
     genai.configure(api_key=settings.GEMINI_API_KEY_paid_thumbnail)

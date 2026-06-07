@@ -1,14 +1,7 @@
 from pydantic import BaseModel
-from datetime import datetime
 
 
-# ── Upload response ──────────────────────────────────────
-class UploadResponse(BaseModel):
-    batch_id: str
-    file_count: int
-
-
-# ── Extract response ─────────────────────────────────────
+# ── Report rows (pushed by the browser extension) ────────
 class ListingReportRow(BaseModel):
     listing_id: str
     title: str | None = None
@@ -42,29 +35,6 @@ class KeywordReportRow(BaseModel):
     views: int = 0
 
 
-class ExtractResponse(BaseModel):
-    batch_id: str
-    status: str
-    listing_report: list[ListingReportRow] = []
-    keyword_report: list[KeywordReportRow] = []
-    progress: int = 0
-    total_files: int = 0
-    failed_files: list[str] = []
-
-
-# ── Confirm request / response ───────────────────────────
-class ConfirmRequest(BaseModel):
-    batch_id: str
-    no_vm: str | None = None
-    listing_report: list[ListingReportRow]
-    keyword_report: list[KeywordReportRow]
-
-
-class ConfirmResponse(BaseModel):
-    imported: bool
-    rows: dict  # {"listing": N, "keyword": M}
-
-
 # ── Extension ingest ─────────────────────────────────────
 class IngestListingRequest(BaseModel):
     rows: list[ListingReportRow]
@@ -78,23 +48,3 @@ class IngestKeywordRequest(BaseModel):
 
 class IngestResponse(BaseModel):
     inserted: int
-
-
-# ── Discard / Rollback response ──────────────────────────
-class BatchActionResponse(BaseModel):
-    batch_id: str
-    status: str
-
-
-# ── History ──────────────────────────────────────────────
-class BatchHistoryItem(BaseModel):
-    batch_id: str
-    status: str
-    file_count: int = 0
-    listing_count: int = 0
-    keyword_count: int = 0
-    created_at: datetime | None = None
-    confirmed_at: datetime | None = None
-    note: str | None = None
-    error_message: str | None = None
-    failed_files: list[str] = []

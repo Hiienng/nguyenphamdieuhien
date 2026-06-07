@@ -1,7 +1,28 @@
 import asyncio
 import logging
+import os
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
+
+
+def _resource_root() -> Path:
+    """Directory that holds frontend/, docs/, extension files and .env.
+
+    Works in three modes:
+      - dev:        the project dir (backend/app/main.py -> parents[2])
+      - PyInstaller: the bundle's extraction dir (sys._MEIPASS)
+      - override:   ETSY_RESOURCE_ROOT env (set by the desktop launcher)
+    """
+    override = os.environ.get("ETSY_RESOURCE_ROOT")
+    if override:
+        return Path(override)
+    if getattr(sys, "frozen", False):
+        return Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
+    return Path(__file__).resolve().parents[2]
+
+
+RESOURCE_ROOT = _resource_root()
 from fastapi import FastAPI, Request
 from fastapi.responses import Response, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,12 +31,11 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import NotSupportedError
 from .core.config import get_settings
 from .core.database import create_tables, AsyncSessionLocal, engine
-from .api.routes import listings, market, performance, internal, references, scenarios, thresholds, intelligence, auth, billing, admin
+from .api.routes import listings, performance, internal, references, scenarios, thresholds, auth
 from .models import scenario   # noqa: F401 — registers scenarios_rules with Base
 from .models import threshold  # noqa: F401 — registers threshold_configs with Base
-from .models import import_batch, listing_report, keyword_report, manual_listing_report, manual_keyword_report  # noqa: F401 — register with Base
-from .models import thumbnail_knowledge  # noqa: F401 — registers thumbnail_knowledge with Base
-from .models import user, subscription, credit, payment  # noqa: F401 — registers auth/payment models with Base
+from .models import listing_report, keyword_report, manual_listing_report, manual_keyword_report  # noqa: F401 — register with Base
+from .models import user  # noqa: F401 — registers users table with Base
 from .services import performance_service, reporting_etl, crawler_ops
 
 logger = logging.getLogger(__name__)
@@ -87,16 +107,12 @@ app.add_middleware(
 )
 
 app.include_router(listings.router, prefix="/api/v1")
-app.include_router(market.router, prefix="/api/v1")
 app.include_router(performance.router, prefix="/api/v1")
 app.include_router(internal.router, prefix="/api/v1")
 app.include_router(references.router, prefix="/api/v1")
 app.include_router(scenarios.router,   prefix="/api/v1")
 app.include_router(thresholds.router,  prefix="/api/v1")
-app.include_router(intelligence.router, prefix="/api/v1/intelligence", tags=["intelligence"])
 app.include_router(auth.router, prefix="/api/v1")
-app.include_router(billing.router, prefix="/api/v1")
-app.include_router(admin.router, prefix="/api/v1")
 
 
 @app.get("/favicon.ico")
@@ -118,12 +134,12 @@ async def health():
 
 
 # Serve docs/ markdown files at /md-docs/ to avoid prefix clash with /docs.html
-_docs_dir = Path(__file__).resolve().parents[2] / "docs"
+_docs_dir = RESOURCE_ROOT / "docs"
 if _docs_dir.exists():
     app.mount("/md-docs", StaticFiles(directory=str(_docs_dir)), name="docs")
 
 # Extension download — served with octet-stream so Chrome doesn't block .xpi
-_ext_xpi = Path(__file__).resolve().parents[2] / "extension-keyword-main" / "Archive.pxi"
+_ext_xpi = RESOURCE_ROOT / "extension-keyword-main" / "Archive.pxi"
 
 @app.get("/extension/download")
 async def download_extension():
@@ -137,7 +153,7 @@ async def download_extension():
     )
 
 # Serve frontend static files — must be AFTER API routes
-_frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
+_frontend_dir = RESOURCE_ROOT / "frontend"
 if _frontend_dir.exists():
     # Explicit route: /app → app.html (portal, requires auth)
     @app.get("/app")

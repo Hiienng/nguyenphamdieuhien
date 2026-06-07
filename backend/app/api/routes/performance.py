@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from ...core.database import get_db, MarketSessionLocal
-from ...core.auth_middleware import require_subscription, get_tenant_db_for_user
+from ...core.auth_middleware import get_current_active_user, get_tenant_db_for_user
 from ...models.user import User
 from ...schemas.performance import ListingDashboardItem
 from ...services import performance_service, reporting_etl
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/performance", tags=["performance"])
 
 
 @router.get("/listings", response_model=list[ListingDashboardItem])
-async def get_listings_dashboard(db: AsyncSession = Depends(get_tenant_db_for_user), user: User = Depends(require_subscription)):
+async def get_listings_dashboard(db: AsyncSession = Depends(get_tenant_db_for_user), user: User = Depends(get_current_active_user)):
     try:
         async with MarketSessionLocal() as market_db:
             return await performance_service.get_dashboard_listings(db, market_db, tenant_id=user.id)
@@ -21,7 +21,7 @@ async def get_listings_dashboard(db: AsyncSession = Depends(get_tenant_db_for_us
 
 
 @router.post("/refresh")
-async def refresh_dashboard(force: bool = False, db: AsyncSession = Depends(get_tenant_db_for_user), user: User = Depends(require_subscription)):
+async def refresh_dashboard(force: bool = False, db: AsyncSession = Depends(get_tenant_db_for_user), user: User = Depends(get_current_active_user)):
     """Trigger ETL rebuild of reporting tables from raw ingestion data.
 
     Behaviour:

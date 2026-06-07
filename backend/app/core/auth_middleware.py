@@ -2,63 +2,39 @@ from typing import AsyncGenerator
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
-from datetime import datetime, timezone
+from sqlalchemy import text
 
-from .database import get_db, AsyncSessionLocal
+from .database import AsyncSessionLocal
+from .config import get_settings
 from ..models.user import User
-from ..models.subscription import Subscription
-from ..models.credit import CreditAccount
-from ..services.auth_service import decode_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
+# Single-user app: all data is keyed to this fixed tenant id. Login is a shared
+# secret (SECRET_KEY) — no email/password accounts.
+SINGLE_USER_ID = "b7b81ef3-8a1a-42ca-8a56-efb40358ff91"
+SINGLE_USER_EMAIL = "owner@local"
 
-async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: AsyncSession = Depends(get_db),
-) -> User:
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    payload = decode_token(token)
-    if not payload or payload.get("type") != "access":
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-    user = await db.get(User, payload["sub"])
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-    return user
+
+def _single_user() -> User:
+    """Return the in-memory owner identity (not persisted; no DB row needed)."""
+    return User(
+        id=SINGLE_USER_ID,
+        email=SINGLE_USER_EMAIL,
+        password_hash="",
+        is_active=True,
+        is_admin=True,
+    )
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
+    secret = get_settings().SECRET_KEY
+    if not token or not secret or token != secret:
+        raise HTTPException(status_code=401, detail="Invalid or missing access token")
+    return _single_user()
 
 
 async def get_current_active_user(user: User = Depends(get_current_user)) -> User:
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="Account disabled")
-    return user
-
-
-async def require_subscription(
-    user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
-) -> User:
-    now = datetime.now(timezone.utc)
-    sub = await db.scalar(
-        select(Subscription).where(
-            Subscription.user_id == user.id,
-            Subscription.status == "active",
-            Subscription.period_end > now,
-        )
-    )
-    if not sub and not user.is_admin:
-        raise HTTPException(status_code=403, detail="Active subscription required")
-    return user
-
-
-async def require_credit(
-    user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
-) -> User:
-    acct = await db.scalar(select(CreditAccount).where(CreditAccount.user_id == user.id))
-    if not acct or acct.balance < 1:
-        raise HTTPException(status_code=402, detail="Insufficient credits")
     return user
 
 
@@ -67,9 +43,9 @@ def get_tenant_id(user: User = Depends(get_current_active_user)) -> str:
 
 
 async def get_tenant_db_for_user(
-    user: User = Depends(require_subscription),
+    user: User = Depends(get_current_active_user),
 ) -> AsyncGenerator[AsyncSession, None]:
-    """FastAPI dependency: session with RLS app.tenant_id set to current user."""
+    """FastAPI dependency: session with RLS app.tenant_id set to the single user."""
     async with AsyncSessionLocal() as session:
         try:
             await session.execute(
@@ -79,9 +55,3 @@ async def get_tenant_db_for_user(
             yield session
         finally:
             await session.close()
-
-
-async def require_admin(user: User = Depends(get_current_active_user)) -> User:
-    if not user.is_admin:
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return user

@@ -25,6 +25,8 @@ def _get_engine():
             echo=settings.APP_ENV == "development",
             pool_size=5,
             max_overflow=10,
+            pool_pre_ping=True,
+            pool_recycle=300,
             connect_args={"ssl": True, "statement_cache_size": 0},
         )
         _AsyncSessionLocal = async_sessionmaker(
@@ -44,6 +46,8 @@ def _get_market_session_factory() -> async_sessionmaker:
             echo=settings.APP_ENV == "development",
             pool_size=3,
             max_overflow=5,
+            pool_pre_ping=True,
+            pool_recycle=300,
             connect_args={"ssl": True},
         )
         _MarketSessionLocal = async_sessionmaker(

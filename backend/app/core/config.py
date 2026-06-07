@@ -1,16 +1,21 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 from pathlib import Path
+import os
 
 
 _CORE_DIR = Path(__file__).resolve().parent
 _BACKEND_DIR = _CORE_DIR.parents[1]
 _PROJECT_DIR = _CORE_DIR.parents[2]
-_ENV_FILES = (
+# ETSY_RESOURCE_ROOT is set by the desktop launcher (PyInstaller bundle dir) so
+# the bundled .env is found; it takes priority over the dev-tree locations.
+_RESOURCE_ROOT = os.environ.get("ETSY_RESOURCE_ROOT")
+_ENV_FILES = tuple(filter(None, (
+    (Path(_RESOURCE_ROOT) / ".env") if _RESOURCE_ROOT else None,
     _PROJECT_DIR / ".env",
     _BACKEND_DIR / ".env",
     Path.cwd() / ".env",
-)
+)))
 
 
 class Settings(BaseSettings):
@@ -23,32 +28,17 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     CLAUDE_MODEL: str = "claude-sonnet-4-6"
 
-    # AI Vision — 2 dedicated keys, one per pipeline
-    GEMINI_API_KEY_paid_imagereport: str = ""   # internal_extractor — Etsy Ads screenshot OCR
-    GEMINI_API_KEY_paid_thumbnail: str = ""     # vision_service — thumbnail evaluation/knowledge
-    GEMINI_MODEL: str = "gemini-2.5-flash-lite"  # cheapest vision model available
+    # AI Vision — Gemini key used by references_service (title classification)
+    GEMINI_API_KEY_paid_thumbnail: str = ""
     HUGGINGFACE_API_KEY: str = ""
     # Use a router-supported vision model with an explicit provider suffix.
     HF_MODEL: str = "zai-org/GLM-4.5V"
-
-    # ImageKit (screenshot storage)
-    IMAGEKIT_PUBLIC_KEY: str = ""
-    IMAGEKIT_PRIVATE_KEY: str = ""
-    IMAGEKIT_URL_ENDPOINT: str = ""
-    IMAGEKIT_FOLDER: str = "/listing/EtseeMate"
 
     # JWT Auth
     JWT_SECRET_KEY: str = ""
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_EXPIRE_MIN: int = 30
     JWT_REFRESH_EXPIRE_DAYS: int = 7
-
-    # Stripe
-    STRIPE_SECRET_KEY: str = ""
-    STRIPE_PUBLISHABLE_KEY: str = ""
-    STRIPE_WEBHOOK_SECRET: str = ""
-    STRIPE_PRICE_SUBSCRIPTION: str = ""   # recurring $9.9/month price ID
-    STRIPE_PRICE_CREDIT_DEPOSIT: str = "" # one-time $9.9 price ID
 
     # App
     APP_ENV: str = "development"
@@ -90,5 +80,4 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     s = Settings()
-    print(f"DEBUG: Settings loaded. Gemini imagereport key: {bool(s.GEMINI_API_KEY_paid_imagereport)}, thumbnail key: {bool(s.GEMINI_API_KEY_paid_thumbnail)}")
     return s

@@ -2,210 +2,27 @@
 Internal Ads Data Pipeline — API routes.
 
 Prefix: /api/v1/internal
+
+Only the browser-extension ingest endpoints remain. The screenshot/image-OCR
+import workflow (upload → extract → preview → confirm → history) was removed.
 """
-import asyncio
 import logging
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, BackgroundTasks
+from datetime import datetime, timezone
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import NotSupportedError
 
 logger = logging.getLogger(__name__)
 
-from ...core.database import get_db
-from ...core.auth_middleware import require_subscription, get_tenant_db_for_user
+from ...core.auth_middleware import get_current_active_user, get_tenant_db_for_user
 from ...models.user import User
 from ...schemas.internal import (
-    UploadResponse,
-    ExtractResponse,
-    ConfirmRequest,
-    ConfirmResponse,
-    BatchActionResponse,
-    BatchHistoryItem,
     IngestListingRequest,
     IngestKeywordRequest,
     IngestResponse,
 )
-from ...services import internal_service, reporting_etl, crawler_ops
+from ...services import crawler_ops
 
 router = APIRouter(prefix="/internal", tags=["internal"])
-
-
-@router.get("/status")
-async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_db)):
-    """
-    Get current progress of a batch.
-    """
-    from ...models.import_batch import ImportBatch
-    from sqlalchemy import select
-    
-    result = await db.execute(select(ImportBatch).where(ImportBatch.batch_id == batch_id))
-    batch = result.scalar_one_or_none()
-    if not batch:
-        raise HTTPException(404, "Batch not found")
-        
-    return {
-        "batch_id": batch.batch_id,
-        "status": batch.status,
-        "progress": batch.progress or 0,
-        "total_files": batch.total_files or 0,
-        "listing_count": batch.listing_count or 0,
-        "keyword_count": batch.keyword_count or 0,
-        "error_message": batch.error_message,
-        "quota_exhausted": bool((batch.preview_data or {}).get("quota_exhausted")),
-    }
-
-
-@router.get("/preview")
-async def get_batch_preview(batch_id: str, db: AsyncSession = Depends(get_db)):
-    """
-    Get the preview JSON data for a batch.
-    Returns empty streaming preview instead of 404 when data isn't ready yet.
-    """
-    try:
-        return await internal_service.get_batch_preview(batch_id)
-    except FileNotFoundError:
-        # Return empty preview instead of 404 to avoid console error spam from polling
-        return {
-            "batch_id": batch_id,
-            "listing_report": [],
-            "keyword_report": [],
-            "failed_files": [],
-            "successful_files": [],
-            "extraction_errors": {},
-            "quota_exhausted": False,
-            "streaming": True,
-        }
-
-
-# ── POST /upload — receive images, create batch ─────────────────────────────
-
-@router.post("/upload", response_model=UploadResponse)
-async def upload_screenshots(
-    files: list[UploadFile] = File(...),
-    db: AsyncSession = Depends(get_db),
-):
-    if not files:
-        raise HTTPException(400, "No files provided")
-    if len(files) > 100:
-        raise HTTPException(400, "Tối đa 100 file mỗi lần import để đảm bảo tốc độ trích xuất.")
-
-    allowed = {".png", ".jpg", ".jpeg", ".webp"}
-    for f in files:
-        ext = "." + f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else ""
-        if ext not in allowed:
-            raise HTTPException(400, f"File type not allowed: {f.filename}")
-
-    # Validate image content (magic bytes, size, dimensions)
-    errors = []
-    file_contents: list[tuple] = []  # (UploadFile, bytes)
-    for f in files:
-        content = await f.read()
-        err = await internal_service.validate_image(f.filename, content)
-        if err:
-            errors.append(err)
-        else:
-            file_contents.append((f, content))
-
-    if errors:
-        raise HTTPException(
-            422,
-            detail={"message": "Image validation failed", "errors": errors},
-        )
-
-    try:
-        batch_id, count, _ = await internal_service.save_uploaded_files(
-            file_contents, db,
-        )
-    except Exception as exc:
-        logger.exception("save_uploaded_files failed")
-        raise HTTPException(500, f"Lỗi lưu file: {exc}") from exc
-    return UploadResponse(batch_id=batch_id, file_count=count)
-
-
-# ── POST /extract — run Claude Vision on batch images ────────────────────────
-
-@router.post("/extract")
-async def extract_batch(
-    batch_id: str
-):
-    """
-    Start extraction in the background using asyncio.create_task.
-    (BackgroundTasks closes DB connections after request — create_task avoids that.)
-    """
-    asyncio.create_task(internal_service.run_extraction(batch_id))
-    return {"message": "Extraction started in background", "batch_id": batch_id, "status": "processing"}
-
-
-# ── POST /confirm — write reviewed data to DB ───────────────────────────────
-
-@router.post("/confirm", response_model=ConfirmResponse)
-async def confirm_import(req: ConfirmRequest, db: AsyncSession = Depends(get_tenant_db_for_user), user: User = Depends(require_subscription)):
-    try:
-        result = await internal_service.confirm_import(
-            batch_id=req.batch_id,
-            listing_report=[r.model_dump() for r in req.listing_report],
-            keyword_report=[r.model_dump() for r in req.keyword_report],
-            no_vm=req.no_vm,
-            db=db,
-            tenant_id=user.id,
-        )
-    except ValueError as e:
-        raise HTTPException(400, str(e))
-    except Exception as exc:
-        logger.exception("confirm_import failed for batch %s", req.batch_id)
-        raise HTTPException(500, f"Lỗi confirm: {exc}") from exc
-
-    # New raw rows just landed — rebuild reporting layer so the FE shows them
-    # without the user having to click "Tải lại". Failure here must not break
-    # the import response.
-    try:
-        await reporting_etl.refresh_if_stale(db, user.id, force=True)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Post-import reporting rebuild failed for batch %s: %s", req.batch_id, exc)
-
-    return ConfirmResponse(imported=result["imported"], rows=result["rows"])
-
-
-# ── POST /discard — cancel pending batch ─────────────────────────────────────
-
-@router.post("/discard", response_model=BatchActionResponse)
-async def discard_batch(batch_id: str, db: AsyncSession = Depends(get_db)):
-    try:
-        await internal_service.discard_batch(batch_id, db)
-    except ValueError as e:
-        raise HTTPException(400, str(e))
-    return BatchActionResponse(batch_id=batch_id, status="discarded")
-
-
-# ── POST /rollback — revert confirmed batch ──────────────────────────────────
-
-@router.post("/rollback", response_model=BatchActionResponse)
-async def rollback_batch(batch_id: str, db: AsyncSession = Depends(get_db)):
-    try:
-        await internal_service.rollback_batch(batch_id, db)
-    except ValueError as e:
-        raise HTTPException(400, str(e))
-    return BatchActionResponse(batch_id=batch_id, status="rolled_back")
-
-
-# ── GET /history — list import batches ───────────────────────────────────────
-
-@router.get("/history", response_model=list[BatchHistoryItem])
-async def import_history(
-    limit: int = 20,
-    db: AsyncSession = Depends(get_db),
-):
-    return await internal_service.get_history(db, limit)
-
-
-# ── GET /snapshot/{batch_id} — view confirmed data ──────────────────────────
-
-@router.get("/snapshot/{batch_id}")
-async def get_snapshot(batch_id: str):
-    data = await internal_service.get_snapshot(batch_id)
-    if data is None:
-        raise HTTPException(404, f"Snapshot not found for batch {batch_id}")
-    return data
 
 
 # ── POST /ingest/listing — extension pushes listing_report rows ──────────────
@@ -214,13 +31,12 @@ async def get_snapshot(batch_id: str):
 async def ingest_listing(
     req: IngestListingRequest,
     db: AsyncSession = Depends(get_tenant_db_for_user),
-    user: User = Depends(require_subscription),
+    user: User = Depends(get_current_active_user),
 ):
     """Endpoint for browser extension to push listing_report rows.
-    tenant_id is injected from JWT — extension never touches DB directly.
+    tenant_id is injected from the auth token — extension never touches DB directly.
     """
     from ...models.listing_report import ListingReport
-    from datetime import datetime, timezone
 
     now = datetime.now(timezone.utc)
     importer = req.importer or "extension"
@@ -264,11 +80,10 @@ async def ingest_listing(
 async def ingest_keyword(
     req: IngestKeywordRequest,
     db: AsyncSession = Depends(get_tenant_db_for_user),
-    user: User = Depends(require_subscription),
+    user: User = Depends(get_current_active_user),
 ):
     """Endpoint for browser extension to push keyword_report rows."""
     from ...models.keyword_report import KeywordReport
-    from datetime import datetime, timezone
 
     now = datetime.now(timezone.utc)
     importer = req.importer or "extension"
