@@ -156,9 +156,18 @@ async def download_extension():
 # Serve frontend static files — must be AFTER API routes
 _frontend_dir = RESOURCE_ROOT / "frontend"
 if _frontend_dir.exists():
-    # Explicit route: /app → app.html (portal, requires auth)
+    from fastapi.responses import HTMLResponse
+
     @app.get("/app")
     async def serve_app():
+        # In desktop mode there is no login: inject a sentinel token so app.html's
+        # bootstrap doesn't redirect to the landing/login page. (The backend
+        # ignores the token value when DESKTOP_MODE=1.)
+        if os.environ.get("DESKTOP_MODE") == "1":
+            html = (_frontend_dir / "app.html").read_text(encoding="utf-8")
+            inject = "<script>try{sessionStorage.setItem('Getify_token','desktop')}catch(e){}</script>"
+            html = html.replace("<body>", "<body>\n" + inject, 1)
+            return HTMLResponse(html)
         return FileResponse(str(_frontend_dir / "app.html"))
 
     app.mount("/", StaticFiles(directory=str(_frontend_dir), html=True), name="frontend")

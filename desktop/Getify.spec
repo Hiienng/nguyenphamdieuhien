@@ -7,6 +7,11 @@ SPEC_DIR = os.path.abspath(SPECPATH)          # desktop/
 ROOT = os.path.dirname(SPEC_DIR)              # project dir (nguyenphamdieuhien)
 BACKEND = os.path.join(ROOT, "backend")
 
+_ICNS = os.path.join(SPEC_DIR, "icon.icns")   # macOS app icon (from logo.jpg)
+_ICO = os.path.join(SPEC_DIR, "icon.ico")     # Windows exe icon (from logo.jpg)
+ICON_ICNS = _ICNS if os.path.exists(_ICNS) else None
+ICON_ICO = _ICO if os.path.exists(_ICO) else None
+
 # --- bundled data: static frontend, docs, extension asset, and .env ---------
 datas = [
     (os.path.join(ROOT, "frontend"), "frontend"),
@@ -70,6 +75,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=ICON_ICO,            # Windows .exe icon
 )
 
 coll = COLLECT(
@@ -86,7 +92,7 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name="getifyco-listing-portal.app",
-    icon=None,
+    icon=ICON_ICNS,
     bundle_identifier="online.nguyenphamdieuhien.getifyco-listing-portal",
     info_plist={
         "CFBundleName": "GetifyCo Listing Portal",

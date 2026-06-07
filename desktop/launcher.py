@@ -31,6 +31,9 @@ def _base_dir() -> Path:
 BASE = _base_dir()
 os.environ.setdefault("ETSY_RESOURCE_ROOT", str(BASE))
 os.environ.setdefault("APP_ENV", "production")
+# Desktop mode: server is local + single-user, so the login screen is skipped
+# (the backend trusts localhost and the portal opens straight to /app).
+os.environ.setdefault("DESKTOP_MODE", "1")
 
 if not getattr(sys, "frozen", False):
     sys.path.insert(0, str(BASE / "backend"))
@@ -136,7 +139,7 @@ class SetupApi:
             _write_user_config(db_url, market_db, secret)
             _apply_config()
             url = _start_server()
-            self.window.load_url(url)
+            self.window.load_url(url + "app")
             return {"ok": True}
         except Exception as e:  # noqa: BLE001
             return {"ok": False, "error": str(e)}
@@ -155,7 +158,7 @@ def main() -> None:
             return
         import webview
         webview.create_window(
-            "GetifyCo Listing Portal", url,
+            "GetifyCo Listing Portal", url + "app",
             width=1280, height=860, min_size=(1024, 680),
         )
     else:

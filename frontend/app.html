@@ -1627,14 +1627,10 @@
 
   </main>
 
-  <!-- ── Dark Footer Section ─────────────────────── -->
-  <section class="dark-section">
-    <div class="hub-wrapper" style="max-width:1200px;margin:0 auto;padding:0 40px">
-      <p style="font-family:var(--font-sans);font-size:0.88rem;color:var(--stone);margin-top:48px">
-        © 2026 Findatasolution. Built with care.
-      </p>
-    </div>
-  </section>
+  <!-- ── Footer ─────────────────────── -->
+  <footer style="max-width:1200px;margin:0 auto;padding:24px 40px 32px">
+    <p style="font-family:var(--font-sans);font-size:0.8rem;color:var(--stone)">© 2026 Findatasolution. Built with care.</p>
+  </footer>
 
   <!-- ── Tab Script ──────────────────────────────── -->
   <script>
@@ -1729,14 +1725,22 @@
       improve_or_off: { badge: 'badge-all', pri: 'pri-crit' },
     };
 
-    async function loadListingsDashboard() {
-      try {
-        const res = await authFetch('/api/v1/performance/listings');
-        if (res.ok) {
-          LISTINGS = await res.json();
-          renderImprTable();
-        }
-      } catch (e) { console.warn('[dashboard] load failed', e); }
+    async function loadListingsDashboard(retries = 3) {
+      // Retry transient failures (e.g. Neon serverless cold-start / idle drop on
+      // the first request after the app opens).
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const res = await authFetch('/api/v1/performance/listings');
+          if (res.ok) {
+            LISTINGS = await res.json();
+            renderImprTable();
+            return true;
+          }
+          console.warn('[dashboard] HTTP', res.status, 'attempt', attempt);
+        } catch (e) { console.warn('[dashboard] load failed attempt', attempt, e); }
+        if (attempt < retries) await new Promise(r => setTimeout(r, 1500));
+      }
+      return false;
     }
 
     let _imprPage = 10;
@@ -2531,9 +2535,17 @@
       btn.disabled = true;
       let finalLabel = 'Refresh';
       try {
-        const res = await authFetch('/api/v1/performance/refresh', { method: 'POST' });
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok) {
+        // Retry transient DB hiccups (Neon cold-start / idle drop) before giving up.
+        let res, payload = {};
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            res = await authFetch('/api/v1/performance/refresh', { method: 'POST' });
+            payload = await res.json().catch(() => ({}));
+            if (res.ok) break;
+          } catch (e) { console.warn('[imprReload] attempt', attempt, e); }
+          if (attempt < 2) await new Promise(r => setTimeout(r, 1500));
+        }
+        if (!res || !res.ok) {
           console.warn('[imprReload] refresh error', payload);
           finalLabel = 'Error · Retry';
         } else if (payload.status === 'in_progress') {

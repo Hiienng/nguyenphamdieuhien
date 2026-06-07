@@ -1,3 +1,4 @@
+import os
 from typing import AsyncGenerator
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
@@ -28,6 +29,9 @@ def _single_user() -> User:
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
+    # Desktop mode: server is local (127.0.0.1) + single-user → no login required.
+    if os.environ.get("DESKTOP_MODE") == "1":
+        return _single_user()
     secret = get_settings().SECRET_KEY
     if not token or not secret or token != secret:
         raise HTTPException(status_code=401, detail="Invalid or missing access token")
