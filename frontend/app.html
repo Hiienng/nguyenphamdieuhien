@@ -1183,11 +1183,71 @@
       <button class="hub-tab" data-perf="rules" onclick="_perfPillClick('rules')">Configure Thresholds</button>
     </div>
     <ul class="nav-links" style="display:flex;align-items:center;gap:12px;list-style:none">
+      <li><a href="#" onclick="openSettings();return false" style="font-size:0.80rem;color:var(--stone);text-decoration:none;padding:0 4px"
+          onmouseover="this.style.color='var(--charcoal)'" onmouseout="this.style.color='var(--stone)'">Settings</a></li>
       <li><a href="docs.html" style="font-size:0.80rem;color:var(--stone);text-decoration:none;padding:0 4px"
           onmouseover="this.style.color='var(--charcoal)'" onmouseout="this.style.color='var(--stone)'">Docs</a></li>
       <li><a href="#" id="nav-signout" class="nav-cta" onclick="authLogout();return false">Sign out</a></li>
     </ul>
   </nav>
+
+  <!-- ── Settings modal (desktop: change DB connection) ───────────── -->
+  <div id="settingsModal" style="display:none;position:fixed;inset:0;z-index:2000;align-items:center;justify-content:center;background:rgba(20,20,19,0.55)" onclick="if(event.target===this)closeSettings()">
+    <div style="background:var(--ivory);border-radius:16px;width:520px;max-width:94vw;box-shadow:0 8px 40px rgba(0,0,0,0.18);padding:30px 30px">
+      <h2 style="font-family:var(--font-serif);font-size:1.4rem;font-weight:500;margin-bottom:6px;color:var(--near-black)">Settings — Kết nối Database</h2>
+      <p style="font-size:0.84rem;color:var(--stone);margin-bottom:18px">Đổi chuỗi kết nối Postgres/Neon. Lưu xong cần <strong>khởi động lại app</strong> để áp dụng.</p>
+      <div style="margin-bottom:12px">
+        <p style="font-size:0.78rem;color:var(--charcoal);font-weight:600;margin-bottom:3px">Đang dùng</p>
+        <p id="settingsCurrent" style="font-family:ui-monospace,Menlo,monospace;font-size:0.8rem;color:var(--stone);word-break:break-all">…</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px">
+        <label style="font-size:0.8rem;font-weight:600;color:var(--charcoal)">Database URL mới</label>
+        <input id="settingsDbUrl" type="password" placeholder="postgresql://..." autocomplete="off"
+          style="font-family:var(--font-sans);font-size:0.9rem;padding:10px 13px;border:1px solid var(--border-warm);border-radius:8px;background:var(--parchment);outline:none">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">
+        <label style="font-size:0.8rem;font-weight:600;color:var(--charcoal)">Market DB URL <span style="font-weight:400;color:var(--stone)">— tuỳ chọn</span></label>
+        <input id="settingsMarketUrl" type="password" placeholder="(để trống = dùng chung)" autocomplete="off"
+          style="font-family:var(--font-sans);font-size:0.9rem;padding:10px 13px;border:1px solid var(--border-warm);border-radius:8px;background:var(--parchment);outline:none">
+      </div>
+      <p id="settingsMsg" style="font-size:0.82rem;min-height:18px;margin:6px 0"></p>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button onclick="closeSettings()" style="font-family:var(--font-sans);font-size:0.9rem;padding:10px 18px;border-radius:9px;border:1px solid var(--border-warm);background:var(--ivory);color:var(--charcoal);cursor:pointer">Đóng</button>
+        <button id="settingsSaveBtn" onclick="saveSettings()" style="font-family:var(--font-sans);font-size:0.9rem;font-weight:600;padding:10px 20px;border-radius:9px;border:none;background:var(--terracotta);color:#fff;cursor:pointer">Lưu</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    async function openSettings() {
+      document.getElementById('settingsModal').style.display = 'flex';
+      document.getElementById('settingsMsg').textContent = '';
+      try {
+        const res = await authFetch('/api/v1/settings/database');
+        const d = await res.json();
+        document.getElementById('settingsCurrent').textContent = d.database_url_masked || '(chưa cấu hình)';
+      } catch { document.getElementById('settingsCurrent').textContent = '(không đọc được)'; }
+    }
+    function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+    async function saveSettings() {
+      const db = document.getElementById('settingsDbUrl').value.trim();
+      const market = document.getElementById('settingsMarketUrl').value.trim();
+      const msg = document.getElementById('settingsMsg');
+      msg.style.color = '#b53333';
+      if (!db) { msg.textContent = 'Nhập Database URL mới.'; return; }
+      const btn = document.getElementById('settingsSaveBtn');
+      btn.disabled = true; btn.textContent = 'Đang lưu...';
+      try {
+        const res = await authFetch('/api/v1/settings/database', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ database_url: db, market_db_url: market })
+        });
+        const d = await res.json();
+        if (!res.ok) { msg.textContent = d.detail || 'Lưu thất bại.'; }
+        else { msg.style.color = 'var(--status-good)'; msg.textContent = '✓ Đã lưu. Khởi động lại app để áp dụng.'; document.getElementById('settingsDbUrl').value=''; document.getElementById('settingsMarketUrl').value=''; }
+      } catch { msg.textContent = 'Lỗi kết nối.'; }
+      finally { btn.disabled = false; btn.textContent = 'Lưu'; }
+    }
+  </script>
 
   <!-- ── Hub Section ────────────────────────────────── -->
   <main class="hub-wrapper">

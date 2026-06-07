@@ -58,3 +58,6 @@ market_engine_crawler/output/
 desktop/build/
 desktop/dist/
 *.spec.bak
+
+# Baked desktop config (secrets) — never commit
+app_config.env

@@ -96,13 +96,14 @@
   </div>
 
   <p class="dl-note" id="dl-fallback">
-    Link chưa hoạt động? Xem tất cả phiên bản tại <a id="dl-releases" href="#" target="_blank" rel="noopener">trang Releases</a>.
+    Bản tải đã <strong>cấu hình sẵn database</strong> — mở là dùng (đổi sau trong Settings của app).<br>
+    Việc tải yêu cầu <strong>đăng nhập GitHub có quyền truy cập</strong> (liên hệ admin để được cấp quyền). Xem tất cả phiên bản tại <a id="dl-releases" href="#" target="_blank" rel="noopener">trang Releases</a>.
   </p>
 </main>
 
 <script>
-  // GitHub repo phát hành bản build (đổi tại đây nếu repo đổi tên / chủ sở hữu).
-  const GITHUB_REPO = 'Hiienng/nguyenphamdieuhien';
+  // Bản build (đã nhúng DB) nằm trong repo PRIVATE — tải cần đăng nhập GitHub có quyền truy cập.
+  const GITHUB_REPO = 'Hiienng/getifyco-listing-portal';
   const base = `https://github.com/${GITHUB_REPO}/releases`;
   document.getElementById('dl-mac').href = `${base}/latest/download/getifyco-listing-portal-macos.zip`;
   document.getElementById('dl-win').href = `${base}/latest/download/getifyco-listing-portal-windows.zip`;

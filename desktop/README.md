@@ -1,67 +1,64 @@
-# Getify Desktop App
+# GetifyCo Listing Portal — Desktop App
 
-A click-to-run desktop build of the Getify Listing Manager portal. It starts the
-FastAPI server **locally on the user's machine** and opens it in a native window
-(via [pywebview](https://pywebview.flowlib.org/)) — **no domain / no Render**.
+Click-to-run desktop build of the Listing Manager portal. It starts the FastAPI
+server **locally on the user's machine** and opens it in a native window (via
+[pywebview](https://pywebview.flowlib.org/)) — **no domain / no Render**. An
+**internet connection is required** (the DB is cloud Postgres / Neon). Login uses
+the `SECRET_KEY` access token.
 
-The bundled `.env` still points `DATABASE_URL` at the cloud Neon database, so an
-**internet connection is required**. Login uses the `SECRET_KEY` access token.
+## Config resolution (no secrets in public builds)
+
+The app reads its DB config in this order (highest priority first):
+
+1. `~/.getifyco-listing-portal/config.env` — per-user override, written by the
+   in-app **Settings** screen (and by first-run setup).
+2. `<bundle>/app_config.env` — baked default, present **only in the private
+   build** (see below).
+3. **First-run setup screen** — if neither exists, the app asks for the Database
+   URL + access token and saves them to (1).
+
+So **public builds ship with no credentials**; the **private build** bakes
+`DATABASE_URL` + `SECRET_KEY` so it works out of the box.
 
 ## What's inside
 
 | File | Purpose |
 |------|---------|
-| `launcher.py` | Boots uvicorn on a free localhost port, then opens the pywebview window. |
-| `Getify.spec` | PyInstaller spec — bundles `app`, `frontend/`, `docs/`, the extension asset and `.env`. |
+| `launcher.py` | Resolves config, boots uvicorn on a free localhost port, opens the window (or the first-run setup window). |
+| `Getify.spec` | PyInstaller spec — bundles `app`, `frontend/`, `docs/`, the extension asset, and `app_config.env` **if present**. |
 | `requirements-desktop.txt` | Backend runtime + `pywebview` + `pyinstaller`. |
 | `build.sh` / `build.ps1` | One-shot local build (macOS / Windows). |
 
-## Build locally
+## Two build flavors
 
-> PyInstaller cannot cross-compile. Build the macOS `.app` on a Mac and the
-> Windows `.exe` on Windows.
-
-**macOS**
-```bash
-cd desktop
-PYTHON=python3 ./build.sh
-# -> desktop/dist/getifyco-listing-portal.app
-```
-
-**Windows**
-```powershell
-cd desktop
-powershell -ExecutionPolicy Bypass -File build.ps1
-# -> desktop\dist\getifyco-listing-portal\getifyco-listing-portal.exe
-```
-
-A `.env` in the project root is bundled automatically if present.
-
-## Build via GitHub Actions (both OSes)
-
-`.github/workflows/desktop-build.yml` builds macOS **and** Windows on real
-runners. Trigger it by pushing a tag (`git tag v1.0.0 && git push --tags`) or via
-the **Actions → Build desktop app → Run workflow** button. Artifacts
-`getifyco-listing-portal-macos.zip` / `getifyco-listing-portal-windows.zip` are attached to the run.
-
-**Required secret:** add a repo secret named **`ENV_FILE`** containing the full
-contents of your `.env`. The workflow writes it to `.env` before building so the
-bundled app has DB credentials. (The repo `.env` is gitignored, so CI needs this.)
+- **Public build (BYO config)** — built from this public repo with no
+  `app_config.env`. First run shows the setup screen. Safe to distribute openly.
+  Build locally: `cd desktop && PYTHON=python3 ./build.sh` (mac) /
+  `powershell -ExecutionPolicy Bypass -File build.ps1` (win).
+- **Private build (DB bundled)** — built by the **private repo**
+  `Hiienng/getifyco-listing-portal`. Its workflow checks out this public code,
+  writes `app_config.env` from the repo's Actions secrets (`DATABASE_URL`,
+  `SECRET_KEY`, `ETSY_MARKET_DB`), builds macOS + Windows, and publishes a
+  **private Release**. Trigger by pushing a tag `v*` in that repo. Because the
+  release is private, the bundled credentials never go public.
 
 ## Run / verify
 
-- Double-click `getifyco-listing-portal.app` (macOS) or `getifyco-listing-portal.exe` (Windows). A window opens on
-  the login screen — paste the `SECRET_KEY` value to enter.
-- Headless smoke test (no window, just confirms the embedded server boots):
+- Double-click `getifyco-listing-portal.app` (macOS) / `getifyco-listing-portal.exe` (Windows).
+- Change the database later via the app's **Settings** link (restart to apply).
+- Headless smoke test (no window):
   ```bash
-  GETIFY_HEADLESS=1 ./dist/getifyco-listing-portal.app/Contents/MacOS/getifyco-listing-portal   # prints GETIFY_HEADLESS ok=1
+  GETIFY_HEADLESS=1 ./dist/getifyco-listing-portal.app/Contents/MacOS/getifyco-listing-portal
+  # prints "GETIFY_HEADLESS ok=1" (configured) or "ok=setup-needed" (no config)
   ```
 
 ## Notes
 
 - Windows uses the Edge **WebView2** runtime (preinstalled on Windows 10/11).
-- macOS builds are unsigned; on first launch use right-click → Open (or
-  `xattr -dr com.apple.quarantine getifyco-listing-portal.app`) to bypass Gatekeeper. For
-  distribution, sign & notarize with an Apple Developer ID.
-- `google-generativeai` is intentionally excluded from the bundle (only used for
-  optional title classification); it's imported lazily and skipped if absent.
+- macOS/Windows builds are unsigned → first launch: right-click → Open (mac, or
+  `xattr -dr com.apple.quarantine getifyco-listing-portal.app`) / More info → Run
+  anyway (win). Sign & notarize for friction-free distribution.
+- macOS CI runners are Apple Silicon → the released `.app` is arm64. Intel Macs
+  need an `x86_64`/universal build (`macos-13` runner).
+- `google-generativeai` is excluded from the bundle (optional title
+  classification only); imported lazily and skipped if absent.

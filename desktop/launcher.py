@@ -1,10 +1,17 @@
 """
-Getify desktop launcher.
+GetifyCo Listing Portal — desktop launcher.
 
-Starts the FastAPI/uvicorn server on a local port in a background thread, then
-opens a native window (pywebview) pointing at it. No browser, no domain — the
-user just double-clicks the app. The bundled .env still points DATABASE_URL at
-the cloud Neon DB, so an internet connection is required.
+Starts the FastAPI/uvicorn server on a local port and opens it in a native
+window (pywebview). No browser, no domain. An internet connection is required
+(the DB is cloud Postgres / Neon).
+
+Config resolution (highest priority first):
+  1. ~/.getifyco-listing-portal/config.env   — user override (written by Settings)
+  2. <bundle>/app_config.env                 — baked default (private CI build)
+  3. first-run setup screen                  — asks DB URL + token, saves to (1)
+
+Public builds ship WITHOUT app_config.env (no secrets). The private build bakes
+DATABASE_URL + SECRET_KEY into app_config.env so the app works out of the box.
 """
 import os
 import sys
@@ -16,23 +23,69 @@ from pathlib import Path
 
 
 def _base_dir() -> Path:
-    """Resource root holding frontend/, docs/, extension files and .env."""
     if getattr(sys, "frozen", False):
         return Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
-    # dev: desktop/ is a sibling of backend/ and frontend/
     return Path(__file__).resolve().parents[1]
 
 
 BASE = _base_dir()
-# Make the backend find bundled static dirs + .env, and run in production mode.
 os.environ.setdefault("ETSY_RESOURCE_ROOT", str(BASE))
 os.environ.setdefault("APP_ENV", "production")
 
-# In dev (not frozen) the `app` package lives under backend/.
 if not getattr(sys, "frozen", False):
     sys.path.insert(0, str(BASE / "backend"))
 
+CONFIG_DIR = Path.home() / ".getifyco-listing-portal"
+USER_CONFIG = CONFIG_DIR / "config.env"
+BUNDLED_CONFIG = BASE / "app_config.env"
 
+_server = None
+
+
+# ── config ──────────────────────────────────────────────────────────────────
+def _load_env_file(path: Path) -> dict:
+    cfg = {}
+    if path.exists():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            cfg[k.strip()] = v.strip()
+    return cfg
+
+
+def _effective_config() -> dict:
+    cfg = {}
+    cfg.update(_load_env_file(BUNDLED_CONFIG))   # baked default (private build)
+    cfg.update(_load_env_file(USER_CONFIG))      # user override wins
+    return cfg
+
+
+def _is_configured() -> bool:
+    cfg = _effective_config()
+    return bool(cfg.get("DATABASE_URL") and cfg.get("SECRET_KEY"))
+
+
+def _apply_config() -> None:
+    for k, v in _effective_config().items():
+        if v:
+            os.environ[k] = v
+
+
+def _write_user_config(db_url: str, market_db: str, secret: str) -> None:
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    lines = [f"DATABASE_URL={db_url}", f"SECRET_KEY={secret}"]
+    if market_db:
+        lines.append(f"ETSY_MARKET_DB={market_db}")
+    USER_CONFIG.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    try:
+        os.chmod(USER_CONFIG, 0o600)
+    except Exception:
+        pass
+
+
+# ── server ──────────────────────────────────────────────────────────────────
 def _free_port() -> int:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(("127.0.0.1", 0))
@@ -52,42 +105,75 @@ def _wait_until_ready(url: str, timeout: float = 40.0) -> bool:
     return False
 
 
-def main() -> None:
+def _start_server() -> str:
+    global _server
     import uvicorn
-    from app.main import app  # imported after env vars are set
+    from app.main import app  # imported AFTER config env vars are set
 
     port = _free_port()
     config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning")
-    server = uvicorn.Server(config)
-
-    thread = threading.Thread(target=server.run, daemon=True)
-    thread.start()
-
+    _server = uvicorn.Server(config)
+    threading.Thread(target=_server.run, daemon=True).start()
     base_url = f"http://127.0.0.1:{port}/"
-    ready = _wait_until_ready(base_url + "health")
-    if not ready:
-        sys.stderr.write("Server failed to start within timeout.\n")
+    _wait_until_ready(base_url + "health")
+    return base_url
 
-    # Headless self-test (used by build verification / CI smoke test):
-    # start the server, confirm it serves, then exit without opening a window.
-    if os.environ.get("GETIFY_HEADLESS") == "1":
-        print("GETIFY_HEADLESS ok=" + ("1" if ready else "0") + " url=" + base_url)
-        server.should_exit = True
-        return
 
-    import webview  # pywebview
+# ── first-run setup bridge ────────────────────────────────────────────────────
+class SetupApi:
+    """Exposed to the first-run setup page as window.pywebview.api."""
 
-    webview.create_window(
-        "GetifyCo Listing Portal",
-        base_url,
-        width=1280,
-        height=860,
-        min_size=(1024, 680),
-    )
+    def __init__(self):
+        self.window = None
+
+    def save_config(self, db_url, market_db, secret):
+        db_url = (db_url or "").strip()
+        secret = (secret or "").strip()
+        market_db = (market_db or "").strip()
+        if not db_url or not secret:
+            return {"ok": False, "error": "Cần nhập Database URL và Access token."}
+        try:
+            _write_user_config(db_url, market_db, secret)
+            _apply_config()
+            url = _start_server()
+            self.window.load_url(url)
+            return {"ok": True}
+        except Exception as e:  # noqa: BLE001
+            return {"ok": False, "error": str(e)}
+
+
+def main() -> None:
+    headless = os.environ.get("GETIFY_HEADLESS") == "1"
+
+    if _is_configured():
+        _apply_config()
+        url = _start_server()
+        if headless:
+            print("GETIFY_HEADLESS ok=1 url=" + url)
+            if _server:
+                _server.should_exit = True
+            return
+        import webview
+        webview.create_window(
+            "GetifyCo Listing Portal", url,
+            width=1280, height=860, min_size=(1024, 680),
+        )
+    else:
+        if headless:
+            print("GETIFY_HEADLESS ok=setup-needed")
+            return
+        import webview
+        setup_html = (BASE / "frontend" / "setup.html").read_text(encoding="utf-8")
+        api = SetupApi()
+        win = webview.create_window(
+            "GetifyCo Listing Portal — Cấu hình", html=setup_html,
+            js_api=api, width=720, height=760,
+        )
+        api.window = win
+
     webview.start()
-
-    # Window closed -> shut the server down and exit.
-    server.should_exit = True
+    if _server:
+        _server.should_exit = True
 
 
 if __name__ == "__main__":

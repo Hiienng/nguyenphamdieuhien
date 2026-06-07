@@ -15,9 +15,11 @@ datas = [
 _ext = os.path.join(ROOT, "extension-keyword-main", "Archive.pxi")
 if os.path.exists(_ext):
     datas.append((_ext, "extension-keyword-main"))
-_env = os.path.join(ROOT, ".env")
-if os.path.exists(_env):
-    datas.append((_env, "."))
+# Baked default config for the PRIVATE build (DATABASE_URL + SECRET_KEY). Public
+# builds omit this file, so released public artifacts contain no secrets.
+_appcfg = os.path.join(ROOT, "app_config.env")
+if os.path.exists(_appcfg):
+    datas.append((_appcfg, "."))
 
 # --- hidden imports: uvicorn dynamic loaders + the backend package ----------
 hiddenimports = []
