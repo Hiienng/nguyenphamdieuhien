@@ -124,11 +124,10 @@ async def seed_scenarios(db: AsyncSession) -> None:
         await db.commit()
 
 
-async def get_dashboard_listings(db: AsyncSession, market_db: AsyncSession, tenant_id: str) -> list[dict]:
+async def get_dashboard_listings(db: AsyncSession, tenant_id: str) -> list[dict]:
     """
     Build listing dashboard by reading the materialized reporting layer
-    (`listings_int_ext`, `listings_int_hist`, `keywords`) and enriching with
-    market data from ETSY_MARKET_DB.
+    (`listings_int_ext`, `listings_int_hist`, `keywords`).
 
     The reporting tables are populated by `reporting_etl.rebuild_reporting`.
     """
@@ -166,32 +165,9 @@ async def get_dashboard_listings(db: AsyncSession, market_db: AsyncSession, tena
             e.scenario_cause,
             e.scenario_fix_listing,
             e.scenario_fix_ads,
-            refs.references AS "references",
             kw.keywords     AS keywords,
             hist.history    AS history
         FROM listings_int_ext e
-        LEFT JOIN LATERAL (
-            SELECT json_agg(
-                json_build_object(
-                    'reference_listing_id', re.reference_listing_id,
-                    'ref_rank',             re.ref_rank,
-                    'ref_title',            re.ref_title,
-                    'ref_shop',             re.ref_shop,
-                    'ref_url',              re.ref_url,
-                    'ref_price',            re.ref_price,
-                    'ref_discount',         re.ref_discount,
-                    'ref_rating',           re.ref_rating,
-                    'ref_review_count',     re.ref_review_count,
-                    'ref_tag_ranking',      re.ref_tag_ranking,
-                    'ref_badge',            re.ref_badge,
-                    'ref_free_shipping',    re.ref_free_shipping,
-                    'ref_product_type',     re.ref_product_type,
-                    'ref_import_date',      re.ref_import_date
-                ) ORDER BY re.ref_rank
-            ) AS "references"
-            FROM references_engine re
-            WHERE re.listing_id = e.listing_id
-        ) refs ON true
         LEFT JOIN LATERAL (
             SELECT json_agg(
                 json_build_object(
@@ -239,34 +215,6 @@ async def get_dashboard_listings(db: AsyncSession, market_db: AsyncSession, tena
     """)
     result = await db.execute(sql, {"tid": tenant_id})
     rows = [dict(r) for r in result.mappings().all()]
-
-    # Fetch own market data from ETSY_MARKET_DB, merge by listing_id
-    listing_ids = list({r["listing_id"] for r in rows if r.get("listing_id")})
-    market_map: dict = {}
-    if listing_ids:
-        try:
-            mkt_sql = text("""
-                SELECT listing_id, price, discount, rating, review_count, badge, free_shipping, is_ad, tag_ranking
-                FROM market_listing
-                WHERE listing_id = ANY(:ids)
-            """)
-            mkt_result = await market_db.execute(mkt_sql, {"ids": listing_ids})
-            for row in mkt_result.mappings().all():
-                market_map[row["listing_id"]] = dict(row)
-        except Exception:
-            pass  # ETSY_MARKET_DB chưa set hoặc market_listing chưa tồn tại — bỏ qua, trả — về null
-
-    for r in rows:
-        own = market_map.get(r.get("listing_id"), {})
-        r["price"] = own.get("price")
-        r["discount_price"] = own.get("discount")
-        r["rating"] = own.get("rating")
-        r["review_count"] = own.get("review_count")
-        r["badge"] = own.get("badge")
-        r["free_shipping"] = own.get("free_shipping")
-        r["is_ad"] = own.get("is_ad")
-        r["tag_ranking"] = own.get("tag_ranking")
-
     return rows
 
 

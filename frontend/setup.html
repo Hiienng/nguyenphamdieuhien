@@ -35,10 +35,6 @@
       <input id="db" type="password" placeholder="postgresql://..." autocomplete="off">
     </div>
     <div class="field">
-      <label>Market DB URL <span class="hint">— tuỳ chọn, để trống = dùng chung Database URL</span></label>
-      <input id="market" type="password" placeholder="(tuỳ chọn)" autocomplete="off">
-    </div>
-    <div class="field">
       <label>Access token <span class="hint">— token đăng nhập (SECRET_KEY)</span></label>
       <input id="secret" type="password" placeholder="Dán access token" autocomplete="off">
     </div>
@@ -51,12 +47,12 @@
     function ready(fn){ if (window.pywebview && window.pywebview.api) fn(); else window.addEventListener('pywebviewready', fn); }
     ready(() => {
       $('save').addEventListener('click', async () => {
-        const db = $('db').value.trim(), market = $('market').value.trim(), secret = $('secret').value.trim();
+        const db = $('db').value.trim(), secret = $('secret').value.trim();
         const err = $('err'); err.textContent = '';
         if (!db || !secret) { err.textContent = 'Cần nhập Database URL và Access token.'; return; }
         const btn = $('save'); btn.disabled = true; btn.textContent = 'Đang khởi động...';
         try {
-          const res = await window.pywebview.api.save_config(db, market, secret);
+          const res = await window.pywebview.api.save_config(db, secret);
           if (!res || !res.ok) { err.textContent = (res && res.error) || 'Lưu thất bại.'; btn.disabled = false; btn.textContent = 'Lưu & mở app'; }
           // on success the Python side navigates the window to the portal
         } catch (e) {

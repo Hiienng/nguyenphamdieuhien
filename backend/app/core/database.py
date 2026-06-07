@@ -12,8 +12,6 @@ logger = logging.getLogger(__name__)
 
 _engine = None
 _AsyncSessionLocal = None
-_market_engine = None
-_MarketSessionLocal = None
 
 
 def _get_engine():
@@ -37,27 +35,6 @@ def _get_engine():
     return _engine, _AsyncSessionLocal
 
 
-def _get_market_session_factory() -> async_sessionmaker:
-    global _market_engine, _MarketSessionLocal
-    if _MarketSessionLocal is None:
-        settings = get_settings()
-        _market_engine = create_async_engine(
-            settings.async_market_db_url,
-            echo=settings.APP_ENV == "development",
-            pool_size=3,
-            max_overflow=5,
-            pool_pre_ping=True,
-            pool_recycle=300,
-            connect_args={"ssl": True},
-        )
-        _MarketSessionLocal = async_sessionmaker(
-            bind=_market_engine,
-            class_=AsyncSession,
-            expire_on_commit=False,
-        )
-    return _MarketSessionLocal
-
-
 # ── Compatibility shims ───────────────────────────────────────────────────────
 # Code throughout the app does `from .database import engine, AsyncSessionLocal`.
 # These proxy objects forward attribute access to the lazy-initialised instances.
@@ -78,12 +55,6 @@ class _SessionLocalProxy:
 
 engine = _EngineProxy()
 AsyncSessionLocal = _SessionLocalProxy()
-
-
-class MarketSessionLocal:
-    """Context manager proxy — creates engine lazily on first use."""
-    def __new__(cls):
-        return _get_market_session_factory()()
 
 
 class Base(DeclarativeBase):

@@ -19,20 +19,12 @@ _ENV_FILES = tuple(filter(None, (
 
 
 class Settings(BaseSettings):
-    # Database (Neon PostgreSQL) — internal data
+    # Database (Neon PostgreSQL) — the user's own ads data
     DATABASE_URL: str = ""
-    # Market data DB (etsy_star_engine output)
-    ETSY_MARKET_DB: str = ""
 
     # Claude / Anthropic
     ANTHROPIC_API_KEY: str = ""
     CLAUDE_MODEL: str = "claude-sonnet-4-6"
-
-    # AI Vision — Gemini key used by references_service (title classification)
-    GEMINI_API_KEY_paid_thumbnail: str = ""
-    HUGGINGFACE_API_KEY: str = ""
-    # Use a router-supported vision model with an explicit provider suffix.
-    HF_MODEL: str = "zai-org/GLM-4.5V"
 
     # JWT Auth
     JWT_SECRET_KEY: str = ""
@@ -66,10 +58,6 @@ class Settings(BaseSettings):
     @property
     def async_db_url(self) -> str:
         return self._normalize_asyncpg_url(self.DATABASE_URL)
-
-    @property
-    def async_market_db_url(self) -> str:
-        return self._normalize_asyncpg_url(self.ETSY_MARKET_DB or self.DATABASE_URL)
 
     class Config:
         env_file = _ENV_FILES

@@ -1205,11 +1205,6 @@
         <input id="settingsDbUrl" type="password" placeholder="postgresql://..." autocomplete="off"
           style="font-family:var(--font-sans);font-size:0.9rem;padding:10px 13px;border:1px solid var(--border-warm);border-radius:8px;background:var(--parchment);outline:none">
       </div>
-      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">
-        <label style="font-size:0.8rem;font-weight:600;color:var(--charcoal)">Market DB URL <span style="font-weight:400;color:var(--stone)">— tuỳ chọn</span></label>
-        <input id="settingsMarketUrl" type="password" placeholder="(để trống = dùng chung)" autocomplete="off"
-          style="font-family:var(--font-sans);font-size:0.9rem;padding:10px 13px;border:1px solid var(--border-warm);border-radius:8px;background:var(--parchment);outline:none">
-      </div>
       <p id="settingsMsg" style="font-size:0.82rem;min-height:18px;margin:6px 0"></p>
       <div style="display:flex;gap:10px;justify-content:flex-end">
         <button onclick="closeSettings()" style="font-family:var(--font-sans);font-size:0.9rem;padding:10px 18px;border-radius:9px;border:1px solid var(--border-warm);background:var(--ivory);color:var(--charcoal);cursor:pointer">Đóng</button>
@@ -1230,7 +1225,6 @@
     function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
     async function saveSettings() {
       const db = document.getElementById('settingsDbUrl').value.trim();
-      const market = document.getElementById('settingsMarketUrl').value.trim();
       const msg = document.getElementById('settingsMsg');
       msg.style.color = '#b53333';
       if (!db) { msg.textContent = 'Nhập Database URL mới.'; return; }
@@ -1239,11 +1233,11 @@
       try {
         const res = await authFetch('/api/v1/settings/database', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ database_url: db, market_db_url: market })
+          body: JSON.stringify({ database_url: db })
         });
         const d = await res.json();
         if (!res.ok) { msg.textContent = d.detail || 'Lưu thất bại.'; }
-        else { msg.style.color = 'var(--status-good)'; msg.textContent = '✓ Đã lưu. Khởi động lại app để áp dụng.'; document.getElementById('settingsDbUrl').value=''; document.getElementById('settingsMarketUrl').value=''; }
+        else { msg.style.color = 'var(--status-good)'; msg.textContent = '✓ Đã lưu. Khởi động lại app để áp dụng.'; document.getElementById('settingsDbUrl').value=''; }
       } catch { msg.textContent = 'Lỗi kết nối.'; }
       finally { btn.disabled = false; btn.textContent = 'Lưu'; }
     }
@@ -1375,14 +1369,8 @@
 
         <h2 class="section-heading" style="margin-bottom:12px">1. Import Report</h2>
 
-        <!-- Import method selector — reuses perf-pill pattern -->
-        <div class="perf-pill-wrap" style="margin-bottom:12px">
-          <button class="import-method-btn active" data-method="extension" onclick="importSelectMethod('extension')">From extension</button>
-          <button class="import-method-btn" data-method="csv" onclick="importSelectMethod('csv')">From CSV</button>
-        </div>
-
-        <!-- Panel: From extension -->
-        <div id="importExtensionZone" style="display:none">
+        <!-- Import via browser extension (only method) -->
+        <div id="importExtensionZone">
           <div class="chart-card">
             <p class="hub-section-label" style="margin-bottom:20px">2. Upload from extension</p>
             <div style="display:flex;flex-direction:column;gap:20px;max-width:560px">
@@ -1449,18 +1437,6 @@
               <p style="font-family:var(--font-sans);font-size:0.75rem;color:#7a5c1e;line-height:1.5"><strong>⚡ Fast &amp; free</strong> — no credits needed. Captures data while you browse normally. <strong>Note:</strong> browser automation may be detected by Etsy in future policy updates.</p>
             </div>
 
-          </div>
-        </div>
-
-        <!-- Panel: From CSV -->
-        <div id="importCsvZone" style="display:none">
-          <div class="chart-card" style="text-align:center;padding:40px 24px">
-            <p style="font-family:var(--font-sans);font-size:0.88rem;color:var(--stone);margin-bottom:6px">Import from CSV</p>
-            <p style="font-family:var(--font-sans);font-size:0.82rem;color:var(--border-warm)">Coming soon</p>
-          </div>
-          <!-- Note -->
-          <div style="margin-top:16px;padding:10px 14px;background:var(--warm-sand);border-left:3px solid var(--border-cream);border-radius:0 7px 7px 0">
-            <p style="font-family:var(--font-sans);font-size:0.75rem;color:var(--stone);line-height:1.5"><strong>📄 Safest option</strong> — export your data directly from Etsy Ads, no browser automation involved. <strong style="color:var(--terracotta)">1 credit per upload</strong>. Etsy will never detect this method.</p>
           </div>
         </div>
 
@@ -2171,102 +2147,6 @@
       </tr>`;
     }
 
-    function _imprListingRows(d) {
-      const GetifyRow = {
-        is_Getify: true,
-        listing_id: d.listing_id,
-        product: d.product,
-        ctr: d.ctr,
-        cr: d.cr,
-        roas: d.roas,
-        price: d.price,
-        discount: d.discount_price,
-        rating: d.rating,
-        review_count: d.review_count,
-        badge: d.badge,
-        free_shipping: d.free_shipping,
-        rank: d.tag_ranking,
-        url: d.url,
-      };
-      const refs = (Array.isArray(d.references) ? d.references : []).map(r => ({
-        is_Getify: false,
-        listing_id: r.reference_listing_id,
-        product: r.ref_product_type,
-        ctr: null,
-        cr: null,
-        roas: null,
-        price: r.ref_price,
-        discount: r.ref_discount,
-        rating: r.ref_rating,
-        review_count: r.ref_review_count,
-        badge: r.ref_badge,
-        free_shipping: r.ref_free_shipping,
-        rank: r.ref_rank != null ? r.ref_rank : r.ref_tag_ranking,
-        url: r.ref_url,
-      }));
-      return [GetifyRow, ...refs];
-    }
-
-    function _imprListingTable(d, groupKey) {
-      const sortState = _imprGetDetailSort('listing', groupKey, 'listing_id', 'asc');
-      const rows = _imprSortRows(_imprListingRows(d), sortState, 'listing_id');
-      const head = `<thead><tr style="font-family:var(--font-sans);font-size:0.70rem;color:var(--stone);text-transform:uppercase;letter-spacing:0.04em">
-        <th style="text-align:left;padding:4px 8px;font-weight:600;white-space:nowrap">${_imprMiniSortButton('listing', groupKey, 'listing_id', 'ID', 'left')}</th>
-        <th style="text-align:left;padding:4px 8px;font-weight:600;white-space:nowrap">${_imprMiniSortButton('listing', groupKey, 'product', 'Product', 'left')}</th>
-        <th style="text-align:right;padding:4px 8px;font-weight:600;white-space:nowrap">${_imprMiniSortButton('listing', groupKey, 'ctr', 'CTR', 'right')}</th>
-        <th style="text-align:right;padding:4px 8px;font-weight:600;white-space:nowrap">${_imprMiniSortButton('listing', groupKey, 'cr', 'CR', 'right')}</th>
-        <th style="text-align:right;padding:4px 8px;font-weight:600;white-space:nowrap">${_imprMiniSortButton('listing', groupKey, 'roas', 'ROAS', 'right')}</th>
-        <th style="text-align:right;padding:4px 8px;font-weight:600;white-space:nowrap">${_imprMiniSortButton('listing', groupKey, 'price', 'Price', 'right')}</th>
-        <th style="text-align:right;padding:4px 8px;font-weight:600;white-space:nowrap">${_imprMiniSortButton('listing', groupKey, 'discount', 'Discount', 'right')}</th>
-        <th style="text-align:right;padding:4px 8px;font-weight:600;white-space:nowrap">${_imprMiniSortButton('listing', groupKey, 'rating', 'Rating', 'right')}</th>
-        <th style="text-align:right;padding:4px 8px;font-weight:600;white-space:nowrap">${_imprMiniSortButton('listing', groupKey, 'review_count', '#Review', 'right')}</th>
-        <th style="text-align:left;padding:4px 8px;font-weight:600;white-space:nowrap">${_imprMiniSortButton('listing', groupKey, 'badge', 'Badge', 'left')}</th>
-        <th style="text-align:center;padding:4px 8px;font-weight:600;white-space:nowrap">${_imprMiniSortButton('listing', groupKey, 'free_shipping', 'Freeship', 'center')}</th>
-        <th style="text-align:right;padding:4px 8px;font-weight:600;white-space:nowrap">${_imprMiniSortButton('listing', groupKey, 'rank', 'Rank', 'right')}</th>
-      </tr></thead>`;
-
-      const body = rows.map(r => {
-        const rowTone = r.is_Getify ? '#fff7f4' : 'var(--parchment)';
-        const rowColor = r.is_Getify ? 'var(--charcoal)' : 'var(--stone)';
-        const sideBorder = r.is_Getify ? 'var(--terracotta)' : 'var(--border-cream)';
-        const ctrCell = r.ctr == null ? '—' : (Number(r.ctr) >= 1.5 ? `<span class="metric-chip chip-ok">${Number(r.ctr).toFixed(2)}%</span>` : `<span class="metric-chip chip-warn">${Number(r.ctr).toFixed(2)}%</span>`);
-        const crCell = r.cr == null ? '—' : (Number(r.cr) >= 3 ? `<span class="metric-chip chip-ok">${Number(r.cr).toFixed(2)}%</span>` : `<span class="metric-chip chip-warn">${Number(r.cr).toFixed(2)}%</span>`);
-        const roasCell = r.roas == null ? '—' : (Number(r.roas) >= 2 ? `<span class="metric-chip chip-ok">${_imprFmtRatio(r.roas)}</span>` : `<span class="metric-chip chip-neu">${_imprFmtRatio(r.roas)}</span>`);
-        return `<tr style="font-family:var(--font-sans);font-size:0.76rem;color:${rowColor};border-top:1px solid var(--border-cream);background:${rowTone}">
-          <td style="padding:4px 8px;border-left:3px solid ${sideBorder}">
-            ${r.url
-            ? `<a href="${r.url}" target="_blank" rel="noopener" style="font-family:var(--font-mono);font-size:0.76rem;color:${r.is_Getify ? 'var(--terracotta)' : 'var(--stone)'};text-decoration:underline;${r.is_Getify ? 'font-weight:600;' : ''}">${r.listing_id || '—'}</a>`
-            : `<span style="font-family:var(--font-mono);font-size:0.76rem;${r.is_Getify ? 'font-weight:600;' : ''}">${r.listing_id || '—'}</span>`}
-          </td>
-          <td style="padding:4px 8px">${r.product ? `<span class="metric-chip chip-neu" style="font-size:0.68rem">${_imprEsc(r.product)}</span>` : '—'}</td>
-          <td style="padding:4px 8px;text-align:right">${ctrCell}</td>
-          <td style="padding:4px 8px;text-align:right">${crCell}</td>
-          <td style="padding:4px 8px;text-align:right">${roasCell}</td>
-          <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtPrice(r.price)}</td>
-          <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtDiscount(r.discount)}</td>
-          <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtRating(r.rating)}</td>
-          <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtNum(r.review_count)}</td>
-          <td style="padding:4px 8px">${r.badge ? `<span class="metric-chip chip-neu" style="font-size:0.68rem">${_imprEsc(r.badge)}</span>` : '—'}</td>
-          <td style="padding:4px 8px;text-align:center">${_imprFmtBool(r.free_shipping)}</td>
-          <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtNum(r.rank)}</td>
-        </tr>`;
-      }).join('');
-
-      const mappingTip = `How references are selected:<br>The system finds market listings that contain the <b>product name</b> (category) of the Getify listing — typically found in the <b>title</b>, sometimes in search keywords or product type.<br><br>Results are ranked by <b>Etsy search ranking</b> (appearing earlier ⇒ better), and the <b>top 3</b> are selected.`;
-      const meta = `<span style="display:flex;align-items:center;gap:10px;font-weight:400;font-size:0.68rem;letter-spacing:0;text-transform:none;color:var(--stone)">
-          <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#c0714a;opacity:0.85"></span>Getify</span>
-          <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--stone);opacity:0.4"></span>Market ref</span>
-        </span>
-        <span style="position:relative;display:inline-block">
-          <span onmouseenter="imprHelpShow(this)" onmouseleave="imprHelpHide(this)" aria-label="mapping info" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--stone);color:var(--stone);font-size:0.64rem;font-weight:700;cursor:help;user-select:none">?</span>
-          <span class="impr-help-pop" style="display:none;position:absolute;top:20px;right:0;z-index:50;width:340px;padding:10px 12px;background:var(--parchment);border:1px solid var(--border-cream);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);font-family:var(--font-sans);font-size:0.78rem;font-weight:400;color:var(--charcoal);letter-spacing:normal;text-transform:none;line-height:1.5">${mappingTip}</span>
-        </span>`;
-      const bodyHtml = `<div style="overflow-x:auto">
-          <table id="impr-tbl-listing-${groupKey}" style="width:100%;border-collapse:collapse">${head}<tbody id="impr-tbody-listing-${groupKey}">${body}</tbody></table>
-        </div>`;
-      return `<div style="margin-top:14px">${_imprFoldSection('Listing reference', bodyHtml, { metaHtml: meta })}</div>`;
-    }
-
     function _imprKeywordTable(listing, groupKey) {
       const keywords = Array.isArray(listing?.keywords) ? listing.keywords : [];
       if (!keywords.length) return '';
@@ -2430,20 +2310,12 @@
         }).join('')
         : `<div style="padding:16px 10px;font-family:var(--font-sans);font-size:0.80rem;color:var(--stone);font-style:italic;text-align:center;border:1px dashed var(--border-cream);border-radius:6px">No scenario mapping for this period.</div>`;
 
-      const recoItems = ['Ideal image', 'Ideal price (based on market pricing)', 'Ideal discount %', 'Etsy boosting algorithm tips'];
-      const recoContent = `<div style="display:flex;flex-direction:column;gap:6px;opacity:0.50">
-          ${recoItems.map(item => `<div style="display:flex;align-items:baseline;gap:6px;font-family:var(--font-sans);font-size:0.78rem;color:var(--charcoal)"><span style="color:var(--terracotta);font-weight:700;flex-shrink:0">+</span><span>${item}</span></div>`).join('')}
-        </div>`;
-
       const extras = withExtras
-        ? (_imprListingTable(d, groupKey) + _imprKeywordTable(d, groupKey) + _imprHistoryTable(d.history, groupKey))
+        ? (_imprKeywordTable(d, groupKey) + _imprHistoryTable(d.history, groupKey) + _imprActionLog(d, groupKey))
         : '';
 
       const periodTag = d.period ? `<span style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.68rem;color:var(--stone);font-weight:400;text-transform:none;letter-spacing:0">${_imprEsc(d.period)}</span>` : '';
-      const detailCombined = `<div style="display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:12px;align-items:start">
-        <div style="min-width:0">${detailBody}</div>
-        <div style="min-width:0"><div class="impr-fold" open><summary style="list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:rgba(232,230,220,0.7);border-bottom:1px solid var(--border-cream);user-select:none"><span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="impr-fold-caret" style="display:inline-block;font-size:0.76rem;color:var(--terracotta);transition:transform 0.15s;flex:0 0 auto">▸</span><span style="font-family:var(--font-sans);font-size:0.72rem;font-weight:600;color:var(--stone);letter-spacing:0.02em;text-transform:uppercase">Recommendation Box</span></span><span style="font-family:var(--font-sans);font-size:0.60rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;background:var(--warm-sand);color:var(--stone);padding:2px 7px;border-radius:10px;border:1px solid var(--border-cream)">Phase 2</span></summary><div class="impr-fold-body" style="padding:10px 12px;background:var(--parchment)">${recoContent}</div></div></div>
-      </div>`;
+      const detailCombined = `<div style="min-width:0">${detailBody}</div>`;
 
       return `<tr class="impr-sub-row impr-sub-${groupKey}" style="display:none">
         <td colspan="14" style="padding:0;border-top:1px solid var(--border-cream);border-bottom:2px solid var(--border-cream);background:var(--warm-sand)">
@@ -2462,6 +2334,78 @@
           </div>
         </td>
       </tr>`;
+    }
+
+    // ── Optimization action log (Phase 1) ──────────────
+    const _OPT_ACTIONS = [
+      ['listing_off', 'Tắt listing'], ['listing_on', 'Mở listing'],
+      ['keyword_off', 'Tắt keyword'], ['keyword_on', 'Mở keyword'],
+      ['edit_title', 'Đổi title'], ['edit_tags', 'Đổi tag'], ['edit_price', 'Đổi giá'],
+      ['edit_image', 'Đổi ảnh'], ['edit_other', 'Khác'],
+    ];
+    const _OPT_LABEL = Object.fromEntries(_OPT_ACTIONS);
+
+    function _imprActionLog(d, groupKey) {
+      const lid = d.listing_id || '';
+      const opts = _OPT_ACTIONS.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+      const inp = 'font-family:var(--font-sans);font-size:0.8rem;padding:7px 9px;border:1px solid var(--border-cream);border-radius:6px;background:var(--ivory);outline:none';
+      const form = `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px">
+          <select id="optlog-action-${groupKey}" style="${inp}">${opts}</select>
+          <input id="optlog-kw-${groupKey}" placeholder="keyword (nếu có)" style="${inp};width:150px">
+          <input id="optlog-note-${groupKey}" placeholder="Ghi chú (vd: đổi title cho rõ keyword)" style="${inp};flex:1;min-width:160px">
+          <button onclick="optLogSave('${groupKey}','${lid}')" style="font-family:var(--font-sans);font-size:0.8rem;font-weight:600;color:#fff;background:var(--terracotta);border:none;border-radius:6px;padding:8px 16px;cursor:pointer">Ghi nhận</button>
+        </div>
+        <div id="optlog-list-${groupKey}" data-lid="${lid}" style="font-family:var(--font-sans);font-size:0.78rem;color:var(--stone)">…</div>`;
+      const body = `<div style="padding:10px 12px;background:var(--parchment);border:1px solid var(--border-cream);border-radius:8px">${form}</div>`;
+      return `<div style="margin-top:14px">
+          <p style="font-family:var(--font-sans);font-size:0.72rem;font-weight:600;color:var(--stone);letter-spacing:0.02em;text-transform:uppercase;margin-bottom:8px">Tối ưu — Ghi nhận &amp; lịch sử</p>
+          ${body}
+        </div>`;
+    }
+
+    async function optLogLoad(groupKey) {
+      const el = document.getElementById('optlog-list-' + groupKey);
+      if (!el) return;
+      const lid = el.dataset.lid;
+      try {
+        const res = await authFetch('/api/v1/optimization-log?listing_id=' + encodeURIComponent(lid));
+        const rows = await res.json();
+        if (!Array.isArray(rows) || !rows.length) { el.innerHTML = '<span style="font-style:italic">Chưa ghi nhận tối ưu nào cho listing này.</span>'; return; }
+        el.innerHTML = rows.map(r => {
+          const dt = r.created_at ? new Date(r.created_at).toLocaleString('vi-VN') : '';
+          const kw = r.keyword ? ` · <span style="font-family:var(--font-mono)">${_imprEsc(r.keyword)}</span>` : '';
+          const note = r.note ? ` — ${_imprEsc(r.note)}` : '';
+          return `<div style="display:flex;align-items:baseline;gap:8px;padding:5px 0;border-top:1px solid var(--border-cream)">
+              <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--stone);flex:0 0 auto">${dt}</span>
+              <span style="flex:1;color:var(--charcoal)"><strong style="color:var(--terracotta)">${_OPT_LABEL[r.action] || r.action}</strong>${kw}${note}</span>
+              <span onclick="optLogDelete(${r.id},'${groupKey}')" title="Xoá" style="cursor:pointer;color:var(--stone);font-size:0.8rem;flex:0 0 auto">✕</span>
+            </div>`;
+        }).join('');
+      } catch { el.innerHTML = '<span style="color:#b53333">Không tải được lịch sử.</span>'; }
+    }
+
+    async function optLogSave(groupKey, listingId) {
+      const action = document.getElementById('optlog-action-' + groupKey).value;
+      const keyword = document.getElementById('optlog-kw-' + groupKey).value.trim();
+      const note = document.getElementById('optlog-note-' + groupKey).value.trim();
+      try {
+        const res = await authFetch('/api/v1/optimization-log', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ listing_id: listingId, action, keyword: keyword || null, note: note || null })
+        });
+        if (res.ok) {
+          document.getElementById('optlog-kw-' + groupKey).value = '';
+          document.getElementById('optlog-note-' + groupKey).value = '';
+          optLogLoad(groupKey);
+        } else { showToast('Ghi nhận thất bại.', 'error'); }
+      } catch { showToast('Lỗi kết nối.', 'error'); }
+    }
+
+    async function optLogDelete(id, groupKey) {
+      try {
+        await authFetch('/api/v1/optimization-log/' + id, { method: 'DELETE' });
+        optLogLoad(groupKey);
+      } catch { showToast('Xoá thất bại.', 'error'); }
     }
 
     function _imprRenderRows() {
@@ -2496,6 +2440,7 @@
           const caret = caretRow.querySelector('.impr-caret');
           if (caret) caret.style.transform = 'rotate(90deg)';
         }
+        optLogLoad(key);
       });
 
       _imprUpdateSortIndicators();
@@ -2515,6 +2460,7 @@
       rows.forEach(r => { r.style.display = hidden ? '' : 'none'; });
       const caret = caretTd.querySelector('.impr-caret');
       if (caret) caret.style.transform = hidden ? 'rotate(90deg)' : '';
+      if (hidden) optLogLoad(key);  // lazy-load optimization history when expanded
     }
 
     function renderImprTable() {

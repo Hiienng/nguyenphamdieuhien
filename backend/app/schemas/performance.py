@@ -22,23 +22,12 @@ class ListingDashboardItem(BaseModel):
     spend: Decimal | None = None
     cpc: Decimal | None = None
     cpp: Decimal | None = None
-    # own market data (market_listing WHERE id = listing_id, latest)
-    price: int | None = None
-    discount_price: int | None = None
-    rating: float | None = None
-    review_count: int | None = None
-    badge: str | None = None
-    free_shipping: bool | None = None
-    is_ad: bool | None = None
-    tag_ranking: int | None = None
     # scenario (from scenarios_rules JOIN)
     scenario_action: str | None = None
     scenario_label: str | None = None
     scenario_cause: str | None = None
     scenario_fix_listing: str | None = None
     scenario_fix_ads: str | None = None
-    # references: top-N market listings from references_engine (ordered by ref_rank)
-    references: list[dict] | None = None
     # keywords: list of dicts from keyword_report at latest import_time
     keywords: list[dict] | None = None
     # history: daily internal metrics per listing

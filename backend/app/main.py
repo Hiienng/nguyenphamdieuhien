@@ -31,8 +31,9 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import NotSupportedError
 from .core.config import get_settings
 from .core.database import create_tables, AsyncSessionLocal, engine
-from .api.routes import listings, performance, internal, references, scenarios, thresholds, auth, settings as settings_routes
+from .api.routes import listings, performance, internal, scenarios, thresholds, auth, settings as settings_routes, optimization_log
 from .models import scenario   # noqa: F401 — registers scenarios_rules with Base
+from .models import optimization_log as optimization_log_model  # noqa: F401 — registers optimization_log with Base
 from .models import threshold  # noqa: F401 — registers threshold_configs with Base
 from .models import listing_report, keyword_report, manual_listing_report, manual_keyword_report  # noqa: F401 — register with Base
 from .models import user  # noqa: F401 — registers users table with Base
@@ -109,11 +110,11 @@ app.add_middleware(
 app.include_router(listings.router, prefix="/api/v1")
 app.include_router(performance.router, prefix="/api/v1")
 app.include_router(internal.router, prefix="/api/v1")
-app.include_router(references.router, prefix="/api/v1")
 app.include_router(scenarios.router,   prefix="/api/v1")
 app.include_router(thresholds.router,  prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(settings_routes.router, prefix="/api/v1")
+app.include_router(optimization_log.router, prefix="/api/v1")
 
 
 @app.get("/favicon.ico")

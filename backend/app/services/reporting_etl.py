@@ -150,8 +150,7 @@ _SIGNATURE_SQL = text("""
         (SELECT COALESCE(MAX(import_time)::text, '') FROM listing_report)        AS lr,
         (SELECT COALESCE(MAX(import_time)::text, '') FROM manual_listing_report) AS mlr,
         (SELECT COALESCE(MAX(import_time)::text, '') FROM keyword_report)        AS kr,
-        (SELECT COALESCE(MAX(import_time)::text, '') FROM manual_keyword_report) AS mkr,
-        (SELECT COALESCE(MAX(refreshed_at)::text, '') FROM references_engine)    AS refs
+        (SELECT COALESCE(MAX(import_time)::text, '') FROM manual_keyword_report) AS mkr
 """)
 
 
@@ -433,8 +432,7 @@ _INSERT_KEYWORDS_SQL = text("""
 
 
 async def rebuild_reporting(db: AsyncSession, tenant_id: str) -> dict:
-    """Full rebuild of reporting tables for a single tenant. Internal data only —
-    market enrichment (price/rating/...) happens at serving time via market_db."""
+    """Full rebuild of reporting tables for a single tenant (own ads data only)."""
     t0 = time.monotonic()
 
     # Per-tenant advisory lock key: XOR base key with hash of tenant_id so

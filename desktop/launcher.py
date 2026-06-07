@@ -76,11 +76,9 @@ def _apply_config() -> None:
             os.environ[k] = v
 
 
-def _write_user_config(db_url: str, market_db: str, secret: str) -> None:
+def _write_user_config(db_url: str, secret: str) -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     lines = [f"DATABASE_URL={db_url}", f"SECRET_KEY={secret}"]
-    if market_db:
-        lines.append(f"ETSY_MARKET_DB={market_db}")
     USER_CONFIG.write_text("\n".join(lines) + "\n", encoding="utf-8")
     try:
         os.chmod(USER_CONFIG, 0o600)
@@ -129,14 +127,13 @@ class SetupApi:
     def __init__(self):
         self.window = None
 
-    def save_config(self, db_url, market_db, secret):
+    def save_config(self, db_url, secret):
         db_url = (db_url or "").strip()
         secret = (secret or "").strip()
-        market_db = (market_db or "").strip()
         if not db_url or not secret:
             return {"ok": False, "error": "Cần nhập Database URL và Access token."}
         try:
-            _write_user_config(db_url, market_db, secret)
+            _write_user_config(db_url, secret)
             _apply_config()
             url = _start_server()
             self.window.load_url(url + "app")

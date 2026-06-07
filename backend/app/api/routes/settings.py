@@ -23,7 +23,6 @@ USER_CONFIG = Path.home() / ".getifyco-listing-portal" / "config.env"
 
 class DatabaseUpdate(BaseModel):
     database_url: str
-    market_db_url: str | None = None
 
 
 def _mask(url: str) -> str:
@@ -68,7 +67,6 @@ async def get_database_settings(user: User = Depends(get_current_active_user)):
     s = get_settings()
     return {
         "database_url_masked": _mask(s.DATABASE_URL),
-        "market_db_configured": bool(s.ETSY_MARKET_DB),
         "config_path": str(USER_CONFIG),
     }
 
@@ -84,12 +82,6 @@ async def update_database_settings(
 
     cfg = _read_user_config()
     cfg["DATABASE_URL"] = db_url
-    if body.market_db_url is not None:
-        mk = body.market_db_url.strip()
-        if mk:
-            cfg["ETSY_MARKET_DB"] = mk
-        else:
-            cfg.pop("ETSY_MARKET_DB", None)
     # Preserve the existing token so the launcher still considers the app configured.
     if "SECRET_KEY" not in cfg and get_settings().SECRET_KEY:
         cfg["SECRET_KEY"] = get_settings().SECRET_KEY
