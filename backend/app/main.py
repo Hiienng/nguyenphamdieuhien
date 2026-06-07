@@ -156,7 +156,14 @@ async def download_extension():
 # Serve frontend static files — must be AFTER API routes
 _frontend_dir = RESOURCE_ROOT / "frontend"
 if _frontend_dir.exists():
-    from fastapi.responses import HTMLResponse
+    from fastapi.responses import HTMLResponse, RedirectResponse
+
+    @app.get("/")
+    async def root():
+        # Desktop app is single-user with no marketing/login — go straight to the portal.
+        if os.environ.get("DESKTOP_MODE") == "1":
+            return RedirectResponse(url="/app", status_code=307)
+        return FileResponse(str(_frontend_dir / "index.html"))
 
     @app.get("/app")
     async def serve_app():

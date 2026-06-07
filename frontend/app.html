@@ -198,7 +198,11 @@
       max-width: 1440px;
       margin: 0 auto;
       padding: 28px 28px 100px;
+      box-sizing: border-box;
+      overflow-x: hidden;   /* page never scrolls sideways; inner tables scroll on their own */
     }
+    html, body { max-width: 100%; overflow-x: hidden; }
+    .impr-help-pop { max-width: calc(100vw - 40px) !important; }
 
     .hub-tab {
       font-family: var(--font-sans);
@@ -1176,7 +1180,7 @@
 
   <!-- ── Navigation ─────────────────────────────────── -->
   <nav class="nav">
-    <a href="#" class="nav-brand">Internal Portal<span>.</span></a>
+    <a href="/app" class="nav-brand" style="display:flex;align-items:center;gap:8px"><img src="/logo.png" alt="GetifyCo" style="height:28px;width:auto;display:block"><span style="font-family:var(--font-serif);font-size:1.05rem;font-weight:500;color:var(--near-black)">GetifyCo</span></a>
     <div class="nav-tabs" role="tablist">
       <button class="hub-tab" data-perf="import" onclick="_perfPillClick('import')">Import Report</button>
       <button class="hub-tab active" data-perf="improvement" onclick="_perfPillClick('improvement')">Action Recommendations</button>
@@ -1187,7 +1191,6 @@
           onmouseover="this.style.color='var(--charcoal)'" onmouseout="this.style.color='var(--stone)'">Settings</a></li>
       <li><a href="docs.html" style="font-size:0.80rem;color:var(--stone);text-decoration:none;padding:0 4px"
           onmouseover="this.style.color='var(--charcoal)'" onmouseout="this.style.color='var(--stone)'">Docs</a></li>
-      <li><a href="#" id="nav-signout" class="nav-cta" onclick="authLogout();return false">Sign out</a></li>
     </ul>
   </nav>
 
@@ -2183,7 +2186,7 @@
       </tr>`;
       }).join('');
       const bodyHtml = `<div style="overflow-x:auto"><table id="impr-tbl-keywords-${groupKey}" style="width:100%;border-collapse:collapse">${head}<tbody id="impr-tbody-keywords-${groupKey}">${body}</tbody></table></div>`;
-      return `<div style="margin-top:12px">${_imprFoldSection('Keywords · Period: ' + periodNote, bodyHtml)}</div>`;
+      return `<div style="margin-top:12px">${_imprFoldSection('Keywords · Period: ' + periodNote, bodyHtml, { open: true })}</div>`;
     }
 
     function _imprHistoryDownloadCsv(groupKey) {
@@ -2300,7 +2303,7 @@
 
       return `<tr class="impr-sub-row impr-sub-${groupKey}" style="display:none">
         <td colspan="14" style="padding:0;border-top:1px solid var(--border-cream);border-bottom:2px solid var(--border-cream);background:var(--warm-sand)">
-          <div style="position:sticky;left:0;background:var(--warm-sand);padding:14px 16px 18px;box-sizing:border-box">
+          <div style="position:sticky;left:0;background:var(--warm-sand);padding:14px 16px 18px;box-sizing:border-box;width:calc(100vw - 56px);max-width:1384px">
             <details class="impr-fold">
               <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:rgba(232,230,220,0.7);border-bottom:1px solid var(--border-cream);user-select:none">
                 <span style="display:flex;align-items:center;gap:8px;min-width:0">
