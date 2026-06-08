@@ -1293,6 +1293,15 @@
       } catch { msg.textContent = 'Lỗi kết nối.'; }
       finally { btn.disabled = false; btn.textContent = 'Lưu'; }
     }
+
+    function copyExtLink() {
+      const inp = document.getElementById('extLink');
+      const btn = document.getElementById('extCopyBtn');
+      const done = () => { const t = btn.innerHTML; btn.textContent = 'Đã copy ✓'; setTimeout(() => { btn.innerHTML = t; }, 1500); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(inp.value).then(done).catch(() => { inp.select(); document.execCommand('copy'); done(); });
+      } else { inp.select(); document.execCommand('copy'); done(); }
+    }
   </script>
 
   <!-- ── Hub Section ────────────────────────────────── -->
@@ -1389,13 +1398,18 @@
                 <div style="min-width:24px;height:24px;border-radius:50%;background:var(--terracotta);color:#fff;font-family:var(--font-sans);font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">1</div>
                 <div style="flex:1">
                   <p style="font-family:var(--font-sans);font-size:0.85rem;font-weight:600;color:var(--charcoal);margin-bottom:6px">Download &amp; install the extension</p>
-                  <a href="/extension/download"
-                    style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:var(--terracotta);color:#fff;font-family:var(--font-sans);font-size:0.82rem;font-weight:500;border-radius:7px;text-decoration:none;transition:opacity 0.15s"
-                    onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M3.5 6l3.5 3.5L10.5 6M2 12h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Download Extension (.xpi)
-                  </a>
-                  <p style="font-family:var(--font-sans);font-size:0.76rem;color:var(--stone);margin-top:6px">Compatible with Firefox. After downloading, rename the file from <strong>.zip → .xpi</strong>, then in Firefox open <strong>about:debugging</strong> → This Firefox → Load Temporary Add-on → select the .xpi file.</p>
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <input id="extLink" readonly value="https://github.com/Hiienng/getifyco-listing-portal/releases/download/extension/getifyco-extension.xpi"
+                      onclick="this.select()"
+                      style="flex:1 1 300px;min-width:220px;font-family:var(--font-mono);font-size:0.74rem;padding:8px 10px;border:1px solid var(--border-cream);border-radius:7px;background:var(--warm-sand);color:var(--charcoal)">
+                    <button id="extCopyBtn" type="button" onclick="copyExtLink()"
+                      style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:var(--terracotta);color:#fff;font-family:var(--font-sans);font-size:0.82rem;font-weight:500;border-radius:7px;border:none;cursor:pointer;transition:opacity 0.15s"
+                      onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      Copy link
+                    </button>
+                  </div>
+                  <p style="font-family:var(--font-sans);font-size:0.76rem;color:var(--stone);margin-top:6px">Copy link → mở trên trình duyệt (cần đăng nhập GitHub) để tải file <strong>.xpi</strong>. Cài vào Firefox: <strong>about:debugging</strong> → This Firefox → Load Temporary Add-on → chọn file <strong>.xpi</strong>.</p>
                 </div>
               </div>
 
