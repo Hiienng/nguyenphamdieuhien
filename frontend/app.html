@@ -1249,7 +1249,7 @@
   <div id="settingsModal" style="display:none;position:fixed;inset:0;z-index:2000;align-items:center;justify-content:center;background:rgba(20,20,19,0.55)" onclick="if(event.target===this)closeSettings()">
     <div style="background:var(--ivory);border-radius:16px;width:520px;max-width:94vw;box-shadow:0 8px 40px rgba(0,0,0,0.18);padding:30px 30px">
       <h2 style="font-family:var(--font-serif);font-size:1.4rem;font-weight:500;margin-bottom:6px;color:var(--near-black)">Settings — Kết nối Database</h2>
-      <p style="font-size:0.84rem;color:var(--stone);margin-bottom:18px">Đổi chuỗi kết nối Postgres/Neon. Lưu xong cần <strong>khởi động lại app</strong> để áp dụng.</p>
+      <p style="font-size:0.84rem;color:var(--stone);margin-bottom:18px">Đổi chuỗi kết nối Postgres/Neon. Lưu xong <strong>áp dụng ngay</strong>, không cần khởi động lại.</p>
       <div style="margin-bottom:12px">
         <p style="font-size:0.78rem;color:var(--charcoal);font-weight:600;margin-bottom:3px">Đang dùng</p>
         <p id="settingsCurrent" style="font-family:ui-monospace,Menlo,monospace;font-size:0.8rem;color:var(--stone);word-break:break-all">…</p>
@@ -1294,7 +1294,16 @@
         });
         const d = await res.json();
         if (!res.ok) { msg.textContent = d.detail || 'Lưu thất bại.'; }
-        else { msg.style.color = 'var(--status-good)'; msg.textContent = '✓ Đã lưu. Khởi động lại app để áp dụng.'; document.getElementById('settingsDbUrl').value=''; }
+        else {
+          msg.style.color = 'var(--status-good)';
+          msg.textContent = '✓ Đã lưu & áp dụng — đang tải dữ liệu…';
+          document.getElementById('settingsDbUrl').value = '';
+          const cur = document.getElementById('settingsCurrent');
+          if (cur && d.database_url_masked) cur.textContent = d.database_url_masked;
+          // applied at runtime (no restart) — reload the dashboard right away
+          try { await loadListingsDashboard(); } catch (e) {}
+          setTimeout(closeSettings, 900);
+        }
       } catch { msg.textContent = 'Lỗi kết nối.'; }
       finally { btn.disabled = false; btn.textContent = 'Lưu'; }
     }

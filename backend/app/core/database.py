@@ -47,6 +47,23 @@ def _get_engine():
     return _engine, _AsyncSessionLocal
 
 
+async def reset_engine():
+    """Drop the cached engine so the next use rebuilds it from current settings.
+
+    Called after the DB connection is changed at runtime (Settings → save), so the
+    new Neon URL applies immediately without restarting the app.
+    """
+    global _engine, _AsyncSessionLocal
+    old = _engine
+    _engine = None
+    _AsyncSessionLocal = None
+    if old is not None:
+        try:
+            await old.dispose()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("engine dispose failed: %s", exc)
+
+
 # ── Compatibility shims ───────────────────────────────────────────────────────
 # Code throughout the app does `from .database import engine, AsyncSessionLocal`.
 # These proxy objects forward attribute access to the lazy-initialised instances.

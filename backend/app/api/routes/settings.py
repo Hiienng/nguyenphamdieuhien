@@ -87,4 +87,13 @@ async def update_database_settings(
         cfg["SECRET_KEY"] = get_settings().SECRET_KEY
 
     _write_user_config(cfg)
-    return {"ok": True, "restart_required": True, "database_url_masked": _mask(db_url)}
+
+    # Apply immediately (no restart): point env at the new URL, drop the cached
+    # settings + DB engine so the next query rebuilds against the new connection.
+    import os
+    from ...core.database import reset_engine
+    os.environ["DATABASE_URL"] = db_url
+    get_settings.cache_clear()
+    await reset_engine()
+
+    return {"ok": True, "restart_required": False, "database_url_masked": _mask(db_url)}
