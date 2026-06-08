@@ -113,7 +113,10 @@ def _start_server() -> str:
     from app.main import app  # imported AFTER config env vars are set
 
     port = _free_port()
-    config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning")
+    # Frozen app: keep the console clean (hide error tracebacks like the harmless
+    # "Could not parse SQLAlchemy URL ''" before the DB is configured).
+    log_level = "critical" if getattr(sys, "frozen", False) else "warning"
+    config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level=log_level)
     _server = uvicorn.Server(config)
     threading.Thread(target=_server.run, daemon=True).start()
     base_url = f"http://127.0.0.1:{port}/"
@@ -167,14 +170,24 @@ def main() -> None:
         url = _start_server()
         target = url + "app"
         webbrowser.open(target)
-        print("=" * 56)
-        print("  GetifyCo Listing Portal đang chạy:")
+        print("=" * 60)
+        print("  GetifyCo Listing Portal ĐANG CHẠY — dùng app ở trình duyệt:")
         print("  " + target)
         if not configured:
-            print("  Lần đầu: mở app → bấm ⚙ (Settings) → nhập")
-            print("  Database connection (Neon) → Lưu → mở lại app.")
-        print("  >> ĐÓNG CỬA SỔ NÀY để thoát app. <<")
-        print("=" * 56)
+            print("  Lần đầu: trong app bấm  Settings (⚙)  → nhập Database")
+            print("  connection (Neon) → Lưu. (Lần sau KHÔNG phải nhập lại.)")
+        print("")
+        print("  Cửa sổ này là máy chủ của app — cứ để thu nhỏ dưới taskbar.")
+        print("  >> ĐÓNG cửa sổ này khi muốn THOÁT app. <<")
+        print("=" * 60)
+        # Tuck the console out of the way (still in the taskbar; close it to quit).
+        try:
+            import ctypes
+            hwnd = ctypes.windll.kernel32.GetConsoleWindow()
+            if hwnd:
+                ctypes.windll.user32.ShowWindow(hwnd, 6)  # SW_MINIMIZE
+        except Exception:
+            pass
         try:
             threading.Event().wait()
         except KeyboardInterrupt:
