@@ -15,7 +15,8 @@ ICON_ICO = _ICO if os.path.exists(_ICO) else None
 # --- bundled data: static frontend, docs, extension asset, and .env ---------
 datas = [
     (os.path.join(ROOT, "frontend"), "frontend"),
-    (os.path.join(ROOT, "docs"), "docs"),
+    # NOTE: top-level docs/ holds dev/design docs only — NOT bundled. The
+    # user-facing guides live in frontend/md-docs/ (shipped via frontend above).
 ]
 _ext = os.path.join(ROOT, "extension-keyword-main", "Archive.pxi")
 if os.path.exists(_ext):

@@ -84,7 +84,7 @@
 </div>
 
 <script>
-const DOCS = [{"label": "Hướng dẫn sử dụng", "group": "guide", "content": "# Hướng dẫn sử dụng — GetifyCo Listing Portal\n\nTài liệu này đi theo đúng **3 nhu cầu của bạn**. Mỗi nhu cầu trả lời 3 câu: **(1) Nhu cầu là gì → (2) Kết quả xem ở đâu → (3) Phải vận hành thế nào để ra kết quả đó.**\n\n> Trước tiên: dữ liệu trong app đến từ **extension** quét trang Etsy Ads rồi ghi thẳng vào **Neon DB của bạn**. App không tự lấy dữ liệu — bạn phải quét định kỳ (vd mỗi tuần). Không có dữ liệu thì không phần nào hiển thị.\n\n---\n\n## Nhu cầu 1 — \"Listing / keyword nào đang lời, đang lỗ?\"\n\n**▸ Kết quả xem ở đâu**\n- Tab **Action Recommendations**: mỗi listing là 1 thẻ, hàng chỉ số ngay đầu thẻ — **ROAS · Rev-Spend($) · Revenue · Spend · Orders · Views · Clicks · CTR · CR · CPC · CPP**.\n- **Chấm màu** ở cuối hàng tiêu đề thẻ = lời/lỗ tức thì: 🟢 đang lời · 🟠 cần cải thiện · 🔴 lỗ / nên dừng (rê vào xem chữ).\n- Bung thẻ (▸) → bảng **Keywords**: chỉ số của **từng keyword** trong listing.\n\n**▸ Vận hành thế nào**\n1. Cài extension (Firefox) → vào *Settings* của extension, dán **Database connection (Neon)** của bạn.\n2. Mở trang **Etsy Ads** → extension quét → bấm **Add to DB** (listing) và **Add Keywords to DB** (keyword).\n3. Về app → tab **Action Recommendations** → **Refresh** → các thẻ hiện chỉ số.\n\n---\n\n## Nhu cầu 2 — \"Keyword nào nên tắt / mở, vì sao?\"\n\n**▸ Kết quả xem ở đâu**\n- Trong bảng **Keywords** của mỗi listing:\n  - cột **Currently** = đang chạy thật (theo lần quét gần nhất).\n  - cột **Suggestion** = đề xuất hệ thống: **on** (keyword từng ra doanh thu → nên giữ) / **off** (chưa từng ra doanh thu → nên tắt).\n- **🔔 Chuông** trên thẻ = listing này **có keyword đang ON nhưng Suggestion OFF** → có cái nên xem lại để tắt. Bung ra, dòng lệch được tô nền cam.\n- Bung **Details** → **Nguyên nhân · Fix Listing · Fix Ads** (vì sao + nên sửa gì).\n\n**▸ Vận hành thế nào**\n1. Sau khi đã có dữ liệu (Nhu cầu 1), bung thẻ listing.\n2. So cột **Currently** vs **Suggestion**: chỗ `Currently = on` mà `Suggestion = off` chính là keyword đang đốt tiền nhưng chưa ra đơn.\n3. Muốn đổi ngưỡng đánh giá lời/lỗ → tab **Configure Thresholds**.\n\n---\n\n## Nhu cầu 3 — \"Tôi tắt / mở keyword rồi, việc đó có tác động đến performance không?\"\n\n**▸ Kết quả xem ở đâu**\n- Trong thẻ listing, phần **Keyword Track change** (biểu đồ):\n  - đường mặc định **Rev-Spend($) = Revenue − Spend** theo ngày (đổi chỉ số ở góc phải: Spend / Clicks / ROAS…).\n  - **▲ cờ đỏ = mốc bạn đổi keyword** (rê vào xem đổi gì, ngày nào).\n  - So đường biểu đồ **trước vs sau cờ** → biết thay đổi có tác động hay không.\n- Danh sách thao tác liệt kê bên dưới biểu đồ (✕ để xoá 1 dòng).\n\n**▸ Vận hành thế nào**\n1. Khi quyết định tắt/mở 1 keyword → trong bảng Keywords gạt nút **Commit** (on ↔ off). Thao tác này **ghi 1 mốc vào lịch sử** và **cắm cờ ▲** lên biểu đồ tại ngày hôm đó.\n2. Qua **Etsy** tắt/mở keyword đó **thật** (Commit chỉ ghi nhận, không tự thao tác trên Etsy).\n3. **Tuần sau quét lại dữ liệu** → quay lại **Keyword Track change**, nhìn đường **Rev-Spend($)** quanh cờ ▲ để đánh giá hiệu quả.\n\n> Ví dụ (theo ảnh đính kèm): ngày **8/6** bạn gạt Commit *\"Tắt keyword berry first birthday onesie\"* → cờ ▲ đỏ hiện tại 8/6. Tuần sau quét lại, so đường Rev-Spend($) trước/sau 8/6 để biết việc tắt keyword đó có cải thiện lãi ròng không.\n\n---\n\n## Lưu ý quan trọng\n- Dữ liệu **không real-time** — chỉ đổi **sau mỗi lần quét** bằng extension.\n- Tắt/mở trên Etsy → **tuần sau quét mới thấy** cột `Currently` đổi theo.\n- **Commit không tự tắt ad trên Etsy** — chỉ ghi nhận quyết định + đo tác động.\n- Tìm nhanh: ô **search** (ID/title) · lọc **Product / ROAS / VM** · sắp xếp bằng dropdown + nút ↑/↓.\n"}, {"label": "Định nghĩa: Suggestion · Commit · Chuông", "group": "guide", "content": "# Định nghĩa: Suggestion · Commit · Chuông\n\n## Suggestion (đề xuất bật/tắt keyword)\n- **on** — keyword **từng tạo doanh thu (Revenue > 0)** ở bất kỳ listing / kỳ nào trong **toàn bộ lịch sử** → nên **giữ bật**.\n- **off** — **chưa từng** tạo doanh thu → nên **cân nhắc tắt** (đang đốt budget mà chưa ra đơn).\n- Tính trên **toàn lịch sử**, độc lập với kỳ đang xem.\n\n## Currently (trạng thái hiện tại)\n- Trạng thái **on/off thực tế** của keyword tại **lần quét gần nhất** — không phải real-time.\n\n## Commit (nút toggle) — quyết định của bạn\n- Là **quyết định**: gạt để xác nhận *\"tôi sẽ bật/tắt ad keyword này trên Etsy\"*.\n- **Mặc định = Currently**.\n- Mỗi lần gạt → **ghi 1 dòng vào lịch sử tối ưu** (kèm thời gian) + cắm **cờ ▲** lên biểu đồ **Keyword Track change**.\n- **Không tự thao tác trên Etsy** — bạn vẫn phải qua Etsy tắt/mở thật. Commit để **ghi nhận + đo tác động** (so trước/sau cờ).\n- **Khi nào bấm:** thường khi `Suggestion = off` nhưng `Currently = on` (keyword đốt tiền, chưa ra đơn) → gạt Commit về **off** để đánh dấu sẽ tắt. Hoặc ngược lại khi muốn bật lại.\n\n## 🔔 Chuông (cảnh báo keyword)\n- Hiện trên thẻ listing khi **có keyword đang ON nhưng Suggestion = OFF**.\n- Ý nghĩa: listing này có keyword **nên xem lại để tắt**. Bung ra, các dòng lệch được **tô nền cam nhạt**.\n\n## Trạng thái listing (chấm màu cuối hàng)\n- 🟢 **Keep Running** — có sales & đang lời.\n- 🟠 **Improve** — cần cải thiện.\n- 🔴 **Improve / Pause** — cân nhắc cải thiện hoặc tạm dừng.\n\n## Công thức chỉ số\n| Chỉ số | Công thức |\n|---|---|\n| ROAS | Revenue / Spend |\n| CTR | Clicks / Views |\n| CR | Orders / Clicks |\n| CPC | Spend / Clicks |\n| CPP | Spend / Orders |\n| **Rev-Spend($)** | **Revenue − Spend** (mặc định của biểu đồ Keyword Track change) |\n"}];
+const DOCS = [{ label: "Hướng dẫn sử dụng", group: "guide", file: "huong-dan-su-dung.md" }, { label: "Định nghĩa: Suggestion · Commit · Chuông", group: "guide", file: "dinh-nghia.md" }];
 
   const GROUPS = [ { label: 'Hướng dẫn', key: 'guide' } ];
 
@@ -109,19 +109,20 @@ const DOCS = [{"label": "Hướng dẫn sử dụng", "group": "guide", "content
   const _firstItem = sidebar.querySelector('.sidebar-item');
   if (_firstItem) _firstItem.click();
 
-  function showDoc(doc, btn) {
+  async function showDoc(doc, btn) {
     sidebar.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    if (doc.isDocx) {
-      const dlUrl = location.protocol === 'file:' ? '../docs/' + doc.file : '/md-docs/' + doc.file;
-      content.innerHTML = `<div style="padding-top:20px"><div class="docx-notice">
-        <strong>${doc.label}</strong>
-        <p>File <code>.docx</code> không thể render trực tiếp trên trình duyệt.<br>Tải về để mở bằng Word hoặc Google Docs.</p>
-        <a href="${dlUrl}" download>⬇ Tải xuống ${doc.file}</a>
-      </div></div>`;
-    } else {
-      content.innerHTML = `<div class="md-body">${marked.parse(doc.content)}</div>`;
+    content.innerHTML = '<div class="md-body" style="color:var(--stone)">Đang tải…</div>';
+    content.scrollTop = 0;
+    try {
+      const url = (location.protocol === 'file:' ? '../md-docs/' : '/md-docs/') + doc.file;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const md = await res.text();
+      content.innerHTML = '<div class="md-body">' + marked.parse(md) + '</div>';
       content.scrollTop = 0;
+    } catch (e) {
+      content.innerHTML = '<div class="md-body" style="color:var(--stone)">Không tải được tài liệu <code>' + doc.file + '</code> (' + e.message + ').</div>';
     }
   }
 </script>

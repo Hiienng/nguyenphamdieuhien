@@ -126,10 +126,8 @@ async def health():
     return {"status": "ok", "env": settings.APP_ENV}
 
 
-# Serve docs/ markdown files at /md-docs/ to avoid prefix clash with /docs.html
-_docs_dir = RESOURCE_ROOT / "docs"
-if _docs_dir.exists():
-    app.mount("/md-docs", StaticFiles(directory=str(_docs_dir)), name="docs")
+# Markdown docs (the user-editable guides) live in frontend/md-docs/ and are
+# served by the frontend static mount below at /md-docs/. No separate mount.
 
 # Extension download — served with octet-stream so Chrome doesn't block .xpi
 _ext_xpi = RESOURCE_ROOT / "extension-keyword-main" / "Archive.pxi"
