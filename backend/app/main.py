@@ -121,14 +121,6 @@ async def favicon():
     return Response(content=None, status_code=204)
 
 
-# Redirect common misspellings: /etsymate.html -> /etseemate.html
-@app.get("/etsymate.html")
-@app.get("/etsyMate.html")
-async def redirect_etsymate():
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/etseemate.html", status_code=301)
-
-
 @app.get("/health")
 async def health():
     return {"status": "ok", "env": settings.APP_ENV}
