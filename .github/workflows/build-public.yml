@@ -33,15 +33,6 @@ jobs:
         working-directory: desktop
         run: pyinstaller --noconfirm --clean Getify.spec
 
-      - name: Verify pythonnet managed assembly bundled (Windows GUI dep)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        working-directory: desktop
-        run: |
-          $dll = Get-ChildItem -Recurse dist -Filter Python.Runtime.dll
-          if (-not $dll) { Write-Error "Python.Runtime.dll missing — winforms GUI would fail at launch"; exit 1 }
-          Write-Host "OK: $($dll[0].FullName)"
-
       - name: Smoke test (headless boot — expects setup-needed without config)
         working-directory: desktop
         shell: bash

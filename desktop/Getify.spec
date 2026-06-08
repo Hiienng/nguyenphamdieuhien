@@ -44,21 +44,8 @@ hiddenimports += [
     "passlib.handlers.bcrypt",
 ]
 
-# Windows GUI (pywebview winforms backend) needs pythonnet's managed assembly
-# Python.Runtime.dll + clr_loader runtime config. PyInstaller doesn't grab these
-# by default → "Failed to resolve Python.Runtime.Loader.Initialize" at launch.
-# Collect them on Windows builds only (pythonnet isn't installed on macOS).
+# Windows opens the system browser (not pywebview), so no pythonnet/.NET is needed.
 binaries = []
-if sys.platform.startswith("win"):
-    for _pkg in ("pythonnet", "clr_loader"):
-        try:
-            _d, _b, _h = collect_all(_pkg)
-            datas += _d
-            binaries += _b
-            hiddenimports += _h
-        except Exception as _e:
-            print(f"[spec] collect_all({_pkg}) skipped: {_e}")
-    hiddenimports += ["clr"]
 
 # Heavy / removed-feature libs we deliberately keep OUT of the bundle.
 excludes = [
@@ -92,7 +79,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
-    console=False,            # GUI app — no terminal window
+    console=True,             # Windows runs in browser; this console is the quit anchor (macOS .app hides it)
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,

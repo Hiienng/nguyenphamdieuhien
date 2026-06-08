@@ -66,8 +66,9 @@ def _effective_config() -> dict:
 
 
 def _is_configured() -> bool:
+    # Desktop mode bypasses auth, so only the DB connection is truly required.
     cfg = _effective_config()
-    return bool(cfg.get("DATABASE_URL") and cfg.get("SECRET_KEY"))
+    return bool(cfg.get("DATABASE_URL"))
 
 
 def _apply_config() -> None:
@@ -144,25 +145,53 @@ class SetupApi:
 
 def main() -> None:
     headless = os.environ.get("GETIFY_HEADLESS") == "1"
+    configured = _is_configured()
+    _apply_config()  # apply whatever config exists (DB may be empty on first run)
 
-    if _is_configured():
-        _apply_config()
-        url = _start_server()
-        if headless:
+    if headless:
+        # CI smoke test — never opens a GUI/browser.
+        if configured:
+            url = _start_server()
             print("GETIFY_HEADLESS ok=1 url=" + url)
             if _server:
                 _server.should_exit = True
-            return
-        import webview
+        else:
+            print("GETIFY_HEADLESS ok=setup-needed")
+        return
+
+    # Windows: pywebview's winforms backend (pythonnet/.NET) is unreliable when
+    # frozen ("Failed to resolve Python.Runtime.Loader.Initialize"), so open the
+    # system browser instead. The local server is the app; closing this window quits.
+    if sys.platform.startswith("win"):
+        import webbrowser
+        url = _start_server()
+        target = url + "app"
+        webbrowser.open(target)
+        print("=" * 56)
+        print("  GetifyCo Listing Portal đang chạy:")
+        print("  " + target)
+        if not configured:
+            print("  Lần đầu: mở app → bấm ⚙ (Settings) → nhập")
+            print("  Database connection (Neon) → Lưu → mở lại app.")
+        print("  >> ĐÓNG CỬA SỔ NÀY để thoát app. <<")
+        print("=" * 56)
+        try:
+            threading.Event().wait()
+        except KeyboardInterrupt:
+            pass
+        if _server:
+            _server.should_exit = True
+        return
+
+    # macOS: native pywebview window (Cocoa backend — no pythonnet).
+    import webview
+    if configured:
+        url = _start_server()
         webview.create_window(
             "GetifyCo Listing Portal", url + "app",
             width=1280, height=860, min_size=(1024, 680),
         )
     else:
-        if headless:
-            print("GETIFY_HEADLESS ok=setup-needed")
-            return
-        import webview
         setup_html = (BASE / "frontend" / "setup.html").read_text(encoding="utf-8")
         api = SetupApi()
         win = webview.create_window(
@@ -170,7 +199,6 @@ def main() -> None:
             js_api=api, width=720, height=760,
         )
         api.window = win
-
     webview.start()
     if _server:
         _server.should_exit = True
