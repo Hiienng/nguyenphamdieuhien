@@ -196,11 +196,14 @@ async function _insertChunked(conn, table, cols, rows) {
 }
 
 const DDL_LISTING = `CREATE TABLE IF NOT EXISTS listing_report (
-  id SERIAL PRIMARY KEY, listing_id VARCHAR(32) NOT NULL, title TEXT, no_vm VARCHAR(16),
+  id SERIAL PRIMARY KEY, listing_id VARCHAR(32) NOT NULL, title TEXT, image_url TEXT, no_vm VARCHAR(16),
   price NUMERIC(10,2), stock INTEGER, category VARCHAR(64), lifetime_orders INTEGER,
   lifetime_revenue NUMERIC(12,2), period VARCHAR(32) NOT NULL, views INTEGER, clicks INTEGER,
   orders INTEGER, revenue NUMERIC(12,2), spend NUMERIC(12,2), roas NUMERIC(8,2),
   import_time TIMESTAMPTZ, importer VARCHAR(64), tenant_id VARCHAR(36))`;
+
+// existing installs: add the column if the table predates image_url
+const DDL_LISTING_ALTER = `ALTER TABLE listing_report ADD COLUMN IF NOT EXISTS image_url TEXT`;
 
 const DDL_KEYWORD = `CREATE TABLE IF NOT EXISTS keyword_report (
   id SERIAL PRIMARY KEY, listing_id VARCHAR(32) NOT NULL, keyword TEXT NOT NULL,
@@ -209,7 +212,7 @@ const DDL_KEYWORD = `CREATE TABLE IF NOT EXISTS keyword_report (
   views INTEGER, relevant VARCHAR(8), import_time TIMESTAMPTZ, importer VARCHAR(64),
   tenant_id VARCHAR(36))`;
 
-const LISTING_COLS = ["listing_id", "title", "no_vm", "price", "stock", "category",
+const LISTING_COLS = ["listing_id", "title", "image_url", "no_vm", "price", "stock", "category",
   "lifetime_orders", "lifetime_revenue", "period", "views", "clicks", "orders",
   "revenue", "spend", "roas", "import_time", "importer", "tenant_id"];
 
@@ -233,6 +236,7 @@ async function handleIngestListing(rows, importer, sendResponse) {
     if (!conn) { sendResponse({ ok: false, error: "Chưa nhập Database connection." }); return; }
     if (!Array.isArray(rows) || rows.length === 0) { sendResponse({ ok: false, error: "No rows to insert." }); return; }
     await neonExec(conn, DDL_LISTING, []);
+    await neonExec(conn, DDL_LISTING_ALTER, []);
     const inserted = await _insertChunked(conn, "listing_report", LISTING_COLS, _prepare(rows, importer || "extension"));
     sendResponse({ ok: true, inserted });
   } catch (e) { sendResponse({ ok: false, error: e.message }); }

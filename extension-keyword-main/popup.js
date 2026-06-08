@@ -344,6 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
       rows.push({
         listing_id: String(item.listing_id || ""),
         title: item.title || "",
+        image_url: item.image_url || null,
         no_vm: vmName,
         price: centsToDecimal(item.price_cents || 0),
         stock: toInt(item.quantity),

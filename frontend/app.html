@@ -779,37 +779,42 @@
     }
 
     /* ─── Card layout (fits app width, no horizontal scroll) ─── */
+    /* Card = one flex row. Metric columns are fixed-width so they line up across
+       cards (and with the header). product / dot / period sit at the end of the
+       same row when there's room, and wrap to a 2nd line one-by-one when narrow. */
     .impr-card {
-      border: 1px solid var(--border-warm);
-      border-radius: 12px;
-      background: var(--ivory);
-      margin-bottom: 12px;
-      overflow: hidden;
+      display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; row-gap: 3px;
+      border: 1px solid var(--border-warm); border-radius: 10px; background: var(--ivory);
+      margin-bottom: 8px; padding: 10px 14px; cursor: pointer; transition: background 0.1s;
     }
-    .impr-card-head {
-      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-      padding: 13px 16px; cursor: pointer; user-select: none;
-    }
-    .impr-card-head:hover { background: rgba(232,230,220,0.35); }
-    /* Fixed 10-column grid so the same metric sits in the same column on every
-       card — numbers line up vertically when scanning down the list. */
-    .impr-card-metrics {
-      display: grid; grid-template-columns: repeat(10, minmax(0, 1fr));
-      gap: 4px 12px; padding: 0 16px 14px;
-    }
-    .impr-kv { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; font-family: var(--font-sans); font-size: 0.82rem; }
-    .impr-kv .k { color: var(--stone); font-size: 0.64rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-    .impr-kv .v { font-family: var(--font-mono); color: var(--charcoal); }
-    /* shared column header above the listing cards */
+    .impr-card:hover { background: #fffaf6; }
+    .impr-idcell { flex: 0 0 150px; display: flex; align-items: center; gap: 7px; min-width: 0; }
+    .impr-thumb { width: 26px; height: 26px; flex: 0 0 auto; border-radius: 5px; object-fit: cover; background: var(--warm-sand); border: 1px solid var(--border-cream); }
+    .impr-id { font-family: var(--font-mono); font-size: 0.82rem; color: var(--terracotta); text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .impr-id.alert { font-weight: 700; color: #b53333; }   /* keyword alert -> bold red ID (replaces bell) */
+    .impr-kv { flex: 0 0 60px; display: flex; justify-content: flex-end; font-family: var(--font-mono); font-size: 0.82rem; color: var(--charcoal); white-space: nowrap; }
+    .impr-kv.zero { color: #b3ada5; }                       /* mute 0 / — so real activity stands out */
+    .impr-kv.ok { color: #2e7d50; font-weight: 600; }       /* good ROAS */
+    .impr-dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; cursor: help; margin-left: auto; }
+    .impr-dot.st-keep { background: #4a8c60; }
+    .impr-dot.st-improve { background: #c17a1f; }
+    .impr-dot.st-off { background: #b53333; }
+    .impr-prod { font-size: 0.66rem; color: var(--stone); background: var(--warm-sand); border-radius: 5px; padding: 1px 7px; white-space: nowrap; flex: 0 0 auto; }
+    .impr-period { font-family: var(--font-mono); font-size: 0.64rem; color: #b3ada5; white-space: nowrap; flex: 0 0 auto; }
+    /* shared, clickable column header — click to sort (no icons). Same widths as cards. */
     .perf-colhead {
-      display: grid; grid-template-columns: repeat(10, minmax(0, 1fr));
-      gap: 4px 12px; padding: 6px 16px; margin: 0 1px 6px;
-      font-family: var(--font-sans); font-size: 0.64rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.04em; color: var(--stone);
+      display: flex; column-gap: 10px; padding: 6px 14px; margin: 0 0 6px;
       border-bottom: 1px solid var(--border-cream);
     }
+    .perf-colhead button {
+      flex: 0 0 60px; background: none; border: none; padding: 0; cursor: pointer;
+      font-family: var(--font-sans); font-size: 0.64rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em; color: var(--stone); text-align: right;
+    }
+    .perf-colhead button:first-child { flex: 0 0 150px; text-align: left; }
+    .perf-colhead button:hover, .perf-colhead button.active { color: var(--terracotta); }
     @media (max-width: 720px) { .perf-colhead { display: none; } }
-    .impr-card-detail { border-top: 1px solid var(--border-cream); background: var(--warm-sand); padding: 14px 16px 18px; }
+    .impr-card-detail { flex: 0 0 100%; margin-top: 8px; border: 1px solid var(--border-cream); background: var(--warm-sand); border-radius: 8px; padding: 12px 14px 16px; cursor: default; }
     .impr-scroll { max-height: 360px; overflow: auto; border: 1px solid var(--border-cream); border-radius: 8px; }
     .impr-scroll table { width: 100%; border-collapse: collapse; }
     .impr-scroll thead th { position: sticky; top: 0; background: var(--parchment); z-index: 1; box-shadow: inset 0 -1px 0 var(--border-cream); }
@@ -1327,26 +1332,6 @@
           </span>
 
           <span style="display:flex;flex-wrap:wrap;align-items:center;gap:6px">
-            <span style="font-size:0.64rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--stone)">Sort</span>
-            <select id="imprSortSel" class="impr-select" onchange="imprSortBy(this.value)">
-              <option value="">Mặc định</option>
-              <option value="roas">ROAS</option>
-              <option value="revenue">Revenue</option>
-              <option value="spend">Spend</option>
-              <option value="orders">Orders</option>
-              <option value="views">Views</option>
-              <option value="clicks">Clicks</option>
-              <option value="period">Period</option>
-              <option value="listing_id">ID</option>
-              <option value="product">Product</option>
-              <option value="scenario_label">Case</option>
-              <option value="scenario_action">Action</option>
-            </select>
-            <button id="imprSortDirBtn" type="button" onclick="imprSortDir()" title="Đảo chiều tăng/giảm"
-              style="font-family:var(--font-sans);font-size:0.82rem;border:1px solid var(--border-cream);background:var(--warm-sand);color:var(--charcoal);border-radius:6px;padding:5px 9px;cursor:pointer">↓</button>
-          </span>
-
-          <span style="display:flex;flex-wrap:wrap;align-items:center;gap:6px">
             <span style="font-size:0.64rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--stone)">Lọc</span>
             <select id="fProd" class="impr-select" title="Lọc theo Product">
               <option value="all">Product: All</option>
@@ -1367,12 +1352,18 @@
           <span style="flex:1 1 auto"></span>
           <span id="imprCount"></span>
         </div>
-        <div style="display:flex;align-items:baseline;gap:12px;margin:6px 0 4px">
-          <h2 style="font-family:var(--font-serif);font-size:1.4rem;font-weight:500;color:var(--near-black);margin:0">Performance</h2>
-          <span style="font-family:var(--font-sans);font-size:0.72rem;color:var(--stone)">Số liệu overview theo Period đã chọn — các cột thẳng hàng giữa các listing</span>
-        </div>
         <div class="perf-colhead">
-          <span>ROAS</span><span>Revenue</span><span>Spend</span><span>Orders</span><span>Views</span><span>Clicks</span><span>CTR</span><span>CR</span><span>CPC</span><span>CPP</span>
+          <button data-sk="listing_id" onclick="imprSortCol('listing_id')">Listing</button>
+          <button data-sk="roas" onclick="imprSortCol('roas')">ROAS</button>
+          <button data-sk="revenue" onclick="imprSortCol('revenue')">Revenue</button>
+          <button data-sk="spend" onclick="imprSortCol('spend')">Spend</button>
+          <button data-sk="orders" onclick="imprSortCol('orders')">Orders</button>
+          <button data-sk="views" onclick="imprSortCol('views')">Views</button>
+          <button data-sk="clicks" onclick="imprSortCol('clicks')">Clicks</button>
+          <button data-sk="ctr" onclick="imprSortCol('ctr')">CTR</button>
+          <button data-sk="cr" onclick="imprSortCol('cr')">CR</button>
+          <button data-sk="cpc" onclick="imprSortCol('cpc')">CPC</button>
+          <button data-sk="cpp" onclick="imprSortCol('cpp')">CPP</button>
         </div>
         <div id="imprCards"></div>
         <div style="text-align:center;margin-top:10px">
@@ -1933,7 +1924,7 @@
         const num = Number(String(raw).replace(/[^\d.-]/g, ''));
         return Number.isFinite(num) ? num : String(raw).toLowerCase();
       }
-      if (['views', 'clicks', 'orders', 'revenue', 'spend', 'roas', 'cpc', 'cpp'].includes(key)) {
+      if (['views', 'clicks', 'orders', 'revenue', 'spend', 'roas', 'cpc', 'cpp', 'ctr', 'cr'].includes(key)) {
         return _imprToNumber(row[key]);
       }
       if (key === 'scenario_action') return _imprActionLabel(row.scenario_action || 'improve').toLowerCase();
@@ -1958,10 +1949,19 @@
     }
 
     function _imprUpdateSortIndicators() {
-      const sel = document.getElementById('imprSortSel');
-      if (sel) sel.value = _imprSort.key || '';
-      const b = document.getElementById('imprSortDirBtn');
-      if (b) b.textContent = _imprSort.dir === 'asc' ? '↑' : '↓';
+      // highlight the active column header (no sort icons, per design)
+      document.querySelectorAll('.perf-colhead button[data-sk]').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-sk') === _imprSort.key);
+      });
+    }
+
+    // Sort from a column header: same key -> flip direction; new key -> sensible default.
+    function imprSortCol(key) {
+      if (_imprSort.key === key) _imprSort.dir = _imprSort.dir === 'asc' ? 'desc' : 'asc';
+      else _imprSort = { key, dir: key === 'listing_id' ? 'asc' : 'desc' };
+      _imprPage = 10;
+      _imprApplyFilters();
+      _imprRenderRows();
     }
 
     function imprSearch() { _imprPage = 10; _imprApplyFilters(); _imprRenderRows(); }
@@ -2149,37 +2149,48 @@
             </span>
           </span>`
         : '';
-      const idLink = d.url
-        ? `<a href="${d.url}" target="_blank" rel="noopener" title="Open listing on Etsy ↗" style="font-family:var(--font-mono);font-size:0.82rem;color:var(--terracotta);text-decoration:underline;text-underline-offset:2px">${d.listing_id}</a>`
-        : `<span style="font-family:var(--font-mono);font-size:0.82rem;color:var(--charcoal)">${d.listing_id || '—'}</span>`;
-      const idCell = `<span style="display:inline-flex;align-items:center;gap:6px;min-width:0">${idLink}${bell}</span>`;
-      // value-only cells — column labels live in the shared .perf-colhead above.
-      // title= keeps the label on hover (and for narrow screens where header hides).
-      const kv = (k, v) => `<span class="impr-kv" title="${k}"><span class="v">${v}</span></span>`;
+      const alertCls = hasKeywordAlert ? ' alert' : '';
+      const alertTip = hasKeywordAlert ? 'Có keyword đang ON nhưng nên tắt — ' : '';
+      const idInner = d.url
+        ? `<a href="${d.url}" target="_blank" rel="noopener" class="impr-id${alertCls}" title="${alertTip}Mở trên Etsy ↗" onclick="event.stopPropagation()">${d.listing_id || '—'}</a>`
+        : `<span class="impr-id${alertCls}" title="${alertTip}">${d.listing_id || '—'}</span>`;
+      // thumbnail (Etsy image captured by the extension); placeholder keeps IDs aligned when missing
+      const thumb = d.image_url
+        ? `<img class="impr-thumb" src="${d.image_url}" loading="lazy" alt="" onerror="this.style.visibility='hidden'">`
+        : `<span class="impr-thumb" aria-hidden="true"></span>`;
+      const idCell = `<span class="impr-idcell">${thumb}${idInner}</span>`;
+
+      // value-only cells aligned to .perf-colhead; mute 0/— so real activity stands out
+      const isZero = raw => raw == null || raw === '' || Number(String(raw).replace(/[^\d.-]/g, '')) === 0;
+      const cell = (raw, txt) => `<span class="impr-kv${isZero(raw) ? ' zero' : ''}">${txt}</span>`;
       const pct = v => (v == null || v === '') ? '—' : Number(v).toFixed(2) + '%';
-      const metrics = [
-        `<span class="impr-kv" title="ROAS">${roasChip}</span>`,
-        kv('Revenue', _imprFmtMoney(d.revenue)),
-        kv('Spend', _imprFmtMoney(d.spend)),
-        kv('Orders', _imprFmtNum(d.orders)),
-        kv('Views', _imprFmtNum(d.views)),
-        kv('Clicks', _imprFmtNum(d.clicks)),
-        kv('CTR', pct(d.ctr)),
-        kv('CR', pct(d.cr)),
-        kv('CPC', _imprFmtMoney(d.cpc)),
-        kv('CPP', _imprFmtMoney(d.cpp)),
-      ].join('');
-      return `<div class="impr-card" data-group-key="${groupKey}">
-        <div class="impr-card-head" onclick="imprToggle('${groupKey}', this)">
-          <span class="impr-caret" style="font-size:0.82rem;color:var(--terracotta);display:inline-block;transition:transform 0.15s;flex:0 0 auto">▸</span>
-          ${idCell}
-          <span class="metric-chip chip-neu" style="font-size:0.70rem">${d.product || '—'}</span>
-          <span style="flex:1 1 auto"></span>
-          <span style="font-family:var(--font-mono);font-size:0.70rem;color:var(--stone)">${_imprFmtPeriodHtml(d.period)}</span>
-          <span title="${actionLabel}${d.scenario_label ? ' — ' + _imprEsc(d.scenario_label) : ''}" aria-label="${actionLabel}" style="display:inline-block;width:11px;height:11px;border-radius:50%;flex:0 0 auto;cursor:help;background:${act === 'keep' ? '#4a8c60' : act === 'improve_or_off' ? '#b53333' : '#c17a1f'}"></span>
-        </div>
-        <div class="impr-card-metrics">${metrics}</div>
-        <div class="impr-card-detail" style="display:none">${_imprDetailBody(d, groupKey)}</div>
+      const roasTxt = d.roas == null ? '—' : _imprFmtRatio(d.roas);
+      const roasCls = Number(d.roas) >= 2 ? ' ok' : (isZero(d.roas) ? ' zero' : '');
+      const metrics =
+        `<span class="impr-kv${roasCls}">${roasTxt}</span>` +
+        cell(d.revenue, _imprFmtMoney(d.revenue)) +
+        cell(d.spend, _imprFmtMoney(d.spend)) +
+        cell(d.orders, _imprFmtNum(d.orders)) +
+        cell(d.views, _imprFmtNum(d.views)) +
+        cell(d.clicks, _imprFmtNum(d.clicks)) +
+        cell(d.ctr, pct(d.ctr)) +
+        cell(d.cr, pct(d.cr)) +
+        cell(d.cpc, _imprFmtMoney(d.cpc)) +
+        cell(d.cpp, _imprFmtMoney(d.cpp));
+      const statusCls = act === 'keep' ? 'st-keep' : act === 'improve_or_off' ? 'st-off' : 'st-improve';
+      const statusName = act === 'keep' ? 'Keep running — đang lời'
+        : act === 'improve_or_off' ? 'Improve / Pause — lỗ, cân nhắc tắt'
+        : 'Improve — cần cải thiện';
+      const dotTip = `Trạng thái: ${statusName}${d.scenario_label ? '\n' + _imprEsc(d.scenario_label) : ''}`;
+      // whole row clickable to expand; ID link & detail stop propagation. dot/product/period
+      // are trailing flex items: inline at the right when there's room, wrap one-by-one when narrow.
+      return `<div class="impr-card" data-group-key="${groupKey}" onclick="imprToggle('${groupKey}', this)">
+        ${idCell}
+        ${metrics}
+        <span class="impr-dot ${statusCls}" title="${dotTip}"></span>
+        <span class="impr-prod">${_imprEsc(d.product || '—')}</span>
+        <span class="impr-period">${_imprFmtPeriodHtml(d.period)}</span>
+        <div class="impr-card-detail" style="display:none" onclick="event.stopPropagation()">${_imprDetailBody(d, groupKey)}</div>
       </div>`;
     }
 

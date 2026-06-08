@@ -47,6 +47,7 @@ _DDL = [
         no_vm           VARCHAR(16),
         product         VARCHAR(64),
         url             TEXT,
+        image_url       TEXT,
         views           INTEGER,
         clicks          INTEGER,
         orders          INTEGER,
@@ -131,6 +132,11 @@ _DDL = [
     "CREATE INDEX IF NOT EXISTS idx_listings_int_ext_tenant ON listings_int_ext (tenant_id)",
     "CREATE INDEX IF NOT EXISTS idx_listings_int_hist_tenant ON listings_int_hist (tenant_id)",
     "CREATE INDEX IF NOT EXISTS idx_keywords_tenant ON keywords (tenant_id)",
+    # listing thumbnail (Etsy imageUrlFullxfull captured by the extension). Added via
+    # ALTER so pre-existing tables gain the column; old rows stay NULL until re-scan.
+    "ALTER TABLE listing_report        ADD COLUMN IF NOT EXISTS image_url TEXT",
+    "ALTER TABLE manual_listing_report ADD COLUMN IF NOT EXISTS image_url TEXT",
+    "ALTER TABLE listings_int_ext      ADD COLUMN IF NOT EXISTS image_url TEXT",
 ]
 
 
@@ -241,7 +247,7 @@ _INSERT_HIST_SQL = text(f"""
 _INSERT_EXT_SQL = text(f"""
     INSERT INTO listings_int_ext (
         tenant_id, listing_id, period, reference_date,
-        title, no_vm, product, url,
+        title, no_vm, product, url, image_url,
         views, clicks, orders, revenue, spend, roas,
         ctr, cr, cpc, cpp,
         roas_band, cr_level, ctr_level,
@@ -251,6 +257,7 @@ _INSERT_EXT_SQL = text(f"""
     WITH unioned AS (
         SELECT
             tenant_id, listing_id, title, no_vm, category AS product, period,
+            image_url,
             import_time AS reference_date,
             COALESCE(views, 0) AS views, COALESCE(clicks, 0) AS clicks,
             COALESCE(orders, 0) AS orders, COALESCE(revenue, 0) AS revenue,
@@ -262,6 +269,7 @@ _INSERT_EXT_SQL = text(f"""
         UNION ALL
         SELECT
             tenant_id, listing_id, title, no_vm, category AS product, period,
+            image_url,
             import_time AS reference_date,
             COALESCE(views, 0) AS views, COALESCE(clicks, 0) AS clicks,
             COALESCE(orders, 0) AS orders, COALESCE(revenue, 0) AS revenue,
@@ -277,6 +285,7 @@ _INSERT_EXT_SQL = text(f"""
             MAX(NULLIF(title, ''))        AS title,
             MAX(NULLIF(no_vm, ''))        AS no_vm,
             MAX(NULLIF(product, ''))      AS product,
+            MAX(NULLIF(image_url, ''))    AS image_url,
             MAX(reference_date)           AS reference_date,
             MAX(views)   AS views,
             MAX(clicks)  AS clicks,
@@ -323,6 +332,7 @@ _INSERT_EXT_SQL = text(f"""
         COALESCE(e.no_vm, l.no_vm)                                AS no_vm,
         COALESCE(e.product, l.category)                           AS product,
         COALESCE(l.url, 'https://www.etsy.com/listing/' || e.listing_id) AS url,
+        e.image_url                                               AS image_url,
         e.views, e.clicks, e.orders, e.revenue, e.spend, e.roas,
         e.ctr, e.cr, e.cpc, e.cpp,
         e.roas_band, e.cr_level, e.ctr_level,

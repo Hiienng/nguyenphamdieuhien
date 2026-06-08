@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class ListingDashboardItem(BaseModel):
     listing_id: str | None = None
     url: str | None = None
+    image_url: str | None = None
     title: str | None = None
     product: str | None = None
     no_vm: str | None = None

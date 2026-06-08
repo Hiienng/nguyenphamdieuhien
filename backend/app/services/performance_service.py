@@ -152,6 +152,7 @@ async def get_dashboard_listings(db: AsyncSession, tenant_id: str) -> list[dict]
             e.cr,
             e.roas,
             e.url,
+            e.image_url,
             e.no_vm,
             e.views,
             e.clicks,
