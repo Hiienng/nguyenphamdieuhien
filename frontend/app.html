@@ -1288,48 +1288,55 @@
       <!-- ── Sub-panel: Listing Improvement ──────── -->
       <div id="perf-sub-improvement">
 
-        <!-- Toolbar: Refresh + Sort + filters (flat, one row, wraps) -->
-        <div class="impr-toolbar" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px;font-family:var(--font-sans);font-size:0.8rem;color:var(--stone)">
+        <!-- Toolbar: Refresh · prominent search · grouped Sort / Filters · count -->
+        <div class="impr-toolbar" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:16px;font-family:var(--font-sans);font-size:0.8rem;color:var(--stone)">
           <button id="imprReloadBtn" onclick="imprReload()"
-            style="font-family:var(--font-sans);font-size:0.8rem;color:var(--terracotta);background:transparent;border:1px solid var(--terracotta);border-radius:6px;padding:5px 14px;cursor:pointer">Refresh</button>
-          <span style="width:1px;height:20px;background:var(--border-cream)"></span>
-          <span>Sắp xếp</span>
-          <select id="imprSortSel" class="impr-select" onchange="imprSortBy(this.value)">
-            <option value="">Mặc định</option>
-            <option value="roas">ROAS</option>
-            <option value="revenue">Revenue</option>
-            <option value="spend">Spend</option>
-            <option value="orders">Orders</option>
-            <option value="views">Views</option>
-            <option value="clicks">Clicks</option>
-            <option value="period">Period</option>
-            <option value="listing_id">ID</option>
-            <option value="product">Product</option>
-            <option value="scenario_label">Case</option>
-            <option value="scenario_action">Action</option>
-          </select>
-          <button id="imprSortDirBtn" type="button" onclick="imprSortDir()" title="Đảo chiều tăng/giảm"
-            style="font-family:var(--font-sans);font-size:0.82rem;border:1px solid var(--border-cream);background:var(--warm-sand);color:var(--charcoal);border-radius:6px;padding:4px 10px;cursor:pointer">↓</button>
-          <span style="width:1px;height:20px;background:var(--border-cream)"></span>
-          <span>Lọc</span>
-          <select id="fProd" class="impr-select" title="Lọc theo Product">
-            <option value="all">Product: All</option>
-            <option value="baby blanket">baby blanket</option>
-            <option value="baby onesie">baby onesie</option>
-            <option value="baby romper">baby romper</option>
-          </select>
-          <select id="fROAS" class="impr-select" title="Lọc theo ROAS">
-            <option value="all">ROAS: All</option>
-            <option value="pass">ROAS ≥2x</option>
-            <option value="fail">ROAS &lt;2x</option>
-          </select>
-          <select id="fVM" class="impr-select" title="Lọc theo VM">
-            <option value="all">VM: All</option>
-            <option value="VM01">VM01</option>
-            <option value="VM08">VM08</option>
-            <option value="nan">nan</option>
-          </select>
-          <input id="fSearch" type="search" placeholder="Tìm ID / title…" oninput="imprSearch()" class="impr-select" style="min-width:170px">
+            style="font-family:var(--font-sans);font-size:0.8rem;color:var(--terracotta);background:transparent;border:1px solid var(--terracotta);border-radius:6px;padding:5px 14px;cursor:pointer">↻ Refresh</button>
+
+          <span style="flex:1 1 240px;min-width:180px;display:flex;align-items:center;gap:6px;background:var(--ivory);border:1px solid var(--border-cream);border-radius:6px;padding:5px 10px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--stone)" stroke-width="2" style="flex:0 0 auto;opacity:0.6"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="fSearch" type="search" placeholder="Tìm ID / title…" oninput="imprSearch()"
+              style="border:none;outline:none;background:transparent;font-family:var(--font-sans);font-size:0.8rem;width:100%;color:var(--charcoal)">
+          </span>
+
+          <span style="display:flex;flex-wrap:wrap;align-items:center;gap:6px">
+            <span style="font-size:0.64rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--stone)">Sort</span>
+            <select id="imprSortSel" class="impr-select" onchange="imprSortBy(this.value)">
+              <option value="">Mặc định</option>
+              <option value="roas">ROAS</option>
+              <option value="revenue">Revenue</option>
+              <option value="spend">Spend</option>
+              <option value="orders">Orders</option>
+              <option value="views">Views</option>
+              <option value="clicks">Clicks</option>
+              <option value="period">Period</option>
+              <option value="listing_id">ID</option>
+              <option value="product">Product</option>
+              <option value="scenario_label">Case</option>
+              <option value="scenario_action">Action</option>
+            </select>
+            <button id="imprSortDirBtn" type="button" onclick="imprSortDir()" title="Đảo chiều tăng/giảm"
+              style="font-family:var(--font-sans);font-size:0.82rem;border:1px solid var(--border-cream);background:var(--warm-sand);color:var(--charcoal);border-radius:6px;padding:5px 9px;cursor:pointer">↓</button>
+          </span>
+
+          <span style="display:flex;flex-wrap:wrap;align-items:center;gap:6px">
+            <span style="font-size:0.64rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--stone)">Lọc</span>
+            <select id="fProd" class="impr-select" title="Lọc theo Product">
+              <option value="all">Product: All</option>
+            </select>
+            <select id="fROAS" class="impr-select" title="Lọc theo ROAS">
+              <option value="all">ROAS: All</option>
+              <option value="pass">ROAS ≥2x</option>
+              <option value="fail">ROAS &lt;2x</option>
+            </select>
+            <select id="fVM" class="impr-select" title="Lọc theo VM">
+              <option value="all">VM: All</option>
+            </select>
+            <select id="fPeriod" class="impr-select" title="Performance period — gộp số liệu overview theo kỳ" onchange="imprPeriodChange(this.value)">
+              <option value="all">Period: Toàn bộ</option>
+            </select>
+          </span>
+
           <span style="flex:1 1 auto"></span>
           <span id="imprCount"></span>
         </div>
@@ -1676,6 +1683,27 @@
     let _imprFiltered = [];
     let _imprSort = { key: null, dir: 'asc' };
     let _imprDetailSort = { listing: {}, keywords: {}, history: {} };
+    let _imprPeriod = 'all';  // performance period for the listing OVERVIEW only
+
+    // Build a period-scoped VIEW of a listing's overview numbers. The overview
+    // metrics become the SUM of that listing's history rows in the selected period
+    // (ratios re-derived from the totals). history / keywords / scenario are kept
+    // as-is — period only affects the headline numbers, per product requirement.
+    function _imprPeriodView(d) {
+      if (_imprPeriod === 'all' || !d) return d;
+      const num0 = v => { const n = Number(String(v ?? '').replace(/[^\d.-]/g, '')); return Number.isFinite(n) ? n : 0; };
+      const hist = Array.isArray(d.history) ? d.history.filter(h => h.period === _imprPeriod) : [];
+      const sum = k => hist.reduce((a, h) => a + num0(h[k]), 0);
+      const views = sum('views'), clicks = sum('clicks'), orders = sum('orders'),
+            revenue = sum('revenue'), spend = sum('spend');
+      const div = (a, b) => b > 0 ? a / b : null;
+      const ctr = div(clicks, views), cr = div(orders, clicks);
+      return { ...d, period: _imprPeriod, views, clicks, orders, revenue, spend,
+        roas: div(revenue, spend),
+        ctr: ctr == null ? null : ctr * 100,
+        cr: cr == null ? null : cr * 100,
+        cpc: div(spend, clicks), cpp: div(spend, orders) };
+    }
 
     function _imprToNumber(v) {
       if (v == null || v === '') return Number.NEGATIVE_INFINITY;
@@ -1838,6 +1866,8 @@
       const vmF = gv('fVM');
       const se = document.getElementById('fSearch'); const q = se ? se.value.trim().toLowerCase() : '';
       const groups = _imprGroup(LISTINGS);
+      // apply the period scope to each group's primary record (overview numbers only)
+      if (_imprPeriod !== 'all') groups.forEach(g => { g[0] = _imprPeriodView(g[0]); });
       _imprFiltered = groups.filter(group => {
         const d = group[0];
         if (q && !((d.listing_id||'').toLowerCase().includes(q) || (d.title||'').toLowerCase().includes(q) || (d.product||'').toLowerCase().includes(q))) return false;
@@ -2265,49 +2295,6 @@
       if (pop) pop.style.display = 'none';
     }
 
-    // Checklist tối ưu — gom 3 quyết định (listing / keyword on-off / tối ưu lại)
-    // thành việc-cần-làm cụ thể, tự suy ra từ scenario_action + Suggestion vs Currently.
-    function _imprChecklist(d, groupKey) {
-      const act = d.scenario_action || 'improve';
-      const kws = Array.isArray(d.keywords) ? d.keywords : [];
-      const toOff = kws.filter(k => _imprNormalizeStatus(k.currently_status) === 'on' && _imprKeywordSuggestionForRow(k) === 'off');
-      const toOn  = kws.filter(k => _imprNormalizeStatus(k.currently_status) === 'off' && _imprKeywordSuggestionForRow(k) === 'on');
-      const lmap = {
-        keep:           { t: 'Giữ listing đang chạy — đang lời, chưa cần can thiệp.', c: '#4a8c60' },
-        improve:        { t: 'Tối ưu lại listing (không tắt).', c: '#c17a1f' },
-        improve_or_off: { t: 'Tối ưu lại listing; nếu đã tối ưu mà vẫn không cải thiện → tắt listing.', c: '#b53333' },
-        off:            { t: 'Listing đang off / không có data — tối ưu rồi bật lại, hoặc bỏ.', c: '#b53333' },
-      };
-      const lm = lmap[act] || lmap.improve;
-
-      const cb  = 'margin:3px 8px 0 0;flex:0 0 auto;accent-color:var(--terracotta);cursor:pointer';
-      const liS = 'display:flex;align-items:flex-start;padding:7px 0;border-top:1px solid var(--border-cream);font-family:var(--font-sans);font-size:0.80rem;color:var(--charcoal);line-height:1.55';
-      const dot = c => `<span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:${c};margin:0 6px 0 0;vertical-align:middle"></span>`;
-      const sub = arr => `<ul style="margin:4px 0 0;padding:0;list-style:none">${arr.map(x => `<li style="font-family:var(--font-mono);font-size:0.74rem;color:var(--stone);padding:1px 0">• ${x}</li>`).join('')}</ul>`;
-
-      const rows = [];
-      rows.push(`<li style="${liS};border-top:none"><input type="checkbox" style="${cb}"><div><b>Listing:</b> ${dot(lm.c)}${lm.t}</div></li>`);
-      if (toOff.length)
-        rows.push(`<li style="${liS}"><input type="checkbox" style="${cb}"><div><b>Tắt ${toOff.length} keyword chưa ra đơn</b> <span style="color:var(--stone)">(Currently=on · Suggestion=off)</span>${sub(toOff.map(k => _imprEsc(k.keyword)))}<div style="font-size:0.72rem;color:var(--stone);margin-top:3px">→ gạt <b>Commit</b> các keyword này về <b>off</b> ở bảng Keywords bên dưới.</div></div></li>`);
-      if (toOn.length)
-        rows.push(`<li style="${liS}"><input type="checkbox" style="${cb}"><div><b>Bật lại ${toOn.length} keyword từng ra doanh thu</b> <span style="color:var(--stone)">(Currently=off · Suggestion=on)</span>${sub(toOn.map(k => _imprEsc(k.keyword)))}</div></li>`);
-      if (act !== 'keep') {
-        const fix = (d.scenario_fix_listing || '').split('\n').map(s => s.replace(/^[\-•\s]+/, '').trim()).filter(Boolean);
-        if (fix.length)
-          rows.push(`<li style="${liS}"><input type="checkbox" style="${cb}"><div><b>Tối ưu lại listing:</b>${sub(fix.map(_imprEsc))}</div></li>`);
-      }
-
-      const nothing = act === 'keep' && !toOff.length && !toOn.length;
-      const body = nothing
-        ? `<div style="font-family:var(--font-sans);font-size:0.80rem;color:#4a8c60;padding:2px 0">✓ Đang tốt — không có việc cần làm cho kỳ này.</div>`
-        : `<ul style="margin:0;padding:0;list-style:none">${rows.join('')}</ul>`;
-
-      return `<div style="margin-bottom:12px;padding:12px 14px;background:rgba(192,113,74,0.05);border:1px solid rgba(192,113,74,0.22);border-radius:8px">
-        <div style="font-family:var(--font-sans);font-size:0.72rem;font-weight:700;color:var(--terracotta);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:4px">✅ Checklist tối ưu</div>
-        ${body}
-      </div>`;
-    }
-
     function _imprDetailBody(d, groupKey) {
       const _sectionStyle = {
         'Root Cause': { bg: 'rgba(181,51,51,0.05)', border: 'rgba(181,51,51,0.18)', label: '#b53333' },
@@ -2319,16 +2306,25 @@
         ['Fix Listing', d.scenario_fix_listing],
         ['Fix Ads', d.scenario_fix_ads],
       ].filter(([, v]) => v);
-      const detailBody = items.length
-        ? items.map(([label, v]) => {
-          const s = _sectionStyle[label] || { bg: 'var(--warm-sand)', border: 'var(--border-cream)', label: 'var(--stone)' };
-          return _imprFoldSection(
-            label,
-            `<div style="font-family:var(--font-sans);font-size:0.80rem;color:var(--charcoal);line-height:1.65">${_imprEsc(v)}</div>`,
-            { metaHtml: `<span style="display:inline-flex;width:10px;height:10px;border-radius:999px;background:${s.label};opacity:0.75"></span>` }
-          );
-        }).join('')
+      // 3 blocks side-by-side (equal height via grid stretch); auto-fit -> wraps to
+      // 2 then 1 column when the card narrows, with no leftover horizontal space.
+      const blocks = items.length
+        ? `<div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">${items.map(([label, v]) => {
+            const s = _sectionStyle[label] || { bg: 'var(--warm-sand)', border: 'var(--border-cream)', label: 'var(--stone)' };
+            return `<div style="border-radius:8px;padding:10px 12px;border:1px solid ${s.border};background:${s.bg}">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px">
+                <span style="width:9px;height:9px;border-radius:999px;background:${s.label};flex:0 0 auto"></span>
+                <span style="font-family:var(--font-sans);font-size:0.68rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:${s.label}">${label}</span>
+              </div>
+              <div style="font-family:var(--font-sans);font-size:0.80rem;color:var(--charcoal);line-height:1.6;white-space:pre-line">${_imprEsc(v)}</div>
+            </div>`;
+          }).join('')}</div>`
         : `<div style="padding:16px 10px;font-family:var(--font-sans);font-size:0.80rem;color:var(--stone);font-style:italic;text-align:center;border:1px dashed var(--border-cream);border-radius:6px">No scenario mapping for this period.</div>`;
+
+      const noKw = (!Array.isArray(d.keywords) || !d.keywords.length)
+        ? `<div style="margin-top:10px;padding:8px 12px;font-family:var(--font-sans);font-size:0.76rem;color:var(--stone);font-style:italic;background:var(--warm-sand);border:1px dashed var(--border-cream);border-radius:6px">Listing này chưa có dữ liệu keyword — scan thêm phần keyword của Etsy Ads để xem bảng Keywords.</div>`
+        : '';
+      const detailBody = blocks + noKw;
 
       const extras = _imprKeywordTable(d, groupKey) + _imprHistoryTable(d.history, groupKey) + _imprActionLog(d, groupKey);
       const periodTag = d.period ? `<span style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.68rem;color:var(--stone);font-weight:400;text-transform:none;letter-spacing:0">${_imprEsc(d.period)}</span>` : '';
@@ -2341,7 +2337,7 @@
             </span>
             ${periodTag}
           </summary>
-          <div class="impr-fold-body" style="padding:10px 12px;background:var(--parchment)"><div style="min-width:0">${_imprChecklist(d, groupKey)}${detailBody}</div></div>
+          <div class="impr-fold-body" style="padding:10px 12px;background:var(--parchment)"><div style="min-width:0">${detailBody}</div></div>
         </details>
         <div id="impr-extras-${groupKey}" data-group-key="${groupKey}">${extras}</div>`;
     }
@@ -2376,7 +2372,7 @@
           <select id="optchart-metric-${groupKey}" class="impr-select" onchange="optLogLoad('${groupKey}')">${metricOpts}</select>
         </div>
         <div style="position:relative;height:240px;background:var(--parchment);border:1px solid var(--border-cream);border-radius:8px;padding:8px 8px 4px"><canvas id="optchart-${groupKey}"></canvas></div>
-        <p style="font-size:0.7rem;color:var(--stone);margin:6px 0 0">▲ đỏ = mốc đổi keyword (rê vào xem chi tiết). Mặc định <b>Rev-Spend($)</b> = Revenue − Spend (đổi chỉ số ở góc phải). Bật/tắt keyword ảnh hưởng rõ nhất tới Spend &amp; Rev-Spend($). (Tương quan, tham khảo.)</p>
+        <p style="font-size:0.7rem;color:var(--stone);margin:6px 0 0">▲ cột mốc đổi keyword (rê vào xem chi tiết). Mặc định <b>Rev-Spend($)</b> = Revenue − Spend (đổi chỉ số ở góc phải). Bật/tắt keyword ảnh hưởng rõ nhất tới Spend &amp; Rev-Spend($). (Tương quan, tham khảo.)</p>
         <div id="optlog-list-${groupKey}" data-lid="${lid}" style="margin-top:8px;font-family:var(--font-sans);font-size:0.75rem;color:var(--stone);max-height:150px;overflow:auto"></div>
       </div>`;
     }
@@ -2450,7 +2446,7 @@
             <span style="flex:1;color:var(--charcoal)"><strong style="color:var(--terracotta)">${_OPT_LABEL[r.action] || r.action}</strong>${kw}</span>
             <span onclick="optLogDelete(${r.id},'${groupKey}')" title="Xoá" style="cursor:pointer;color:var(--stone);flex:0 0 auto">✕</span>
           </div>`;
-      }).join('') : '<span style="font-style:italic">Chưa ghi nhận thay đổi nào — gạt Commit ở bảng Keywords hoặc dùng form trên.</span>';
+      }).join('') : '<span style="font-style:italic">Chưa ghi nhận thay đổi nào — gạt Commit ở bảng Keywords.</span>';
       const d = _imprFindByKey(groupKey);
       const msel = document.getElementById('optchart-metric-' + groupKey);
       const metric = (msel && msel.value) || 'net';
@@ -2541,9 +2537,38 @@
       if (prev && (prev === 'all' || prods.includes(prev))) sel.value = prev;
     }
 
+    function _imprPopulateVmFilter() {
+      const sel = document.getElementById('fVM'); if (!sel) return;
+      const prev = sel.value;
+      const vms = Array.from(new Set(LISTINGS.map(d => (d.no_vm == null || d.no_vm === '') ? 'nan' : String(d.no_vm)))).sort();
+      sel.innerHTML = '<option value="all">VM: All</option>' +
+        vms.map(v => `<option value="${_imprEsc(v)}">${v === 'nan' ? 'VM: (trống)' : 'VM: ' + _imprEsc(v)}</option>`).join('');
+      if (prev && (prev === 'all' || vms.includes(prev))) sel.value = prev;
+    }
+
+    function _imprPopulatePeriodFilter() {
+      const sel = document.getElementById('fPeriod'); if (!sel) return;
+      const prev = sel.value;
+      const periods = Array.from(new Set(
+        LISTINGS.flatMap(d => Array.isArray(d.history) ? d.history.map(h => h.period) : []).filter(Boolean)
+      )).sort().reverse();
+      sel.innerHTML = '<option value="all">Period: Toàn bộ</option>' +
+        periods.map(p => `<option value="${_imprEsc(p)}">${_imprEsc(p)}</option>`).join('');
+      sel.value = (prev && (prev === 'all' || periods.includes(prev))) ? prev : _imprPeriod;
+    }
+
+    function imprPeriodChange(v) {
+      _imprPeriod = v || 'all';
+      _imprPage = 10;
+      _imprApplyFilters();
+      _imprRenderRows();
+    }
+
     function renderImprTable() {
       _imprPage = 10;
       _imprPopulateProductFilter();
+      _imprPopulateVmFilter();
+      _imprPopulatePeriodFilter();
       _imprApplyFilters();
       _imprRenderRows();
     }
@@ -2595,7 +2620,7 @@
       btn.textContent = finalLabel;
       btn.disabled = false;
       // Restore the default label after a short delay so the UI doesn't stay stuck.
-      setTimeout(() => { if (btn.disabled === false) btn.textContent = 'Refresh'; }, 4000);
+      setTimeout(() => { if (btn.disabled === false) btn.textContent = '↻ Refresh'; }, 4000);
     }
 
     ['fProd', 'fROAS', 'fVM'].forEach(id => {
