@@ -791,13 +791,24 @@
       padding: 13px 16px; cursor: pointer; user-select: none;
     }
     .impr-card-head:hover { background: rgba(232,230,220,0.35); }
+    /* Fixed 10-column grid so the same metric sits in the same column on every
+       card — numbers line up vertically when scanning down the list. */
     .impr-card-metrics {
-      display: flex; flex-wrap: wrap; gap: 7px 16px;
-      padding: 0 16px 14px; align-items: baseline;
+      display: grid; grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 4px 12px; padding: 0 16px 14px;
     }
-    .impr-kv { display: inline-flex; align-items: baseline; gap: 5px; font-family: var(--font-sans); font-size: 0.82rem; }
-    .impr-kv .k { color: var(--stone); font-size: 0.66rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .impr-kv { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; font-family: var(--font-sans); font-size: 0.82rem; }
+    .impr-kv .k { color: var(--stone); font-size: 0.64rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
     .impr-kv .v { font-family: var(--font-mono); color: var(--charcoal); }
+    /* shared column header above the listing cards */
+    .perf-colhead {
+      display: grid; grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 4px 12px; padding: 6px 16px; margin: 0 1px 6px;
+      font-family: var(--font-sans); font-size: 0.64rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em; color: var(--stone);
+      border-bottom: 1px solid var(--border-cream);
+    }
+    @media (max-width: 720px) { .perf-colhead { display: none; } }
     .impr-card-detail { border-top: 1px solid var(--border-cream); background: var(--warm-sand); padding: 14px 16px 18px; }
     .impr-scroll { max-height: 360px; overflow: auto; border: 1px solid var(--border-cream); border-radius: 8px; }
     .impr-scroll table { width: 100%; border-collapse: collapse; }
@@ -1217,11 +1228,15 @@
       <button class="hub-tab active" data-perf="improvement" onclick="_perfPillClick('improvement')">Action Recommendations</button>
       <button class="hub-tab" data-perf="rules" onclick="_perfPillClick('rules')">Configure Thresholds</button>
     </div>
-    <ul class="nav-links" style="display:flex;align-items:center;gap:12px;list-style:none">
-      <li><a href="#" onclick="openSettings();return false" style="font-size:0.80rem;color:var(--stone);text-decoration:none;padding:0 4px"
-          onmouseover="this.style.color='var(--charcoal)'" onmouseout="this.style.color='var(--stone)'">Settings</a></li>
-      <li><a href="docs.html" style="font-size:0.80rem;color:var(--stone);text-decoration:none;padding:0 4px"
-          onmouseover="this.style.color='var(--charcoal)'" onmouseout="this.style.color='var(--stone)'">Docs</a></li>
+    <ul class="nav-links" style="display:flex;align-items:center;gap:14px;list-style:none">
+      <li><a href="#" onclick="openSettings();return false" title="Settings" aria-label="Settings" style="color:var(--stone);display:inline-flex;align-items:center;padding:0 2px"
+          onmouseover="this.style.color='var(--charcoal)'" onmouseout="this.style.color='var(--stone)'">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a></li>
+      <li><a href="docs.html" title="Docs" aria-label="Docs" style="color:var(--stone);display:inline-flex;align-items:center;padding:0 2px"
+          onmouseover="this.style.color='var(--charcoal)'" onmouseout="this.style.color='var(--stone)'">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </a></li>
     </ul>
   </nav>
 
@@ -1250,8 +1265,11 @@
     async function openSettings() {
       document.getElementById('settingsModal').style.display = 'flex';
       document.getElementById('settingsMsg').textContent = '';
+      // Plain fetch (NOT authFetch): a 401 here must NOT log the user out — just
+      // show a message in the modal. authFetch redirects to landing on any 401.
       try {
-        const res = await authFetch('/api/v1/settings/database');
+        const res = await fetch('/api/v1/settings/database', { headers: getAuthHeaders() });
+        if (!res.ok) { document.getElementById('settingsCurrent').textContent = '(không đọc được — HTTP ' + res.status + ')'; return; }
         const d = await res.json();
         document.getElementById('settingsCurrent').textContent = d.database_url_masked || '(chưa cấu hình)';
       } catch { document.getElementById('settingsCurrent').textContent = '(không đọc được)'; }
@@ -1265,8 +1283,8 @@
       const btn = document.getElementById('settingsSaveBtn');
       btn.disabled = true; btn.textContent = 'Đang lưu...';
       try {
-        const res = await authFetch('/api/v1/settings/database', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+        const res = await fetch('/api/v1/settings/database', {
+          method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, getAuthHeaders()),
           body: JSON.stringify({ database_url: db })
         });
         const d = await res.json();
@@ -1339,6 +1357,13 @@
 
           <span style="flex:1 1 auto"></span>
           <span id="imprCount"></span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:12px;margin:6px 0 4px">
+          <h2 style="font-family:var(--font-serif);font-size:1.4rem;font-weight:500;color:var(--near-black);margin:0">Performance</h2>
+          <span style="font-family:var(--font-sans);font-size:0.72rem;color:var(--stone)">Số liệu overview theo Period đã chọn — các cột thẳng hàng giữa các listing</span>
+        </div>
+        <div class="perf-colhead">
+          <span>ROAS</span><span>Revenue</span><span>Spend</span><span>Orders</span><span>Views</span><span>Clicks</span><span>CTR</span><span>CR</span><span>CPC</span><span>CPP</span>
         </div>
         <div id="imprCards"></div>
         <div style="text-align:center;margin-top:10px">
@@ -2114,10 +2139,12 @@
         ? `<a href="${d.url}" target="_blank" rel="noopener" title="Open listing on Etsy ↗" style="font-family:var(--font-mono);font-size:0.82rem;color:var(--terracotta);text-decoration:underline;text-underline-offset:2px">${d.listing_id}</a>`
         : `<span style="font-family:var(--font-mono);font-size:0.82rem;color:var(--charcoal)">${d.listing_id || '—'}</span>`;
       const idCell = `<span style="display:inline-flex;align-items:center;gap:6px;min-width:0">${idLink}${bell}</span>`;
-      const kv = (k, v) => `<span class="impr-kv"><span class="k">${k}</span><span class="v">${v}</span></span>`;
+      // value-only cells — column labels live in the shared .perf-colhead above.
+      // title= keeps the label on hover (and for narrow screens where header hides).
+      const kv = (k, v) => `<span class="impr-kv" title="${k}"><span class="v">${v}</span></span>`;
       const pct = v => (v == null || v === '') ? '—' : Number(v).toFixed(2) + '%';
       const metrics = [
-        `<span class="impr-kv"><span class="k">ROAS</span>${roasChip}</span>`,
+        `<span class="impr-kv" title="ROAS">${roasChip}</span>`,
         kv('Revenue', _imprFmtMoney(d.revenue)),
         kv('Spend', _imprFmtMoney(d.spend)),
         kv('Orders', _imprFmtNum(d.orders)),
@@ -2549,8 +2576,12 @@
     function _imprPopulatePeriodFilter() {
       const sel = document.getElementById('fPeriod'); if (!sel) return;
       const prev = sel.value;
+      // Only the range-style periods (from/to, e.g. "2026-04-25/2026-05-02") that
+      // exist in the raw data — same format shown on each listing card. Single-day
+      // rows are skipped so the dropdown matches what users see per listing.
       const periods = Array.from(new Set(
-        LISTINGS.flatMap(d => Array.isArray(d.history) ? d.history.map(h => h.period) : []).filter(Boolean)
+        LISTINGS.flatMap(d => Array.isArray(d.history) ? d.history.map(h => h.period) : [])
+          .filter(p => p && p.includes('/'))
       )).sort().reverse();
       sel.innerHTML = '<option value="all">Period: Toàn bộ</option>' +
         periods.map(p => `<option value="${_imprEsc(p)}">${_imprEsc(p)}</option>`).join('');
