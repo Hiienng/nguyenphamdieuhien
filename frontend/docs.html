@@ -119,7 +119,11 @@ const DOCS = [{ label: "Hướng dẫn sử dụng", group: "guide", file: "huon
       const res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const md = await res.text();
-      content.innerHTML = '<div class="md-body">' + marked.parse(md) + '</div>';
+      const base = (location.protocol === 'file:' ? '../md-docs/' : '/md-docs/');
+      // markdown is rendered inside /docs.html, so relative image paths must be
+      // re-pointed at the md-docs folder (else they resolve to the site root).
+      let html = marked.parse(md).replace(/(<img\b[^>]*\bsrc=")(?!https?:|\/|data:)/g, '$1' + base);
+      content.innerHTML = '<div class="md-body">' + html + '</div>';
       content.scrollTop = 0;
     } catch (e) {
       content.innerHTML = '<div class="md-body" style="color:var(--stone)">Không tải được tài liệu <code>' + doc.file + '</code> (' + e.message + ').</div>';
