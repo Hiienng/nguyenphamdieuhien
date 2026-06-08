@@ -29,7 +29,9 @@ class ListingDashboardItem(BaseModel):
     scenario_cause: str | None = None
     scenario_fix_listing: str | None = None
     scenario_fix_ads: str | None = None
-    # keywords: list of dicts from keyword_report at latest import_time
+    # cheap alert flag (keyword currently ON but never earned revenue) for the list view
+    has_keyword_alert: bool = False
+    # keywords / history are loaded lazily per-listing (GET /performance/listing-detail)
     keywords: list[dict] | None = None
     # history: daily internal metrics per listing
     history: list[dict] | None = None

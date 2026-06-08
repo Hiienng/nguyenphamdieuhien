@@ -131,7 +131,8 @@ async def get_dashboard_listings(db: AsyncSession, tenant_id: str) -> list[dict]
 
     The reporting tables are populated by `reporting_etl.rebuild_reporting`.
     """
-    # Global set: keywords từng có revenue > 0 trong lịch sử raw của tenant này.
+    # Overview only (no keywords/history embedded) — keeps the initial payload small.
+    # has_keyword_alert: a keyword currently ON but never earned revenue (suggestion off).
     sql = text("""
         WITH kw_history_earners AS (
             SELECT DISTINCT keyword
@@ -143,80 +144,61 @@ async def get_dashboard_listings(db: AsyncSession, tenant_id: str) -> list[dict]
             WHERE COALESCE(revenue, 0) > 0
         )
         SELECT
-            e.listing_id,
-            e.title,
-            e.product,
-            e.period,
-            e.reference_date,
-            e.ctr,
-            e.cr,
-            e.roas,
-            e.url,
-            e.image_url,
-            e.no_vm,
-            e.views,
-            e.clicks,
-            e.orders,
-            e.revenue,
-            e.spend,
-            e.cpc,
-            e.cpp,
-            e.scenario_action,
-            e.scenario_label,
-            e.scenario_cause,
-            e.scenario_fix_listing,
-            e.scenario_fix_ads,
-            kw.keywords     AS keywords,
-            hist.history    AS history
+            e.listing_id, e.title, e.product, e.period, e.reference_date,
+            e.ctr, e.cr, e.roas, e.url, e.image_url, e.no_vm,
+            e.views, e.clicks, e.orders, e.revenue, e.spend, e.cpc, e.cpp,
+            e.scenario_action, e.scenario_label, e.scenario_cause,
+            e.scenario_fix_listing, e.scenario_fix_ads,
+            EXISTS (
+                SELECT 1 FROM keywords k
+                WHERE k.listing_id = e.listing_id AND k.tenant_id = e.tenant_id
+                  AND lower(k.currently_status) IN ('true', 'on')
+                  AND k.keyword NOT IN (SELECT keyword FROM kw_history_earners)
+            ) AS has_keyword_alert
         FROM listings_int_ext e
-        LEFT JOIN LATERAL (
-            SELECT json_agg(
-                json_build_object(
-                    'keyword',              k.keyword,
-                    'currently_status',     k.currently_status,
-                    'period',               k.period,
-                    'views',                k.views,
-                    'clicks',               k.clicks,
-                    'orders',               k.orders,
-                    'revenue',              k.revenue,
-                    'spend',                k.spend,
-                    'roas',                 k.roas,
-                    'click_rate',           k.click_rate,
-                    'cpc',                  k.cpc,
-                    'cpp',                  k.cpp,
-                    'history_has_revenue',  (he.keyword IS NOT NULL)
-                ) ORDER BY COALESCE(k.orders, 0) DESC, COALESCE(k.clicks, 0) DESC, k.keyword ASC
-            ) AS keywords
-            FROM keywords k
-            LEFT JOIN kw_history_earners he ON he.keyword = k.keyword
-            WHERE k.listing_id = e.listing_id AND k.tenant_id = e.tenant_id
-        ) kw ON true
-        LEFT JOIN LATERAL (
-            SELECT json_agg(
-                json_build_object(
-                    'history_id',     h.listing_id || ':' || h.period,
-                    'period',         h.period,
-                    'views',          h.views,
-                    'clicks',         h.clicks,
-                    'orders',         h.orders,
-                    'revenue',        h.revenue,
-                    'spend',          h.spend,
-                    'roas',           h.roas,
-                    'cpc',            h.cpc,
-                    'cpp',            h.cpp,
-                    'source',         h.source,
-                    'reference_date', h.reference_date
-                ) ORDER BY h.period DESC
-            ) AS history
-            FROM listings_int_hist h
-            WHERE h.listing_id = e.listing_id AND h.tenant_id = e.tenant_id
-        ) hist ON true
         WHERE e.tenant_id = :tid
         ORDER BY e.listing_id ASC, e.period ASC
     """)
     result = await db.execute(sql, {"tid": tenant_id})
     rows = [dict(r) for r in result.mappings().all()]
     return rows
+
+
+async def get_listing_detail(db: AsyncSession, tenant_id: str, listing_id: str) -> dict:
+    """Keywords + daily history for ONE listing — fetched lazily when a card is expanded."""
+    kw_sql = text("""
+        WITH kw_history_earners AS (
+            SELECT DISTINCT keyword FROM (
+                SELECT keyword, revenue FROM keyword_report       WHERE tenant_id = :tid
+                UNION ALL
+                SELECT keyword, revenue FROM manual_keyword_report WHERE tenant_id = :tid
+            ) s WHERE COALESCE(revenue, 0) > 0
+        )
+        SELECT json_build_object(
+            'keyword', k.keyword, 'currently_status', k.currently_status, 'period', k.period,
+            'views', k.views, 'clicks', k.clicks, 'orders', k.orders, 'revenue', k.revenue,
+            'spend', k.spend, 'roas', k.roas, 'click_rate', k.click_rate, 'cpc', k.cpc, 'cpp', k.cpp,
+            'history_has_revenue', (he.keyword IS NOT NULL)
+        )
+        FROM keywords k
+        LEFT JOIN kw_history_earners he ON he.keyword = k.keyword
+        WHERE k.listing_id = :lid AND k.tenant_id = :tid
+        ORDER BY COALESCE(k.orders, 0) DESC, COALESCE(k.clicks, 0) DESC, k.keyword ASC
+    """)
+    hist_sql = text("""
+        SELECT json_build_object(
+            'history_id', h.listing_id || ':' || h.period, 'period', h.period,
+            'views', h.views, 'clicks', h.clicks, 'orders', h.orders, 'revenue', h.revenue,
+            'spend', h.spend, 'roas', h.roas, 'cpc', h.cpc, 'cpp', h.cpp,
+            'source', h.source, 'reference_date', h.reference_date
+        )
+        FROM listings_int_hist h
+        WHERE h.listing_id = :lid AND h.tenant_id = :tid
+        ORDER BY h.period DESC
+    """)
+    kw = (await db.execute(kw_sql, {"tid": tenant_id, "lid": listing_id})).scalars().all()
+    hist = (await db.execute(hist_sql, {"tid": tenant_id, "lid": listing_id})).scalars().all()
+    return {"keywords": list(kw), "history": list(hist)}
 
 
 def write_dashboard_json(listings: list[dict], out_path: Path) -> None:

@@ -19,6 +19,15 @@ async def get_listings_dashboard(db: AsyncSession = Depends(get_tenant_db_for_us
         return JSONResponse(status_code=500, content={"error": str(e), "trace": traceback.format_exc()})
 
 
+@router.get("/listing-detail")
+async def listing_detail(listing_id: str, db: AsyncSession = Depends(get_tenant_db_for_user), user: User = Depends(get_current_active_user)):
+    """Keywords + history for one listing — loaded lazily when a card is expanded."""
+    try:
+        return await performance_service.get_listing_detail(db, tenant_id=user.id, listing_id=listing_id)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e), "trace": traceback.format_exc()})
+
+
 @router.post("/refresh")
 async def refresh_dashboard(force: bool = False, db: AsyncSession = Depends(get_tenant_db_for_user), user: User = Depends(get_current_active_user)):
     """Trigger ETL rebuild of reporting tables from raw ingestion data.

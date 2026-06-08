@@ -1300,9 +1300,10 @@
           document.getElementById('settingsDbUrl').value = '';
           const cur = document.getElementById('settingsCurrent');
           if (cur && d.database_url_masked) cur.textContent = d.database_url_masked;
-          // applied at runtime (no restart) — reload the dashboard right away
-          try { await loadListingsDashboard(); } catch (e) {}
-          setTimeout(closeSettings, 900);
+          // applied at runtime (no restart). Don't block the button on the load —
+          // close the modal and refresh the dashboard in the background.
+          setTimeout(closeSettings, 700);
+          loadListingsDashboard().catch(() => {});
         }
       } catch { msg.textContent = 'Lỗi kết nối.'; }
       finally { btn.disabled = false; btn.textContent = 'Lưu'; }
@@ -1879,7 +1880,9 @@
     }
 
     function _imprHasKeywordAlert(d) {
-      // Cảnh báo khi có keyword nào đang Currently != off nhưng Decision Rule khuyến nghị off.
+      // Server precomputes this (keyword currently ON but never earned revenue) so the
+      // list view doesn't need the full keyword set. Fall back to scanning if present.
+      if (d && typeof d.has_keyword_alert === 'boolean') return d.has_keyword_alert;
       if (!Array.isArray(d?.keywords) || !d.keywords.length) return false;
       return d.keywords.some(k => _imprKeywordSuggestionForRow(k) === 'off'
         && _imprNormalizeStatus(k.currently_status) !== 'off');
@@ -1904,9 +1907,10 @@
       const roasF = gv('fROAS');
       const vmF = gv('fVM');
       const se = document.getElementById('fSearch'); const q = se ? se.value.trim().toLowerCase() : '';
-      const groups = _imprGroup(LISTINGS);
-      // apply the period scope to each group's primary record (overview numbers only)
-      if (_imprPeriod !== 'all') groups.forEach(g => { g[0] = _imprPeriodView(g[0]); });
+      // Each listings_int_ext row is already a per-period overview aggregate. Period =
+      // a filter on the row's period (Toàn bộ = all rows, grouped to latest per listing).
+      const baseRows = _imprPeriod === 'all' ? LISTINGS : LISTINGS.filter(r => r.period === _imprPeriod);
+      const groups = _imprGroup(baseRows);
       _imprFiltered = groups.filter(group => {
         const d = group[0];
         if (q && !((d.listing_id||'').toLowerCase().includes(q) || (d.title||'').toLowerCase().includes(q) || (d.product||'').toLowerCase().includes(q))) return false;
@@ -2579,7 +2583,7 @@
       document.getElementById('imprCount').textContent = `Showing ${Math.min(_imprPage, _imprFiltered.length)} / ${_imprFiltered.length} listings`;
     }
 
-    function imprToggle(key, headEl) {
+    async function imprToggle(key, headEl) {
       const card = (headEl && headEl.closest('.impr-card')) || document.querySelector(`.impr-card[data-group-key="${key}"]`);
       if (!card) return;
       const det = card.querySelector('.impr-card-detail');
@@ -2587,7 +2591,25 @@
       const hidden = det.style.display === 'none';
       det.style.display = hidden ? 'block' : 'none';
       if (caret) caret.style.transform = hidden ? 'rotate(90deg)' : '';
-      if (hidden) optLogLoad(key);  // lazy-load optimization history when expanded
+      if (!hidden) return;  // collapsing — nothing to load
+
+      // Lazy-load keywords + history the first time this listing is expanded
+      // (they are NOT in the initial dashboard payload, to keep it small).
+      const group = _imprFiltered.find(g => ((g[0] || {}).listing_id || '').replace(/[^a-zA-Z0-9]/g, '') === key);
+      const d = group && group[0];
+      if (d && d.keywords === undefined) {
+        d.keywords = null;  // mark in-flight to avoid a double fetch
+        try {
+          const res = await authFetch('/api/v1/performance/listing-detail?listing_id=' + encodeURIComponent(d.listing_id));
+          const dt = res.ok ? await res.json() : {};
+          d.keywords = Array.isArray(dt.keywords) ? dt.keywords : [];
+          d.history = Array.isArray(dt.history) ? dt.history : [];
+        } catch (e) {
+          d.keywords = []; d.history = [];
+        }
+        det.innerHTML = _imprDetailBody(d, key);  // re-render now that data is present
+      }
+      optLogLoad(key);  // optimization history + impact chart
     }
 
     function _imprPopulateProductFilter() {
@@ -2610,12 +2632,10 @@
     function _imprPopulatePeriodFilter() {
       const sel = document.getElementById('fPeriod'); if (!sel) return;
       const prev = sel.value;
-      // Only the range-style periods (from/to, e.g. "2026-04-25/2026-05-02") that
-      // exist in the raw data — same format shown on each listing card. Single-day
-      // rows are skipped so the dropdown matches what users see per listing.
+      // Periods come from the overview rows' own period field (each row is a per-period
+      // aggregate). Range-style (from/to) only — matches what's shown per listing.
       const periods = Array.from(new Set(
-        LISTINGS.flatMap(d => Array.isArray(d.history) ? d.history.map(h => h.period) : [])
-          .filter(p => p && p.includes('/'))
+        LISTINGS.map(d => d.period).filter(p => p && p.includes('/'))
       )).sort().reverse();
       sel.innerHTML = '<option value="all">Period: Toàn bộ</option>' +
         periods.map(p => `<option value="${_imprEsc(p)}">${_imprEsc(p)}</option>`).join('');
