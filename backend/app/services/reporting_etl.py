@@ -228,7 +228,8 @@ _INSERT_HIST_SQL = text(f"""
             MAX(orders)         AS orders,
             MAX(revenue)        AS revenue,
             MAX(spend)          AS spend,
-            MAX(roas)           AS roas,
+            CASE WHEN MAX(spend) > 0
+                 THEN ROUND(MAX(revenue)::numeric / MAX(spend), 2) ELSE 0 END AS roas,
             -- Prefer manual source if present (latest-corrected by user)
             (ARRAY_AGG(source ORDER BY CASE WHEN source = 'manual' THEN 0 ELSE 1 END))[1] AS source
         FROM unioned
@@ -292,7 +293,8 @@ _INSERT_EXT_SQL = text(f"""
             MAX(orders)  AS orders,
             MAX(revenue) AS revenue,
             MAX(spend)   AS spend,
-            MAX(roas)    AS roas
+            CASE WHEN MAX(spend) > 0
+                 THEN ROUND(MAX(revenue)::numeric / MAX(spend), 2) ELSE 0 END AS roas
         FROM unioned
         GROUP BY tenant_id, listing_id, period
     ),
@@ -427,7 +429,8 @@ _INSERT_KEYWORDS_SQL = text("""
             MAX(orders)  AS orders,
             MAX(revenue) AS revenue,
             MAX(spend)   AS spend,
-            MAX(roas)    AS roas
+            CASE WHEN MAX(spend) > 0
+                 THEN ROUND(MAX(revenue)::numeric / MAX(spend), 2) ELSE 0 END AS roas
         FROM filtered
         GROUP BY tenant_id, listing_id, keyword, period
     )
