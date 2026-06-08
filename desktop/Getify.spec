@@ -1,7 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
 """PyInstaller spec for the Getify desktop app (macOS .app + Windows .exe)."""
 import os
-from PyInstaller.utils.hooks import collect_submodules, collect_data_files
+import sys
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files, collect_all
 
 SPEC_DIR = os.path.abspath(SPECPATH)          # desktop/
 ROOT = os.path.dirname(SPEC_DIR)              # project dir (nguyenphamdieuhien)
@@ -43,6 +44,22 @@ hiddenimports += [
     "passlib.handlers.bcrypt",
 ]
 
+# Windows GUI (pywebview winforms backend) needs pythonnet's managed assembly
+# Python.Runtime.dll + clr_loader runtime config. PyInstaller doesn't grab these
+# by default → "Failed to resolve Python.Runtime.Loader.Initialize" at launch.
+# Collect them on Windows builds only (pythonnet isn't installed on macOS).
+binaries = []
+if sys.platform.startswith("win"):
+    for _pkg in ("pythonnet", "clr_loader"):
+        try:
+            _d, _b, _h = collect_all(_pkg)
+            datas += _d
+            binaries += _b
+            hiddenimports += _h
+        except Exception as _e:
+            print(f"[spec] collect_all({_pkg}) skipped: {_e}")
+    hiddenimports += ["clr"]
+
 # Heavy / removed-feature libs we deliberately keep OUT of the bundle.
 excludes = [
     "google", "google.generativeai", "grpc", "stripe",
@@ -54,7 +71,7 @@ block_cipher = None
 a = Analysis(
     ["launcher.py"],
     pathex=[BACKEND, ROOT],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],

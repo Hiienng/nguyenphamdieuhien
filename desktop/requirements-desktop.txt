@@ -2,3 +2,6 @@
 -r ../backend/requirements.txt
 pywebview>=5.1
 pyinstaller>=6.10
+# Windows GUI backend (pywebview winforms) needs pythonnet's managed runtime.
+# Marker keeps it off macOS (where it's unused and pip install would fail).
+pythonnet>=3.0.0 ; sys_platform == "win32"
