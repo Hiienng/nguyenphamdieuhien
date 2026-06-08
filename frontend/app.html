@@ -778,6 +778,37 @@
       padding: 0 6px;
     }
 
+    /* ─── Card layout (fits app width, no horizontal scroll) ─── */
+    .impr-card {
+      border: 1px solid var(--border-warm);
+      border-radius: 12px;
+      background: var(--ivory);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .impr-card-head {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 13px 16px; cursor: pointer; user-select: none;
+    }
+    .impr-card-head:hover { background: rgba(232,230,220,0.35); }
+    .impr-card-metrics {
+      display: flex; flex-wrap: wrap; gap: 7px 16px;
+      padding: 0 16px 14px; align-items: baseline;
+    }
+    .impr-kv { display: inline-flex; align-items: baseline; gap: 5px; font-family: var(--font-sans); font-size: 0.82rem; }
+    .impr-kv .k { color: var(--stone); font-size: 0.66rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .impr-kv .v { font-family: var(--font-mono); color: var(--charcoal); }
+    .impr-card-detail { border-top: 1px solid var(--border-cream); background: var(--warm-sand); padding: 14px 16px 18px; }
+    .impr-scroll { max-height: 360px; overflow: auto; border: 1px solid var(--border-cream); border-radius: 8px; }
+    .impr-scroll table { width: 100%; border-collapse: collapse; }
+    .impr-scroll thead th { position: sticky; top: 0; background: var(--parchment); z-index: 1; box-shadow: inset 0 -1px 0 var(--border-cream); }
+    .kw-toggle { position: relative; display: inline-block; width: 34px; height: 18px; cursor: pointer; vertical-align: middle; }
+    .kw-toggle input { opacity: 0; width: 0; height: 0; }
+    .kw-slider { position: absolute; inset: 0; background: var(--warm-silver); border-radius: 999px; transition: .15s; }
+    .kw-slider::before { content: ""; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: .15s; }
+    .kw-toggle input:checked + .kw-slider { background: #4a8c60; }
+    .kw-toggle input:checked + .kw-slider::before { transform: translateX(16px); }
+
     .impr-select {
       font-family: var(--font-sans);
       font-size: 0.80rem;
@@ -1257,111 +1288,55 @@
       <!-- ── Sub-panel: Listing Improvement ──────── -->
       <div id="perf-sub-improvement">
 
-        <h2 class="section-heading" style="margin-bottom:6px">Action Recommendations</h2>
-
-        <!-- Filter + table -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <!-- Toolbar: Refresh + Sort + filters (flat, one row, wraps) -->
+        <div class="impr-toolbar" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px;font-family:var(--font-sans);font-size:0.8rem;color:var(--stone)">
           <button id="imprReloadBtn" onclick="imprReload()"
-            style="font-family:var(--font-sans);font-size:0.78rem;color:var(--terracotta);background:transparent;border:1px solid var(--terracotta);border-radius:6px;padding:4px 12px;cursor:pointer;opacity:0.85"
-            onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.85'">Refresh</button>
+            style="font-family:var(--font-sans);font-size:0.8rem;color:var(--terracotta);background:transparent;border:1px solid var(--terracotta);border-radius:6px;padding:5px 14px;cursor:pointer">Refresh</button>
+          <span style="width:1px;height:20px;background:var(--border-cream)"></span>
+          <span>Sắp xếp</span>
+          <select id="imprSortSel" class="impr-select" onchange="imprSortBy(this.value)">
+            <option value="">Mặc định</option>
+            <option value="roas">ROAS</option>
+            <option value="revenue">Revenue</option>
+            <option value="spend">Spend</option>
+            <option value="orders">Orders</option>
+            <option value="views">Views</option>
+            <option value="clicks">Clicks</option>
+            <option value="period">Period</option>
+            <option value="listing_id">ID</option>
+            <option value="product">Product</option>
+            <option value="scenario_label">Case</option>
+            <option value="scenario_action">Action</option>
+          </select>
+          <button id="imprSortDirBtn" type="button" onclick="imprSortDir()" title="Đảo chiều tăng/giảm"
+            style="font-family:var(--font-sans);font-size:0.82rem;border:1px solid var(--border-cream);background:var(--warm-sand);color:var(--charcoal);border-radius:6px;padding:4px 10px;cursor:pointer">↓</button>
+          <span style="width:1px;height:20px;background:var(--border-cream)"></span>
+          <span>Lọc</span>
+          <select id="fProd" class="impr-select" title="Lọc theo Product">
+            <option value="all">Product: All</option>
+            <option value="baby blanket">baby blanket</option>
+            <option value="baby onesie">baby onesie</option>
+            <option value="baby romper">baby romper</option>
+          </select>
+          <select id="fROAS" class="impr-select" title="Lọc theo ROAS">
+            <option value="all">ROAS: All</option>
+            <option value="pass">ROAS ≥2x</option>
+            <option value="fail">ROAS &lt;2x</option>
+          </select>
+          <select id="fVM" class="impr-select" title="Lọc theo VM">
+            <option value="all">VM: All</option>
+            <option value="VM01">VM01</option>
+            <option value="VM08">VM08</option>
+            <option value="nan">nan</option>
+          </select>
+          <input id="fSearch" type="search" placeholder="Tìm ID / title…" oninput="imprSearch()" class="impr-select" style="min-width:170px">
+          <span style="flex:1 1 auto"></span>
+          <span id="imprCount"></span>
         </div>
-        <div class="chart-card filterable-table-card">
-          <button class="table-filter-toggle" type="button" onclick="toggleTableFilters('imprFilters', this)"
-            title="Show/hide filters" aria-label="Show/hide filters" aria-expanded="false">
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-              <path d="M2 3h11M4 7.5h7M6 12h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-            </svg>
-          </button>
-          <div id="imprFilters" class="table-filter-panel"
-            style="gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
-            <div style="display:flex;align-items:center;gap:6px">
-              <label for="fProd"
-                style="font-size:0.78rem;color:var(--stone);font-family:var(--font-sans);white-space:nowrap">Product</label>
-              <select id="fProd" class="impr-select">
-                <option value="all">All</option>
-                <option value="baby blanket">baby blanket</option>
-                <option value="baby onesie">baby onesie</option>
-                <option value="baby romper">baby romper</option>
-              </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <label for="fCTR" style="font-size:0.78rem;color:var(--stone);font-family:var(--font-sans)">CTR</label>
-              <select id="fCTR" class="impr-select">
-                <option value="all">All</option>
-                <option value="pass">Pass ≥2%</option>
-                <option value="fail">Fail &lt;2%</option>
-              </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <label for="fCR" style="font-size:0.78rem;color:var(--stone);font-family:var(--font-sans)">CR</label>
-              <select id="fCR" class="impr-select">
-                <option value="all">All</option>
-                <option value="pass">Pass ≥4%</option>
-                <option value="fail">Fail &lt;4%</option>
-              </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <label for="fROAS" style="font-size:0.78rem;color:var(--stone);font-family:var(--font-sans)">ROAS</label>
-              <select id="fROAS" class="impr-select">
-                <option value="all">All</option>
-                <option value="pass">Pass ≥2x</option>
-                <option value="fail">Fail &lt;2x</option>
-              </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <label for="fVM" style="font-size:0.78rem;color:var(--stone);font-family:var(--font-sans)">VM</label>
-              <select id="fVM" class="impr-select">
-                <option value="all">All</option>
-                <option value="VM01">VM01</option>
-                <option value="VM08">VM08</option>
-                <option value="nan">nan</option>
-              </select>
-            </div>
-          </div>
-          <div class="impr-table-wrap">
-            <table class="impr-table">
-              <thead>
-                <tr>
-                  <th style="width:32px"></th>
-                  <th style="width:11%"><button class="impr-sort-btn" type="button" data-sort-scope="main" data-sort-key="listing_id"
-                      onclick="imprSort('listing_id')">ID <span class="impr-sort-icon">↕</span></button></th>
-                  <th><button class="impr-sort-btn" type="button" data-sort-scope="main" data-sort-key="product"
-                      onclick="imprSort('product')">Product <span class="impr-sort-icon">↕</span></button></th>
-                  <th><button class="impr-sort-btn" type="button" data-sort-scope="main" data-sort-key="period"
-                      onclick="imprSort('period')">Period <span class="impr-sort-icon">↕</span></button></th>
-                  <th style="text-align:right"><button class="impr-sort-btn sort-center" type="button" data-sort-scope="main"
-                      data-sort-key="views" onclick="imprSort('views')">Views <span class="impr-sort-icon">↕</span></button>
-                  </th>
-                  <th style="text-align:right"><button class="impr-sort-btn sort-center" type="button" data-sort-scope="main"
-                      data-sort-key="clicks" onclick="imprSort('clicks')">Clicks <span class="impr-sort-icon">↕</span></button></th>
-                  <th style="text-align:right"><button class="impr-sort-btn sort-center" type="button" data-sort-scope="main"
-                      data-sort-key="orders" onclick="imprSort('orders')">Orders <span class="impr-sort-icon">↕</span></button></th>
-                  <th style="text-align:right"><button class="impr-sort-btn sort-center" type="button" data-sort-scope="main"
-                      data-sort-key="revenue" onclick="imprSort('revenue')">Revenue <span class="impr-sort-icon">↕</span></button></th>
-                  <th style="text-align:right"><button class="impr-sort-btn sort-center" type="button" data-sort-scope="main"
-                      data-sort-key="spend" onclick="imprSort('spend')">Spend <span class="impr-sort-icon">↕</span></button></th>
-                  <th style="text-align:center"><button class="impr-sort-btn sort-center" type="button" data-sort-scope="main"
-                      data-sort-key="roas" onclick="imprSort('roas')">ROAS <span class="impr-sort-icon">↕</span></button></th>
-                  <th style="text-align:right"><button class="impr-sort-btn sort-center" type="button" data-sort-scope="main"
-                      data-sort-key="cpc" onclick="imprSort('cpc')">CPC <span class="impr-sort-icon">↕</span></button></th>
-                  <th style="text-align:right"><button class="impr-sort-btn sort-center" type="button" data-sort-scope="main"
-                      data-sort-key="cpp" onclick="imprSort('cpp')">CPP <span class="impr-sort-icon">↕</span></button></th>
-                  <th><button class="impr-sort-btn" type="button" data-sort-scope="main" data-sort-key="scenario_label"
-                      onclick="imprSort('scenario_label')">Case <span class="impr-sort-icon">↕</span></button></th>
-                  <th><button class="impr-sort-btn" type="button" data-sort-scope="main" data-sort-key="scenario_action"
-                      onclick="imprSort('scenario_action')">Scenario <span class="impr-sort-icon">↕</span></button></th>
-                </tr>
-              </thead>
-              <tbody id="imprTableBody"></tbody>
-            </table>
-          </div>
-          <div
-            style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid var(--border-cream)">
-            <p style="font-family:var(--font-sans);font-size:0.78rem;color:var(--stone);margin:0" id="imprCount"></p>
-            <button id="imprLoadMore" onclick="imprLoadMore()"
-              style="display:none;font-family:var(--font-sans);font-size:0.80rem;color:var(--terracotta);background:transparent;border:1px solid var(--terracotta);border-radius:6px;padding:5px 14px;cursor:pointer;opacity:0.85"
-              onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.85'">Load more</button>
-          </div>
+        <div id="imprCards"></div>
+        <div style="text-align:center;margin-top:10px">
+          <button id="imprLoadMore" onclick="imprLoadMore()"
+            style="display:none;font-family:var(--font-sans);font-size:0.80rem;color:var(--terracotta);background:transparent;border:1px solid var(--terracotta);border-radius:6px;padding:5px 14px;cursor:pointer">Load more</button>
         </div>
 
       </div><!-- /perf-sub-improvement -->
@@ -1370,12 +1345,11 @@
       <!-- ── Sub-panel: Getify Import ──────────── -->
       <div id="perf-sub-import" style="display:none">
 
-        <h2 class="section-heading" style="margin-bottom:12px">1. Import Report</h2>
+        <h2 class="section-heading" style="margin-bottom:12px">Import Report</h2>
 
         <!-- Import via browser extension (only method) -->
         <div id="importExtensionZone">
           <div class="chart-card">
-            <p class="hub-section-label" style="margin-bottom:20px">2. Upload from extension</p>
             <div style="display:flex;flex-direction:column;gap:20px;max-width:560px">
 
               <!-- Step 1: Download -->
@@ -1586,11 +1560,6 @@
     </section>
 
   </main>
-
-  <!-- ── Footer ─────────────────────── -->
-  <footer style="max-width:1200px;margin:0 auto;padding:24px 40px 32px">
-    <p style="font-family:var(--font-sans);font-size:0.8rem;color:var(--stone)">© 2026 Findatasolution. Built with care.</p>
-  </footer>
 
   <!-- ── Tab Script ──────────────────────────────── -->
   <script>
@@ -1861,14 +1830,17 @@
     }
 
     function _imprApplyFilters() {
-      const prod = document.getElementById('fProd').value;
-      const ctrF = document.getElementById('fCTR').value;
-      const crF = document.getElementById('fCR').value;
-      const roasF = document.getElementById('fROAS').value;
-      const vmF = document.getElementById('fVM').value;
+      const gv = id => { const e = document.getElementById(id); return e ? e.value : 'all'; };
+      const prod = gv('fProd');
+      const ctrF = gv('fCTR');
+      const crF = gv('fCR');
+      const roasF = gv('fROAS');
+      const vmF = gv('fVM');
+      const se = document.getElementById('fSearch'); const q = se ? se.value.trim().toLowerCase() : '';
       const groups = _imprGroup(LISTINGS);
       _imprFiltered = groups.filter(group => {
         const d = group[0];
+        if (q && !((d.listing_id||'').toLowerCase().includes(q) || (d.title||'').toLowerCase().includes(q) || (d.product||'').toLowerCase().includes(q))) return false;
         if (prod !== 'all' && d.product !== prod) return false;
         if (ctrF === 'pass' && Number(d.ctr) < 1.5) return false;
         if (ctrF === 'fail' && Number(d.ctr) >= 1.5) return false;
@@ -1917,22 +1889,28 @@
     }
 
     function _imprUpdateSortIndicators() {
-      document.querySelectorAll('.impr-sort-btn[data-sort-scope="main"]').forEach(btn => {
-        const active = btn.dataset.sortKey === _imprSort.key;
-        btn.classList.toggle('active', active);
-        const icon = btn.querySelector('.impr-sort-icon');
-        if (icon) icon.textContent = active ? (_imprSort.dir === 'asc' ? '↑' : '↓') : '↕';
-        btn.setAttribute('aria-sort', active ? (_imprSort.dir === 'asc' ? 'ascending' : 'descending') : 'none');
-      });
+      const sel = document.getElementById('imprSortSel');
+      if (sel) sel.value = _imprSort.key || '';
+      const b = document.getElementById('imprSortDirBtn');
+      if (b) b.textContent = _imprSort.dir === 'asc' ? '↑' : '↓';
     }
 
-    function imprSort(key) {
-      if (_imprSort.key === key) {
-        _imprSort.dir = _imprSort.dir === 'asc' ? 'desc' : 'asc';
-      } else {
-        _imprSort = { key, dir: 'asc' };
+    function imprSearch() { _imprPage = 10; _imprApplyFilters(); _imprRenderRows(); }
+
+    function imprSortBy(key) {
+      if (!key) _imprSort = { key: null, dir: 'desc' };
+      else if (_imprSort.key !== key) {
+        // text fields default ascending; metrics default descending
+        const asc = ['listing_id', 'product', 'period', 'scenario_label', 'scenario_action'].includes(key);
+        _imprSort = { key, dir: asc ? 'asc' : 'desc' };
       }
       _imprPage = 10;
+      _imprApplyFilters();
+      _imprRenderRows();
+    }
+
+    function imprSortDir() {
+      _imprSort.dir = _imprSort.dir === 'asc' ? 'desc' : 'asc';
       _imprApplyFilters();
       _imprRenderRows();
     }
@@ -2032,11 +2010,12 @@
           const cpp = _imprMetricFromRow(k, 'cpp');
           return `<tr style="font-family:var(--font-sans);font-size:0.76rem;color:var(--charcoal);border-top:1px solid var(--border-cream);${rowBg}">
             <td style="padding:4px 8px">${_imprEsc(k.keyword)}</td>
-            <td style="text-align:center;padding:4px 8px">${_imprFmtStatus(k.currently_status)}</td>
-            <td style="text-align:center;padding:4px 8px">${_imprFmtSuggestion(rowSuggestion)}</td>
+            <td style="text-align:center;padding:4px 6px;width:1%;white-space:nowrap">${_imprFmtStatus(k.currently_status)}</td>
+            <td style="text-align:center;padding:4px 6px;width:1%;white-space:nowrap">${_imprFmtSuggestion(rowSuggestion)}</td>
+            <td style="text-align:center;padding:4px 6px;width:1%;white-space:nowrap"><label class="kw-toggle" title="Commit: gạt = xác nhận sẽ đổi trên Etsy"><input type="checkbox" data-lid="${d.listing_id || ''}" data-kw="${_imprEsc(k.keyword)}" data-gk="${groupKey}" ${_imprNormalizeStatus(k.currently_status) === 'on' ? 'checked' : ''} onchange="kwCommit(this)"><span class="kw-slider"></span></label></td>
             <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtNum(k.views)}</td>
             <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtNum(k.clicks)}</td>
-            <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtPct(k.click_rate)}</td>
+            <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprEsc(k.click_rate || '—')}</td>
             <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtNum(k.orders)}</td>
             <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtMoney(k.spend)}</td>
             <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtMoney(cpc)}</td>
@@ -2074,9 +2053,7 @@
       });
     }
 
-    function _imprMetricRow(d, opts) {
-      const isMain = opts.isMain;
-      const groupKey = opts.groupKey;
+    function _imprCard(d, groupKey) {
       const act = d.scenario_action || 'improve';
       const ac = ACTION_CLS[act] || ACTION_CLS.improve;
       const hasKeywordAlert = _imprHasKeywordAlert(d);
@@ -2106,29 +2083,33 @@
       const idLink = d.url
         ? `<a href="${d.url}" target="_blank" rel="noopener" title="Open listing on Etsy ↗" style="font-family:var(--font-mono);font-size:0.82rem;color:var(--terracotta);text-decoration:underline;text-underline-offset:2px">${d.listing_id}</a>`
         : `<span style="font-family:var(--font-mono);font-size:0.82rem;color:var(--charcoal)">${d.listing_id || '—'}</span>`;
-      const idCell = `<div style="display:flex;align-items:center;gap:6px;min-width:0">${idLink}${bell}</div>`;
-      const toggleCell = isMain
-        ? `<td style="text-align:center;cursor:pointer;user-select:none" onclick="imprToggle('${groupKey}', this)" title="View scenario details + daily history"><span class="impr-caret" style="font-size:0.82rem;color:var(--terracotta);display:inline-block;transition:transform 0.15s">▸</span></td>`
-        : `<td></td>`;
-      const rowClass = isMain ? `impr-main-row` : `impr-sub-row impr-sub-${groupKey}`;
-      const rowAttrs = isMain ? `data-group-key="${groupKey}"` : `style="display:none;background:var(--warm-sand)"`;
-
-      return `<tr class="${rowClass}" ${rowAttrs}>
-        ${toggleCell}
-        <td>${idCell}</td>
-        <td><span class="metric-chip chip-neu" style="font-size:0.70rem">${d.product || '—'}</span></td>
-        <td style="font-family:var(--font-mono);font-size:0.74rem;color:var(--stone);max-width:132px;line-height:1.35">${_imprFmtPeriodHtml(d.period)}</td>
-        <td style="text-align:right;font-family:var(--font-mono)">${_imprFmtNum(d.views)}</td>
-        <td style="text-align:right;font-family:var(--font-mono)">${_imprFmtNum(d.clicks)}</td>
-        <td style="text-align:right;font-family:var(--font-mono)">${_imprFmtNum(d.orders)}</td>
-        <td style="text-align:right;font-family:var(--font-mono)">${_imprFmtMoney(d.revenue)}</td>
-        <td style="text-align:right;font-family:var(--font-mono)">${_imprFmtMoney(d.spend)}</td>
-        <td style="text-align:center">${roasChip}</td>
-        <td style="text-align:right;font-family:var(--font-mono)">${_imprFmtMoney(d.cpc)}</td>
-        <td style="text-align:right;font-family:var(--font-mono)">${_imprFmtMoney(d.cpp)}</td>
-        <td>${caseCell}</td>
-        <td><span class="pri-badge ${ac.pri}">${actionLabel}</span></td>
-      </tr>`;
+      const idCell = `<span style="display:inline-flex;align-items:center;gap:6px;min-width:0">${idLink}${bell}</span>`;
+      const kv = (k, v) => `<span class="impr-kv"><span class="k">${k}</span><span class="v">${v}</span></span>`;
+      const pct = v => (v == null || v === '') ? '—' : Number(v).toFixed(2) + '%';
+      const metrics = [
+        `<span class="impr-kv"><span class="k">ROAS</span>${roasChip}</span>`,
+        kv('Revenue', _imprFmtMoney(d.revenue)),
+        kv('Spend', _imprFmtMoney(d.spend)),
+        kv('Orders', _imprFmtNum(d.orders)),
+        kv('Views', _imprFmtNum(d.views)),
+        kv('Clicks', _imprFmtNum(d.clicks)),
+        kv('CTR', pct(d.ctr)),
+        kv('CR', pct(d.cr)),
+        kv('CPC', _imprFmtMoney(d.cpc)),
+        kv('CPP', _imprFmtMoney(d.cpp)),
+      ].join('');
+      return `<div class="impr-card" data-group-key="${groupKey}">
+        <div class="impr-card-head" onclick="imprToggle('${groupKey}', this)">
+          <span class="impr-caret" style="font-size:0.82rem;color:var(--terracotta);display:inline-block;transition:transform 0.15s;flex:0 0 auto">▸</span>
+          ${idCell}
+          <span class="metric-chip chip-neu" style="font-size:0.70rem">${d.product || '—'}</span>
+          <span style="flex:1 1 auto"></span>
+          <span style="font-family:var(--font-mono);font-size:0.70rem;color:var(--stone)">${_imprFmtPeriodHtml(d.period)}</span>
+          <span title="${actionLabel}${d.scenario_label ? ' — ' + _imprEsc(d.scenario_label) : ''}" aria-label="${actionLabel}" style="display:inline-block;width:11px;height:11px;border-radius:50%;flex:0 0 auto;cursor:help;background:${act === 'keep' ? '#4a8c60' : act === 'improve_or_off' ? '#b53333' : '#c17a1f'}"></span>
+        </div>
+        <div class="impr-card-metrics">${metrics}</div>
+        <div class="impr-card-detail" style="display:none">${_imprDetailBody(d, groupKey)}</div>
+      </div>`;
     }
 
     function _imprKeywordTable(listing, groupKey) {
@@ -2139,8 +2120,8 @@
       const periodNote = _imprKeywordPeriodSummary(listing);
       const head = `<thead><tr style="font-family:var(--font-sans);font-size:0.70rem;color:var(--stone);text-transform:uppercase;letter-spacing:0.04em">
         <th style="text-align:left;padding:4px 8px;font-weight:600">${_imprMiniSortButton('keywords', groupKey, 'keyword', 'Keyword', 'left')}</th>
-        <th style="text-align:center;padding:4px 8px;font-weight:600">${_imprMiniSortButton('keywords', groupKey, 'currently_status', 'Currently', 'center')}</th>
-        <th style="text-align:center;padding:4px 8px;font-weight:600">
+        <th style="text-align:center;padding:4px 6px;font-weight:600;width:1%;white-space:nowrap">${_imprMiniSortButton('keywords', groupKey, 'currently_status', 'Currently', 'center')}</th>
+        <th style="text-align:center;padding:4px 6px;font-weight:600;width:1%;white-space:nowrap">
           <span style="display:inline-flex;align-items:center;gap:5px;justify-content:center"><span style="color:var(--terracotta);opacity:0.7">Suggestion</span>
             <span style="position:relative;display:inline-block">
               <span onmouseenter="imprHelpShow(this)" onmouseleave="imprHelpHide(this)" aria-label="suggestion logic" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--stone);color:var(--stone);font-size:0.62rem;font-weight:700;cursor:help;user-select:none;text-transform:none">?</span>
@@ -2150,6 +2131,16 @@
                 <span style="color:var(--terracotta);font-weight:600">off</span> &mdash; never generated any revenue.<br>
                 <br>
                 Recommendations based on full system history, independent of the currently displayed period.
+              </span>
+            </span>
+          </span>
+        </th>
+        <th style="text-align:center;padding:4px 6px;font-weight:600;width:1%;white-space:nowrap">
+          <span style="display:inline-flex;align-items:center;gap:5px;justify-content:center"><span style="color:var(--terracotta)">Commit</span>
+            <span style="position:relative;display:inline-block">
+              <span onmouseenter="imprHelpShow(this)" onmouseleave="imprHelpHide(this)" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--stone);color:var(--stone);font-size:0.62rem;font-weight:700;cursor:help;text-transform:none">?</span>
+              <span class="impr-help-pop" style="display:none;position:absolute;top:20px;right:0;z-index:50;width:300px;max-width:calc(100vw - 32px);padding:10px 12px;background:var(--parchment);border:1px solid var(--border-cream);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);font-family:var(--font-sans);font-size:0.76rem;font-weight:400;color:var(--charcoal);text-transform:none;line-height:1.5;text-align:left;white-space:normal">
+                <b>Commit</b> — gạt để xác nhận bạn sẽ <b>Tắt/Bật</b> ad keyword này trên Etsy.<br>Mặc định = trạng thái <b>Currently</b>. Mỗi lần gạt được <b>ghi vào Lịch sử tối ưu</b> (kèm thời gian).
               </span>
             </span>
           </span>
@@ -2172,8 +2163,9 @@
         const cpp = _imprMetricFromRow(k, 'cpp');
         return `<tr style="font-family:var(--font-sans);font-size:0.76rem;color:var(--charcoal);border-top:1px solid var(--border-cream);${rowBg}">
         <td style="padding:4px 8px">${_imprEsc(k.keyword)}</td>
-        <td style="text-align:center;padding:4px 8px">${_imprFmtStatus(k.currently_status)}</td>
-        <td style="text-align:center;padding:4px 8px">${_imprFmtSuggestion(rowSuggestion)}</td>
+        <td style="text-align:center;padding:4px 6px;width:1%;white-space:nowrap">${_imprFmtStatus(k.currently_status)}</td>
+        <td style="text-align:center;padding:4px 6px;width:1%;white-space:nowrap">${_imprFmtSuggestion(rowSuggestion)}</td>
+        <td style="text-align:center;padding:4px 6px;width:1%;white-space:nowrap"><label class="kw-toggle" title="Commit: gạt = xác nhận sẽ đổi trên Etsy"><input type="checkbox" data-lid="${listing.listing_id || ''}" data-kw="${_imprEsc(k.keyword)}" data-gk="${groupKey}" ${_imprNormalizeStatus(k.currently_status) === 'on' ? 'checked' : ''} onchange="kwCommit(this)"><span class="kw-slider"></span></label></td>
         <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtNum(k.views)}</td>
         <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtNum(k.clicks)}</td>
         <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprEsc(k.click_rate || '—')}</td>
@@ -2185,8 +2177,9 @@
         <td style="text-align:right;padding:4px 8px;font-family:var(--font-mono)">${_imprFmtRatio(k.roas)}</td>
       </tr>`;
       }).join('');
-      const bodyHtml = `<div style="overflow-x:auto"><table id="impr-tbl-keywords-${groupKey}" style="width:100%;border-collapse:collapse">${head}<tbody id="impr-tbody-keywords-${groupKey}">${body}</tbody></table></div>`;
-      return `<div style="margin-top:12px">${_imprFoldSection('Keywords · Period: ' + periodNote, bodyHtml, { open: true })}</div>`;
+      const bodyHtml = `<div class="impr-scroll"><table id="impr-tbl-keywords-${groupKey}" style="width:100%;border-collapse:collapse">${head}<tbody id="impr-tbody-keywords-${groupKey}">${body}</tbody></table></div>`;
+      const periodMeta = periodNote ? `<span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--stone);font-weight:400;text-transform:none;letter-spacing:0">${_imprEsc(periodNote)}</span>` : '';
+      return `<div style="margin-top:12px">${_imprFoldSection('Keywords', bodyHtml, { open: true, metaHtml: periodMeta })}</div>`;
     }
 
     function _imprHistoryDownloadCsv(groupKey) {
@@ -2245,8 +2238,8 @@
         <td style="padding:4px 8px;text-align:right;font-family:var(--font-mono)">${_imprFmtMoney(h.cpp)}</td>
         <td style="padding:4px 8px">${_imprEsc(h.source || '—')}</td>
       </tr>`).join('');
-      const bodyHtml = `<div style="overflow-x:auto"><table id="impr-tbl-history-${groupKey}" style="width:100%;border-collapse:collapse">${head}<tbody id="impr-tbody-history-${groupKey}">${body}</tbody></table></div>`;
-      return `<div style="margin-top:12px">${_imprFoldSection('History · ' + history.length + ' records', bodyHtml, { metaHtml: downloadBtn })}</div>`;
+      const bodyHtml = `<div class="impr-scroll"><table id="impr-tbl-history-${groupKey}" style="width:100%;border-collapse:collapse">${head}<tbody id="impr-tbody-history-${groupKey}">${body}</tbody></table></div>`;
+      return `<div style="margin-top:12px">${_imprFoldSection('Listing History · ' + history.length + ' records', bodyHtml, { metaHtml: downloadBtn })}</div>`;
     }
 
     // Toggle popover ? — đóng tất cả popover khác, mở cái được click.
@@ -2272,7 +2265,50 @@
       if (pop) pop.style.display = 'none';
     }
 
-    function _imprDetailRow(d, groupKey, withExtras) {
+    // Checklist tối ưu — gom 3 quyết định (listing / keyword on-off / tối ưu lại)
+    // thành việc-cần-làm cụ thể, tự suy ra từ scenario_action + Suggestion vs Currently.
+    function _imprChecklist(d, groupKey) {
+      const act = d.scenario_action || 'improve';
+      const kws = Array.isArray(d.keywords) ? d.keywords : [];
+      const toOff = kws.filter(k => _imprNormalizeStatus(k.currently_status) === 'on' && _imprKeywordSuggestionForRow(k) === 'off');
+      const toOn  = kws.filter(k => _imprNormalizeStatus(k.currently_status) === 'off' && _imprKeywordSuggestionForRow(k) === 'on');
+      const lmap = {
+        keep:           { t: 'Giữ listing đang chạy — đang lời, chưa cần can thiệp.', c: '#4a8c60' },
+        improve:        { t: 'Tối ưu lại listing (không tắt).', c: '#c17a1f' },
+        improve_or_off: { t: 'Tối ưu lại listing; nếu đã tối ưu mà vẫn không cải thiện → tắt listing.', c: '#b53333' },
+        off:            { t: 'Listing đang off / không có data — tối ưu rồi bật lại, hoặc bỏ.', c: '#b53333' },
+      };
+      const lm = lmap[act] || lmap.improve;
+
+      const cb  = 'margin:3px 8px 0 0;flex:0 0 auto;accent-color:var(--terracotta);cursor:pointer';
+      const liS = 'display:flex;align-items:flex-start;padding:7px 0;border-top:1px solid var(--border-cream);font-family:var(--font-sans);font-size:0.80rem;color:var(--charcoal);line-height:1.55';
+      const dot = c => `<span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:${c};margin:0 6px 0 0;vertical-align:middle"></span>`;
+      const sub = arr => `<ul style="margin:4px 0 0;padding:0;list-style:none">${arr.map(x => `<li style="font-family:var(--font-mono);font-size:0.74rem;color:var(--stone);padding:1px 0">• ${x}</li>`).join('')}</ul>`;
+
+      const rows = [];
+      rows.push(`<li style="${liS};border-top:none"><input type="checkbox" style="${cb}"><div><b>Listing:</b> ${dot(lm.c)}${lm.t}</div></li>`);
+      if (toOff.length)
+        rows.push(`<li style="${liS}"><input type="checkbox" style="${cb}"><div><b>Tắt ${toOff.length} keyword chưa ra đơn</b> <span style="color:var(--stone)">(Currently=on · Suggestion=off)</span>${sub(toOff.map(k => _imprEsc(k.keyword)))}<div style="font-size:0.72rem;color:var(--stone);margin-top:3px">→ gạt <b>Commit</b> các keyword này về <b>off</b> ở bảng Keywords bên dưới.</div></div></li>`);
+      if (toOn.length)
+        rows.push(`<li style="${liS}"><input type="checkbox" style="${cb}"><div><b>Bật lại ${toOn.length} keyword từng ra doanh thu</b> <span style="color:var(--stone)">(Currently=off · Suggestion=on)</span>${sub(toOn.map(k => _imprEsc(k.keyword)))}</div></li>`);
+      if (act !== 'keep') {
+        const fix = (d.scenario_fix_listing || '').split('\n').map(s => s.replace(/^[\-•\s]+/, '').trim()).filter(Boolean);
+        if (fix.length)
+          rows.push(`<li style="${liS}"><input type="checkbox" style="${cb}"><div><b>Tối ưu lại listing:</b>${sub(fix.map(_imprEsc))}</div></li>`);
+      }
+
+      const nothing = act === 'keep' && !toOff.length && !toOn.length;
+      const body = nothing
+        ? `<div style="font-family:var(--font-sans);font-size:0.80rem;color:#4a8c60;padding:2px 0">✓ Đang tốt — không có việc cần làm cho kỳ này.</div>`
+        : `<ul style="margin:0;padding:0;list-style:none">${rows.join('')}</ul>`;
+
+      return `<div style="margin-bottom:12px;padding:12px 14px;background:rgba(192,113,74,0.05);border:1px solid rgba(192,113,74,0.22);border-radius:8px">
+        <div style="font-family:var(--font-sans);font-size:0.72rem;font-weight:700;color:var(--terracotta);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:4px">✅ Checklist tối ưu</div>
+        ${body}
+      </div>`;
+    }
+
+    function _imprDetailBody(d, groupKey) {
       const _sectionStyle = {
         'Root Cause': { bg: 'rgba(181,51,51,0.05)', border: 'rgba(181,51,51,0.18)', label: '#b53333' },
         'Fix Listing': { bg: 'rgba(74,140,96,0.05)', border: 'rgba(74,140,96,0.18)', label: '#4a8c60' },
@@ -2294,30 +2330,20 @@
         }).join('')
         : `<div style="padding:16px 10px;font-family:var(--font-sans);font-size:0.80rem;color:var(--stone);font-style:italic;text-align:center;border:1px dashed var(--border-cream);border-radius:6px">No scenario mapping for this period.</div>`;
 
-      const extras = withExtras
-        ? (_imprKeywordTable(d, groupKey) + _imprHistoryTable(d.history, groupKey) + _imprActionLog(d, groupKey))
-        : '';
-
+      const extras = _imprKeywordTable(d, groupKey) + _imprHistoryTable(d.history, groupKey) + _imprActionLog(d, groupKey);
       const periodTag = d.period ? `<span style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:0.68rem;color:var(--stone);font-weight:400;text-transform:none;letter-spacing:0">${_imprEsc(d.period)}</span>` : '';
-      const detailCombined = `<div style="min-width:0">${detailBody}</div>`;
 
-      return `<tr class="impr-sub-row impr-sub-${groupKey}" style="display:none">
-        <td colspan="14" style="padding:0;border-top:1px solid var(--border-cream);border-bottom:2px solid var(--border-cream);background:var(--warm-sand)">
-          <div style="position:sticky;left:0;background:var(--warm-sand);padding:14px 16px 18px;box-sizing:border-box;width:calc(100vw - 56px);max-width:1384px">
-            <details class="impr-fold">
-              <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:rgba(232,230,220,0.7);border-bottom:1px solid var(--border-cream);user-select:none">
-                <span style="display:flex;align-items:center;gap:8px;min-width:0">
-                  <span class="impr-fold-caret" style="display:inline-block;font-size:0.76rem;color:var(--terracotta);transition:transform 0.15s;flex:0 0 auto">▸</span>
-                  <span style="font-family:var(--font-sans);font-size:0.72rem;font-weight:600;color:var(--stone);letter-spacing:0.02em;text-transform:uppercase">Details</span>
-                </span>
-                ${periodTag}
-              </summary>
-              <div class="impr-fold-body" style="padding:10px 12px;background:var(--parchment)">${detailCombined}</div>
-            </details>
-            <div id="impr-extras-${groupKey}" data-group-key="${groupKey}">${extras}</div>
-          </div>
-        </td>
-      </tr>`;
+      return `<details class="impr-fold">
+          <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:rgba(232,230,220,0.7);border:1px solid var(--border-cream);border-radius:8px;user-select:none">
+            <span style="display:flex;align-items:center;gap:8px;min-width:0">
+              <span class="impr-fold-caret" style="display:inline-block;font-size:0.76rem;color:var(--terracotta);transition:transform 0.15s;flex:0 0 auto">▸</span>
+              <span style="font-family:var(--font-sans);font-size:0.72rem;font-weight:600;color:var(--stone);letter-spacing:0.02em;text-transform:uppercase">Details</span>
+            </span>
+            ${periodTag}
+          </summary>
+          <div class="impr-fold-body" style="padding:10px 12px;background:var(--parchment)"><div style="min-width:0">${_imprChecklist(d, groupKey)}${detailBody}</div></div>
+        </details>
+        <div id="impr-extras-${groupKey}" data-group-key="${groupKey}">${extras}</div>`;
     }
 
     // ── Optimization action log (Phase 1) ──────────────
@@ -2329,43 +2355,106 @@
     ];
     const _OPT_LABEL = Object.fromEntries(_OPT_ACTIONS);
 
+    const _IMPACT_METRICS = [
+      { key: 'net', label: 'Rev-Spend($)' },
+      { key: 'spend', label: 'Spend ($)' }, { key: 'clicks', label: 'Clicks' },
+      { key: 'views', label: 'Views' }, { key: 'orders', label: 'Orders' },
+      { key: 'revenue', label: 'Revenue ($)' }, { key: 'roas', label: 'ROAS (x)' },
+    ];
+    const _optCharts = {};
+
     function _imprActionLog(d, groupKey) {
       const lid = d.listing_id || '';
       const opts = _OPT_ACTIONS.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+      const metricOpts = _IMPACT_METRICS.map(m => `<option value="${m.key}"${m.key === 'net' ? ' selected' : ''}>${m.label}</option>`).join('');
       const inp = 'font-family:var(--font-sans);font-size:0.8rem;padding:7px 9px;border:1px solid var(--border-cream);border-radius:6px;background:var(--ivory);outline:none';
-      const form = `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px">
-          <select id="optlog-action-${groupKey}" style="${inp}">${opts}</select>
-          <input id="optlog-kw-${groupKey}" placeholder="keyword (nếu có)" style="${inp};width:150px">
-          <input id="optlog-note-${groupKey}" placeholder="Ghi chú (vd: đổi title cho rõ keyword)" style="${inp};flex:1;min-width:160px">
-          <button onclick="optLogSave('${groupKey}','${lid}')" style="font-family:var(--font-sans);font-size:0.8rem;font-weight:600;color:#fff;background:var(--terracotta);border:none;border-radius:6px;padding:8px 16px;cursor:pointer">Ghi nhận</button>
-        </div>
-        <div id="optlog-list-${groupKey}" data-lid="${lid}" style="font-family:var(--font-sans);font-size:0.78rem;color:var(--stone)">…</div>`;
-      const body = `<div style="padding:10px 12px;background:var(--parchment);border:1px solid var(--border-cream);border-radius:8px">${form}</div>`;
       return `<div style="margin-top:14px">
-          <p style="font-family:var(--font-sans);font-size:0.72rem;font-weight:600;color:var(--stone);letter-spacing:0.02em;text-transform:uppercase;margin-bottom:8px">Tối ưu — Ghi nhận &amp; lịch sử</p>
-          ${body}
-        </div>`;
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px">
+          <p style="font-family:var(--font-sans);font-size:0.72rem;font-weight:600;color:var(--stone);letter-spacing:0.02em;text-transform:uppercase;margin:0">Keyword Track change</p>
+          <span style="flex:1 1 auto"></span>
+          <span style="font-size:0.72rem;color:var(--stone)">Chỉ số của listing</span>
+          <select id="optchart-metric-${groupKey}" class="impr-select" onchange="optLogLoad('${groupKey}')">${metricOpts}</select>
+        </div>
+        <div style="position:relative;height:240px;background:var(--parchment);border:1px solid var(--border-cream);border-radius:8px;padding:8px 8px 4px"><canvas id="optchart-${groupKey}"></canvas></div>
+        <p style="font-size:0.7rem;color:var(--stone);margin:6px 0 0">▲ đỏ = mốc đổi keyword (rê vào xem chi tiết). Mặc định <b>Rev-Spend($)</b> = Revenue − Spend (đổi chỉ số ở góc phải). Bật/tắt keyword ảnh hưởng rõ nhất tới Spend &amp; Rev-Spend($). (Tương quan, tham khảo.)</p>
+        <div id="optlog-list-${groupKey}" data-lid="${lid}" style="margin-top:8px;font-family:var(--font-sans);font-size:0.75rem;color:var(--stone);max-height:150px;overflow:auto"></div>
+      </div>`;
+    }
+
+    function _imprFindByKey(key) {
+      const groups = _imprGroup(LISTINGS);
+      for (const g of groups) { const d = g[0]; if ((d.listing_id || '').replace(/[^a-zA-Z0-9]/g, '') === key) return d; }
+      return null;
+    }
+
+    function _imprRenderImpactChart(groupKey, history, logs, metric) {
+      const canvas = document.getElementById('optchart-' + groupKey);
+      if (!canvas) return;
+      if (typeof Chart === 'undefined') { canvas.parentElement.innerHTML = '<p style="font-size:0.78rem;color:var(--stone);text-align:center;padding:24px">Cần internet để tải biểu đồ.</p>'; return; }
+      const hist = (history || []).filter(h => h && h.period);
+      const histByDate = {}; hist.forEach(h => { histByDate[h.period] = h; });
+      const byDate = {};
+      (logs || []).forEach(r => { const dt = (r.created_at || '').slice(0, 10); if (!dt) return; (byDate[dt] = byDate[dt] || []).push(r); });
+      // x-axis = union of data days + commit days (so change-flags show even after the last data point)
+      const labels = Array.from(new Set([...Object.keys(histByDate), ...Object.keys(byDate)])).sort();
+      const series = labels.map(lab => {
+        const h = histByDate[lab]; if (!h) return null;
+        if (metric === 'net') return Number(h.revenue || 0) - Number(h.spend || 0);
+        const v = h[metric]; return (v == null || v === '') ? null : Number(v);
+      });
+      const flagInfo = {};
+      const flagData = labels.map((lab, i) => {
+        if (!byDate[lab]) return null;
+        flagInfo[lab] = byDate[lab].map(r => (_OPT_LABEL[r.action] || r.action) + (r.keyword ? (' · ' + r.keyword) : '')).join('; ');
+        return series[i] != null ? series[i] : 0;
+      });
+      const mlabel = (_IMPACT_METRICS.find(m => m.key === metric) || {}).label || metric;
+      if (_optCharts[groupKey]) { try { _optCharts[groupKey].destroy(); } catch (e) {} }
+      _optCharts[groupKey] = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: mlabel, data: series, borderColor: '#c96442', backgroundColor: 'rgba(201,100,66,0.10)', borderWidth: 2, tension: 0.25, pointRadius: 2, fill: true, spanGaps: true, order: 2 },
+            { label: 'Đổi keyword', data: flagData, type: 'line', showLine: false, pointStyle: 'triangle', pointRadius: (c) => (c.raw == null ? 0 : 8), pointHoverRadius: 11, backgroundColor: '#b53333', borderColor: '#b53333', order: 1 },
+          ],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, interaction: { mode: 'nearest', intersect: false },
+          plugins: {
+            legend: { labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: { callbacks: { label: (ctx) => {
+              if (ctx.dataset.label === 'Đổi keyword') { return (ctx.raw == null) ? '' : ('Đổi: ' + (flagInfo[ctx.label] || '')); }
+              return mlabel + ': ' + ctx.formattedValue;
+            } } },
+          },
+          scales: { x: { ticks: { maxRotation: 0, autoSkip: true, font: { size: 10 } } }, y: { beginAtZero: metric !== 'net', ticks: { font: { size: 10 } } } },
+        },
+      });
     }
 
     async function optLogLoad(groupKey) {
       const el = document.getElementById('optlog-list-' + groupKey);
       if (!el) return;
       const lid = el.dataset.lid;
+      let rows = [];
       try {
         const res = await authFetch('/api/v1/optimization-log?listing_id=' + encodeURIComponent(lid));
-        const rows = await res.json();
-        if (!Array.isArray(rows) || !rows.length) { el.innerHTML = '<span style="font-style:italic">Chưa ghi nhận tối ưu nào cho listing này.</span>'; return; }
-        el.innerHTML = rows.map(r => {
-          const dt = r.created_at ? new Date(r.created_at).toLocaleString('vi-VN') : '';
-          const kw = r.keyword ? ` · <span style="font-family:var(--font-mono)">${_imprEsc(r.keyword)}</span>` : '';
-          const note = r.note ? ` — ${_imprEsc(r.note)}` : '';
-          return `<div style="display:flex;align-items:baseline;gap:8px;padding:5px 0;border-top:1px solid var(--border-cream)">
-              <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--stone);flex:0 0 auto">${dt}</span>
-              <span style="flex:1;color:var(--charcoal)"><strong style="color:var(--terracotta)">${_OPT_LABEL[r.action] || r.action}</strong>${kw}${note}</span>
-              <span onclick="optLogDelete(${r.id},'${groupKey}')" title="Xoá" style="cursor:pointer;color:var(--stone);font-size:0.8rem;flex:0 0 auto">✕</span>
-            </div>`;
-        }).join('');
-      } catch { el.innerHTML = '<span style="color:#b53333">Không tải được lịch sử.</span>'; }
+        rows = await res.json(); if (!Array.isArray(rows)) rows = [];
+      } catch { rows = []; }
+      el.innerHTML = rows.length ? rows.map(r => {
+        const dt = r.created_at ? new Date(r.created_at).toLocaleDateString('vi-VN') : '';
+        const kw = r.keyword ? ' · <span style="font-family:var(--font-mono)">' + _imprEsc(r.keyword) + '</span>' : '';
+        return `<div style="display:flex;align-items:baseline;gap:8px;padding:3px 0">
+            <span style="font-family:var(--font-mono);font-size:0.68rem;color:var(--stone);flex:0 0 auto">${dt}</span>
+            <span style="flex:1;color:var(--charcoal)"><strong style="color:var(--terracotta)">${_OPT_LABEL[r.action] || r.action}</strong>${kw}</span>
+            <span onclick="optLogDelete(${r.id},'${groupKey}')" title="Xoá" style="cursor:pointer;color:var(--stone);flex:0 0 auto">✕</span>
+          </div>`;
+      }).join('') : '<span style="font-style:italic">Chưa ghi nhận thay đổi nào — gạt Commit ở bảng Keywords hoặc dùng form trên.</span>';
+      const d = _imprFindByKey(groupKey);
+      const msel = document.getElementById('optchart-metric-' + groupKey);
+      const metric = (msel && msel.value) || 'net';
+      _imprRenderImpactChart(groupKey, d ? (d.history || []) : [], rows, metric);
     }
 
     async function optLogSave(groupKey, listingId) {
@@ -2393,37 +2482,33 @@
     }
 
     function _imprRenderRows() {
-      // Snapshot which sub-rows are currently open so we can restore after re-render.
+      // Snapshot which cards are currently expanded so we can restore after re-render.
       const openKeys = new Set();
-      document.querySelectorAll('tr[class*="impr-sub-"]').forEach(r => {
-        if (r.style.display !== 'none') {
-          const match = r.className.match(/impr-sub-([A-Za-z0-9]+)/);
-          if (match) openKeys.add(match[1]);
-        }
+      document.querySelectorAll('.impr-card').forEach(card => {
+        const det = card.querySelector('.impr-card-detail');
+        if (det && det.style.display !== 'none') openKeys.add(card.dataset.groupKey);
       });
 
       const visible = _imprFiltered.slice(0, _imprPage);
       const html = visible.map(group => {
         const latest = group[0];
         const key = (latest.listing_id || '').replace(/[^a-zA-Z0-9]/g, '');
-        let out = _imprMetricRow(latest, { isMain: true, groupKey: key });
-        out += _imprDetailRow(latest, key, true);
-        return out;
+        return _imprCard(latest, key);
       }).join('');
-      document.getElementById('imprTableBody').innerHTML = html || `<tr><td colspan="14" style="text-align:center;padding:36px 24px">
+      document.getElementById('imprCards').innerHTML = html || `<div style="text-align:center;padding:36px 24px;border:1px dashed var(--border-cream);border-radius:12px">
         <p style="font-family:var(--font-sans);font-size:0.95rem;color:var(--charcoal);margin-bottom:8px">No listing data yet.</p>
         <p style="font-family:var(--font-sans);font-size:0.82rem;color:var(--stone);margin-bottom:16px">Import your Etsy Ads report to see which listings are profitable — and what to do next.</p>
         <button onclick="_perfPillClick('import')" style="font-family:var(--font-sans);font-size:0.85rem;font-weight:500;color:var(--ivory);background:var(--terracotta);border:none;border-radius:8px;padding:9px 20px;cursor:pointer">Import Etsy Ads Report →</button>
-      </td></tr>`;
+      </div>`;
 
-      // Restore open state for sub-rows that were visible before re-render.
+      // Restore expanded cards.
       openKeys.forEach(key => {
-        document.querySelectorAll(`tr.impr-sub-${key}`).forEach(r => { r.style.display = ''; });
-        const caretRow = document.querySelector(`tr[data-group-key="${key}"]`);
-        if (caretRow) {
-          const caret = caretRow.querySelector('.impr-caret');
-          if (caret) caret.style.transform = 'rotate(90deg)';
-        }
+        const card = document.querySelector(`.impr-card[data-group-key="${key}"]`);
+        if (!card) return;
+        const det = card.querySelector('.impr-card-detail');
+        const caret = card.querySelector('.impr-caret');
+        if (det) det.style.display = 'block';
+        if (caret) caret.style.transform = 'rotate(90deg)';
         optLogLoad(key);
       });
 
@@ -2437,18 +2522,28 @@
       document.getElementById('imprCount').textContent = `Showing ${Math.min(_imprPage, _imprFiltered.length)} / ${_imprFiltered.length} listings`;
     }
 
-    function imprToggle(key, caretTd) {
-      const rows = document.querySelectorAll(`tr.impr-sub-${key}`);
-      if (!rows.length) return;
-      const hidden = rows[0].style.display === 'none';
-      rows.forEach(r => { r.style.display = hidden ? '' : 'none'; });
-      const caret = caretTd.querySelector('.impr-caret');
+    function imprToggle(key, headEl) {
+      const card = (headEl && headEl.closest('.impr-card')) || document.querySelector(`.impr-card[data-group-key="${key}"]`);
+      if (!card) return;
+      const det = card.querySelector('.impr-card-detail');
+      const caret = card.querySelector('.impr-caret');
+      const hidden = det.style.display === 'none';
+      det.style.display = hidden ? 'block' : 'none';
       if (caret) caret.style.transform = hidden ? 'rotate(90deg)' : '';
       if (hidden) optLogLoad(key);  // lazy-load optimization history when expanded
     }
 
+    function _imprPopulateProductFilter() {
+      const sel = document.getElementById('fProd'); if (!sel) return;
+      const prev = sel.value;
+      const prods = Array.from(new Set(LISTINGS.map(d => d.product).filter(Boolean))).sort();
+      sel.innerHTML = '<option value="all">Product: All</option>' + prods.map(pp => `<option value="${_imprEsc(pp)}">${_imprEsc(pp)}</option>`).join('');
+      if (prev && (prev === 'all' || prods.includes(prev))) sel.value = prev;
+    }
+
     function renderImprTable() {
       _imprPage = 10;
+      _imprPopulateProductFilter();
       _imprApplyFilters();
       _imprRenderRows();
     }
@@ -2503,7 +2598,7 @@
       setTimeout(() => { if (btn.disabled === false) btn.textContent = 'Refresh'; }, 4000);
     }
 
-    ['fProd', 'fCTR', 'fCR', 'fROAS', 'fVM'].forEach(id => {
+    ['fProd', 'fROAS', 'fVM'].forEach(id => {
       document.getElementById(id).addEventListener('change', renderImprTable);
     });
 
