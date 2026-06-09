@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hướng Dẫn Cài Đặt — GetifyCo Listing Portal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13pt;
+    line-height: 1.75;
+    color: #1a1a2e;
+    background: #fff;
+  }
+
+  /* ── Cover ── */
+  .cover {
+    page-break-after: always;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px 40px;
+    background: linear-gradient(160deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+    color: #fff;
+  }
+
+  .cover-logo {
+    font-size: 13pt;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #a0b4e8;
+    margin-bottom: 32px;
+  }
+
+  .cover h1 {
+    font-size: 36pt;
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 16px;
+    color: #ffffff;
+  }
+
+  .cover h2 {
+    font-size: 16pt;
+    font-weight: 400;
+    color: #8899cc;
+    margin-bottom: 48px;
+  }
+
+  .cover-divider {
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, #4CAF50, #2196F3);
+    border-radius: 2px;
+    margin: 0 auto 48px;
+  }
+
+  .cover-meta {
+    font-size: 10pt;
+    color: #5566aa;
+    line-height: 2;
+  }
+
+  /* ── Page layout ── */
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 48px;
+  }
+
+  .section {
+    page-break-inside: avoid;
+    margin-bottom: 48px;
+  }
+
+  /* ── Section header ── */
+  .section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 9pt;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #6677bb;
+    margin-bottom: 10px;
+  }
+
+  .section-label::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 2px;
+    background: #6677bb;
+    border-radius: 1px;
+  }
+
+  h2.section-title {
+    font-size: 22pt;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+
+  .section-subtitle {
+    font-size: 11pt;
+    color: #667788;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e8ecf4;
+  }
+
+  /* ── Steps ── */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .step {
+    display: flex;
+    gap: 20px;
+    padding: 20px 0;
+    border-bottom: 1px solid #f0f2f8;
+  }
+
+  .step:last-child {
+    border-bottom: none;
+  }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1a1a2e, #2a3a6e);
+    color: #fff;
+    font-size: 13pt;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+  }
+
+  .step-num.green {
+    background: linear-gradient(135deg, #2E7D32, #4CAF50);
+  }
+
+  .step-content {
+    flex: 1;
+  }
+
+  .step-title {
+    font-size: 13pt;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+  }
+
+  .step-desc {
+    font-size: 11pt;
+    color: #445566;
+    line-height: 1.7;
+  }
+
+  /* ── Note / Warning boxes ── */
+  .note {
+    display: flex;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    margin: 16px 0;
+    font-size: 11pt;
+    line-height: 1.6;
+  }
+
+  .note-info {
+    background: #eef3ff;
+    border-left: 3px solid #2196F3;
+    color: #334466;
+  }
+
+  .note-warning {
+    background: #fff8e6;
+    border-left: 3px solid #f39c12;
+    color: #554422;
+  }
+
+  .note-success {
+    background: #edf7f0;
+    border-left: 3px solid #4CAF50;
+    color: #224433;
+  }
+
+  .note-icon {
+    font-size: 14pt;
+    flex-shrink: 0;
+    line-height: 1.5;
+  }
+
+  /* ── Code / path ── */
+  code {
+    font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+    font-size: 10pt;
+    background: #f0f2f8;
+    padding: 2px 7px;
+    border-radius: 4px;
+    color: #2a3a6e;
+  }
+
+  /* ── Link ── */
+  .link-block {
+    display: block;
+    padding: 12px 16px;
+    background: #f4f6fb;
+    border: 1px solid #dde2f0;
+    border-radius: 8px;
+    font-size: 10pt;
+    color: #1a1a2e;
+    text-decoration: none;
+    word-break: break-all;
+    margin: 10px 0;
+    font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+  }
+
+  .link-label {
+    display: block;
+    font-size: 9pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8899cc;
+    margin-bottom: 4px;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* ── Video callout ── */
+  .video-callout {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 10px;
+    margin: 20px 0;
+    color: #fff;
+    text-decoration: none;
+    page-break-inside: avoid;
+  }
+
+  .video-icon {
+    font-size: 24pt;
+    flex-shrink: 0;
+  }
+
+  .video-text strong {
+    display: block;
+    font-size: 12pt;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 2px;
+  }
+
+  .video-text span {
+    font-size: 9pt;
+    color: #7788bb;
+    word-break: break-all;
+  }
+
+  /* ── Page break ── */
+  .page-break { page-break-after: always; }
+
+  /* ── Divider ── */
+  .divider {
+    height: 1px;
+    background: #e4e8f4;
+    margin: 40px 0;
+  }
+
+  /* ── Requirements table ── */
+  .req-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11pt;
+    margin: 16px 0;
+  }
+
+  .req-table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: #f4f6fb;
+    border-bottom: 2px solid #dde2f0;
+    font-size: 10pt;
+    font-weight: 600;
+    color: #445566;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .req-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #eef0f8;
+    color: #334455;
+    vertical-align: top;
+  }
+
+  .req-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 9pt;
+    font-weight: 600;
+  }
+
+  .badge-required {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .badge-optional {
+    background: #f0fdf4;
+    color: #166534;
+  }
+
+  /* ── Print ── */
+  @media print {
+    .cover { min-height: 100vh; }
+    .page { padding: 40px 36px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     COVER
+══════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-logo">GetifyCo</div>
+  <h1>Hướng Dẫn<br>Cài Đặt</h1>
+  <h2>Listing Portal &amp; Extension</h2>
+  <div class="cover-divider"></div>
+  <div class="cover-meta">
+    Phiên bản App: 1.1.8 &nbsp;·&nbsp; Extension: 2.0.0<br>
+    Hỗ trợ: Windows 10/11 &nbsp;·&nbsp; Firefox 128+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE 1 — TỔNG QUAN
+══════════════════════════════════════ -->
+<div class="page">
+
+  <div class="section">
+    <div class="section-label">Tổng quan</div>
+    <h2 class="section-title">Bộ công cụ gồm 2 phần</h2>
+    <p class="section-subtitle">
+      Để sử dụng GetifyCo, bạn cần cài đặt cả hai thành phần bên dưới.
+      Mỗi phần có vai trò riêng và bổ trợ lẫn nhau.
+    </p>
+
+    <table class="req-table">
+      <thead>
+        <tr>
+          <th>Thành phần</th>
+          <th>Vai trò</th>
+          <th>Yêu cầu</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>GetifyCo Listing Portal</strong><br><span style="color:#8899cc;font-size:10pt">Ứng dụng desktop</span></td>
+          <td>Xem báo cáo, phân tích hiệu suất listing và keyword trên Etsy Ads</td>
+          <td><span class="badge badge-required">Bắt buộc</span></td>
+        </tr>
+        <tr>
+          <td><strong>EtseeMate Ads Spy</strong><br><span style="color:#8899cc;font-size:10pt">Extension Firefox</span></td>
+          <td>Tự động thu thập dữ liệu Ads khi bạn duyệt Etsy — ghi vào cơ sở dữ liệu để app phân tích</td>
+          <td><span class="badge badge-required">Bắt buộc</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note note-info">
+      <span class="note-icon">ℹ</span>
+      <div>
+        Bạn nên cài Extension trước, sau đó cài App. Thứ tự này giúp dữ liệu đầu tiên được ghi nhận
+        ngay khi bạn hoàn tất cài đặt.
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── PHẦN 1: EXTENSION ── -->
+  <div class="section">
+    <div class="section-label">Phần 1</div>
+    <h2 class="section-title">Cài Đặt Extension</h2>
+    <p class="section-subtitle">
+      Extension chạy trên Firefox và hoạt động âm thầm trong nền — bạn không cần thao tác thêm
+      sau khi cài xong. Mỗi lần bạn mở trang Etsy Ads, dữ liệu sẽ tự động được ghi lại.
+    </p>
+
+    <a class="video-callout" href="https://drive.google.com/file/d/1S7rx1EegJ482Ra7Jy5_MzMmurvFVdWF_/view?usp=sharing" target="_blank">
+      <span class="video-icon">▶</span>
+      <div class="video-text">
+        <strong>Video hướng dẫn — Cài đặt Extension</strong>
+        <span>https://drive.google.com/file/d/1S7rx1EegJ482Ra7Jy5_MzMmurvFVdWF_/view?usp=sharing</span>
+      </div>
+    </a>
+
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num green">1</div>
+        <div class="step-content">
+          <div class="step-title">Tải file Extension</div>
+          <div class="step-desc">
+            Nhấp vào đường dẫn bên dưới để tải file <code>.xpi</code> về máy.
+            Trình duyệt sẽ hỏi bạn muốn lưu file ở đâu — hãy chọn bất kỳ vị trí nào dễ tìm.
+          </div>
+          <div style="margin-top:10px">
+            <span class="link-label">Link tải Extension</span>
+            <span class="link-block">https://github.com/Hiienng/nguyenphamdieuhien/releases/download/extension/getifyco-extension.xpi</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num green">2</div>
+        <div class="step-content">
+          <div class="step-title">Mở trang quản lý Add-on trong Firefox</div>
+          <div class="step-desc">
+            Trên Firefox, nhập địa chỉ sau vào thanh URL rồi nhấn Enter:
+          </div>
+          <div style="margin-top:8px"><code>about:addons</code></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num green">3</div>
+        <div class="step-content">
+          <div class="step-title">Cài từ file</div>
+          <div class="step-desc">
+            Trong trang Add-ons, nhấp vào biểu tượng bánh răng <strong>⚙</strong>
+            (góc trên bên phải), chọn <strong>"Install Add-on From File…"</strong>,
+            sau đó chọn file <code>.xpi</code> bạn vừa tải.
+            Firefox sẽ hỏi xác nhận — nhấn <strong>Add</strong>.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num green">4</div>
+        <div class="step-content">
+          <div class="step-title">Cấu hình kết nối</div>
+          <div class="step-desc">
+            Sau khi cài, biểu tượng Extension xuất hiện trên thanh công cụ Firefox.
+            Nhấp vào để mở popup, chọn <strong>Settings</strong>, điền thông tin kết nối
+            được cung cấp bởi GetifyCo, rồi nhấn <strong>Save</strong>.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num green">5</div>
+        <div class="step-content">
+          <div class="step-title">Kiểm tra hoạt động</div>
+          <div class="step-desc">
+            Mở trang <code>etsy.com</code> và truy cập mục Ads Manager.
+            Quay lại popup Extension — nếu thấy dòng <strong>"Ready"</strong> và
+            số lượng responses tăng lên, Extension đã hoạt động đúng.
+          </div>
+          <div class="note note-success" style="margin-top:12px">
+            <span class="note-icon">✓</span>
+            <div>Extension hoạt động âm thầm — bạn không cần mở popup mỗi lần dùng. Chỉ cần để Firefox mở và duyệt Etsy như bình thường.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE 2 — APP
+══════════════════════════════════════ -->
+<div class="page-break"></div>
+<div class="page">
+
+  <div class="section">
+    <div class="section-label">Phần 2</div>
+    <h2 class="section-title">Cài Đặt Ứng Dụng</h2>
+    <p class="section-subtitle">
+      GetifyCo Listing Portal là ứng dụng desktop chạy trực tiếp trên máy tính Windows.
+      Không cần cài thêm Python hay bất kỳ phần mềm nào khác — chỉ cần giải nén và chạy.
+    </p>
+
+    <a class="video-callout" href="https://drive.google.com/file/d/1LfscSOHxzPDVIb5hffoyjCKBuk57uLFf/view?usp=sharing" target="_blank">
+      <span class="video-icon">▶</span>
+      <div class="video-text">
+        <strong>Video hướng dẫn — Cài đặt Ứng dụng</strong>
+        <span>https://drive.google.com/file/d/1LfscSOHxzPDVIb5hffoyjCKBuk57uLFf/view?usp=sharing</span>
+      </div>
+    </a>
+
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Tải file cài đặt</div>
+          <div class="step-desc">
+            Nhấp vào đường dẫn bên dưới để tải file <code>.zip</code> về máy.
+          </div>
+          <div style="margin-top:10px">
+            <span class="link-label">Link tải App (Windows)</span>
+            <span class="link-block">https://github.com/Hiienng/nguyenphamdieuhien/releases/latest/download/getifyco-listing-portal-windows.zip</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Giải nén toàn bộ file</div>
+          <div class="step-desc">
+            Nhấp chuột phải vào file <code>.zip</code> vừa tải, chọn
+            <strong>"Extract All…"</strong> và chọn thư mục lưu trữ
+            (ví dụ: <code>C:\GetifyCo\</code>).
+          </div>
+          <div class="note note-warning" style="margin-top:12px">
+            <span class="note-icon">⚠</span>
+            <div>
+              <strong>Không chạy file trực tiếp từ bên trong file .zip.</strong>
+              Bạn phải giải nén ra trước — nếu chạy từ trong .zip, ứng dụng sẽ báo lỗi
+              thiếu thư mục <code>_internal</code>.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Chạy ứng dụng</div>
+          <div class="step-desc">
+            Vào thư mục vừa giải nén, tìm file <code>getifyco-listing-portal.exe</code>
+            và nhấp đúp để chạy.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">Xử lý cảnh báo Windows SmartScreen</div>
+          <div class="step-desc">
+            Windows có thể hiển thị thông báo <em>"Windows protected your PC"</em>.
+            Đây là cảnh báo thông thường với phần mềm chưa được ký số.
+            Nhấn <strong>"More info"</strong> → <strong>"Run anyway"</strong> để tiếp tục.
+          </div>
+          <div class="note note-info" style="margin-top:12px">
+            <span class="note-icon">ℹ</span>
+            <div>Cảnh báo này chỉ xuất hiện lần đầu. Từ lần thứ hai, bạn chỉ cần nhấp đúp vào file <code>.exe</code> là ứng dụng khởi động ngay.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <div class="step-title">Nhập thông tin kết nối cơ sở dữ liệu</div>
+          <div class="step-desc">
+            Khi ứng dụng khởi động lần đầu, trình duyệt sẽ tự mở trang app.
+            Nhấp vào biểu tượng <strong>⚙ Settings</strong>, điền chuỗi kết nối
+            được cung cấp bởi GetifyCo vào ô <strong>Database connection (Neon)</strong>,
+            rồi nhấn <strong>Lưu</strong>.
+          </div>
+          <div class="note note-success" style="margin-top:12px">
+            <span class="note-icon">✓</span>
+            <div>Thông tin kết nối chỉ cần nhập một lần duy nhất — ứng dụng lưu lại trên máy bạn và tự động dùng lại từ lần mở sau.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">6</div>
+        <div class="step-content">
+          <div class="step-title">Sử dụng ứng dụng</div>
+          <div class="step-desc">
+            Sau khi kết nối thành công, trang dashboard sẽ tải dữ liệu listing
+            và hiển thị báo cáo hiệu suất. Cửa sổ console nhỏ trên thanh taskbar
+            là máy chủ nội bộ của ứng dụng — hãy để thu nhỏ, không cần đóng.
+            Khi muốn thoát hoàn toàn, đóng cửa sổ console đó.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ── Câu hỏi thường gặp ── -->
+  <div class="section">
+    <div class="section-label">Hỗ trợ</div>
+    <h2 class="section-title">Câu Hỏi Thường Gặp</h2>
+
+    <table class="req-table" style="margin-top:16px">
+      <thead>
+        <tr>
+          <th>Tình huống</th>
+          <th>Cách xử lý</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>App báo lỗi thiếu <code>_internal</code></td>
+          <td>Giải nén file <code>.zip</code> ra thư mục riêng trước khi chạy</td>
+        </tr>
+        <tr>
+          <td>Trang trắng sau khi mở app</td>
+          <td>Chờ 5–10 giây để server khởi động, rồi tải lại trang (F5)</td>
+        </tr>
+        <tr>
+          <td>Nút Lưu trong Settings bị treo</td>
+          <td>Kiểm tra lại chuỗi kết nối — phải bắt đầu bằng <code>postgresql://</code></td>
+        </tr>
+        <tr>
+          <td>Extension không ghi dữ liệu</td>
+          <td>Mở popup Extension → Settings → kiểm tra thông tin kết nối và nhấn Test</td>
+        </tr>
+        <tr>
+          <td>Dashboard không có dữ liệu</td>
+          <td>Đảm bảo Extension đã chạy và đã duyệt qua trang Etsy Ads ít nhất một lần</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+</body>
+</html>

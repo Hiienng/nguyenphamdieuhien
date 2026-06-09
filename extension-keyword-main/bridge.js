@@ -1,5 +1,5 @@
 // ===========================================================================
-// Getify Ads Spy — ISOLATED World Bridge
+// EtseeMate Ads Spy — ISOLATED World Bridge
 // Receives camouflaged postMessages from MAIN world interceptor,
 // validates them, decodes obfuscated keys, and relays to Service Worker.
 // ===========================================================================

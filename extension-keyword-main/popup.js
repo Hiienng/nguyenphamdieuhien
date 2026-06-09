@@ -1,15 +1,14 @@
 // ===========================================================================
-// Getify Ads Spy — Popup Logic
+// EtseeMate Ads Spy — Popup Logic
 // Reads captured sessions from storage, renders UI, handles export/clear.
 // ===========================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
   // --- SETTINGS ELEMENTS ---
   const settingsPanel = document.getElementById("settings-panel");
-  const settingsToggle = document.getElementById("settings-toggle");
-  const settingsArrow = document.getElementById("settings-arrow");
-  const settingsBody = document.getElementById("settings-body");
-  const inputDbConn = document.getElementById("input-db-conn");
+  const btnSettingsClose = document.getElementById("btn-settings-close");
+  const inputApiUrl = document.getElementById("input-api-url");
+  const inputToken = document.getElementById("input-token");
   const inputVmName = document.getElementById("input-vm-name");
   const btnSaveConfig = document.getElementById("btn-save-config");
 
@@ -40,8 +39,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnMarkKeywordDone = document.getElementById("btn-mark-keyword-done");
   const btnResetKeywordQueue = document.getElementById("btn-reset-keyword-queue");
 
-  const KEYWORD_QUEUE_STORAGE_KEY = "getify_keyword_queue_v1";
-  const KEYWORD_TEMPLATE_STORAGE_KEY = "getify_keyword_url_template_v1";
+  const KEYWORD_QUEUE_STORAGE_KEY = "EtseeMate_keyword_queue_v1";
+  const KEYWORD_TEMPLATE_STORAGE_KEY = "EtseeMate_keyword_url_template_v1";
   const DEFAULT_KEYWORD_URL_TEMPLATE =
     "https://www.etsy.com/your/shops/me/advertising/listings/{listing_id}";
 
@@ -160,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const result = {
       metadata: {
         exported_at: new Date().toISOString(),
-        source: "Getify Ads Spy Extension",
+        source: "EtseeMate Ads Spy Extension",
         raw_responses_count: sessions.length,
         date_range: {
           start: null,
@@ -281,7 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     fillDerivedSummary(result);
 
-    console.log("[Getify] daily rows raw:", result.listing_daily_rows ? result.listing_daily_rows.length : 0,
+    console.log("[EtseeMate] daily rows raw:", result.listing_daily_rows ? result.listing_daily_rows.length : 0,
       "| sessions with graphStats:", sessions.filter(s => {
         const b = s && s.body;
         return b && (Array.isArray(b.graphStats) || (b.data && Array.isArray(b.data.graphStats)));
@@ -316,7 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function buildListingReportRows(cleanData, options) {
     const opts = options || {};
-    const importer = opts.importer || "getify_json";
+    const importer = opts.importer || "EtseeMate_json";
 
     const metadataRange =
       (cleanData.metadata && cleanData.metadata.date_range) || {};
@@ -344,7 +343,6 @@ document.addEventListener("DOMContentLoaded", () => {
       rows.push({
         listing_id: String(item.listing_id || ""),
         title: item.title || "",
-        image_url: item.image_url || null,
         no_vm: vmName,
         price: centsToDecimal(item.price_cents || 0),
         stock: toInt(item.quantity),
@@ -372,7 +370,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function buildKeywordReportRows(cleanData, options) {
     const opts = options || {};
-    const importer = opts.importer || "getify_json";
+    const importer = opts.importer || "EtseeMate_json";
 
     const rows = [];
     const keywords = cleanData.keywords || [];
@@ -508,7 +506,7 @@ document.addEventListener("DOMContentLoaded", () => {
         spend: (spendCents / 100).toFixed(2),
         roas: Number(roasVal || 0).toFixed(2),
         import_time: importTime,
-        importer: "getify_json_daily",
+        importer: "EtseeMate_json_daily",
       });
     }
   }
@@ -1382,7 +1380,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = `getify-ads-export-${ts}.json`;
+    a.download = `EtseeMate-ads-export-${ts}.json`;
     a.click();
     URL.revokeObjectURL(url);
   });
@@ -1452,27 +1450,32 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Database connection from storage
+    // Get API config from storage
     const config = await new Promise((resolve) => {
       chrome.runtime.sendMessage({ action: "GET_DB_CONFIG" }, resolve);
     });
-    if (!config || !config.connString) {
-      setDbStatus("Chưa nhập Database connection. Mở Settings để nhập.", "error");
-      settingsBody.classList.add("visible");
-      settingsArrow.classList.add("open");
+
+    const apiUrl = config && config.apiUrl ? config.apiUrl : "";
+    const token = config && config.token ? config.token : "";
+    if (!apiUrl || !token) {
+      setDbStatus(
+        "Chưa cấu hình API URL hoặc Token. Mở Settings để nhập.",
+        "error"
+      );
+      settingsPanel.classList.add("visible");
       return;
     }
 
     const originalLabel = btnAddDb.textContent;
     btnAddDb.disabled = true;
     btnAddDb.textContent = "Adding to DB...";
-    setDbStatus(`Đang ghi ${rows.length} dòng vào Neon...`, "info");
+    setDbStatus(`Sending ${rows.length} rows to backend...`, "info");
 
     try {
       const importer = getVmName();
       const response = await new Promise((resolve) => {
         chrome.runtime.sendMessage(
-          { action: "INGEST_LISTING", rows, importer },
+          { action: "INGEST_LISTING", rows, apiUrl, token, importer },
           resolve
         );
       });
@@ -1484,7 +1487,11 @@ document.addEventListener("DOMContentLoaded", () => {
       setDbStatus(`Inserted ${response.inserted || 0} rows into listing_report.`, "success");
     } catch (error) {
       const errMsg = String(error && error.message ? error.message : error);
-      setDbStatus("Insert failed: " + errMsg, "error");
+      const isAuthExpired = /401|Unauthorized|Invalid or expired token/i.test(errMsg);
+      const displayMsg = isAuthExpired
+        ? 'Token đã hết hạn. Hãy quay lại portal (/app), bấm "Copy Token" và paste lại vào Settings của extension.'
+        : "Insert failed: " + errMsg;
+      setDbStatus(displayMsg, "error");
     } finally {
       btnAddDb.textContent = originalLabel;
       btnAddDb.disabled = allSessions.length === 0;
@@ -1533,10 +1540,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const config = await new Promise((resolve) => {
       chrome.runtime.sendMessage({ action: "GET_DB_CONFIG" }, resolve);
     });
-    if (!config || !config.connString) {
-      setDbStatus("Chưa nhập Database connection. Mở Settings để nhập.", "error");
-      settingsBody.classList.add("visible");
-      settingsArrow.classList.add("open");
+
+    const apiUrl = config && config.apiUrl ? config.apiUrl : "";
+    const token = config && config.token ? config.token : "";
+    if (!apiUrl || !token) {
+      setDbStatus(
+        "Chưa cấu hình API URL hoặc Token. Mở Settings để nhập.",
+        "error"
+      );
+      settingsPanel.classList.add("visible");
       return;
     }
 
@@ -1544,7 +1556,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btnAddDbKeywords.disabled = true;
     btnAddDbKeywords.textContent = "Adding to DB...";
     setDbStatus(
-      `Đang ghi ${dailyRows.length} daily + ${keywordRows.length} keyword rows vào Neon...`,
+      `Sending ${dailyRows.length} daily + ${keywordRows.length} keyword rows to backend...`,
       "info"
     );
 
@@ -1556,7 +1568,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (dailyRows.length > 0) {
         const dailyResp = await new Promise((resolve) => {
           chrome.runtime.sendMessage(
-            { action: "INGEST_LISTING", rows: dailyRows, importer },
+            { action: "INGEST_LISTING", rows: dailyRows, apiUrl, token, importer },
             resolve
           );
         });
@@ -1569,7 +1581,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (keywordRows.length > 0) {
         const kwResp = await new Promise((resolve) => {
           chrome.runtime.sendMessage(
-            { action: "INGEST_KEYWORD", rows: keywordRows, importer },
+            { action: "INGEST_KEYWORD", rows: keywordRows, apiUrl, token, importer },
             resolve
           );
         });
@@ -1588,7 +1600,11 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     } catch (error) {
       const errMsg = String(error && error.message ? error.message : error);
-      setDbStatus("Insert failed: " + errMsg, "error");
+      const isAuthExpired = /401|Unauthorized|Invalid or expired token/i.test(errMsg);
+      const displayMsg = isAuthExpired
+        ? 'Token đã hết hạn. Hãy quay lại portal (/app), bấm "Copy Token" và paste lại vào Settings của extension.'
+        : "Insert failed: " + errMsg;
+      setDbStatus(displayMsg, "error");
     } finally {
       btnAddDbKeywords.textContent = originalLabel;
       btnAddDbKeywords.disabled = allSessions.length === 0;
@@ -1662,49 +1678,61 @@ document.addEventListener("DOMContentLoaded", () => {
   // SETTINGS PANEL
   // =====================================================================
 
-  // Toggle settings panel
-  settingsToggle.addEventListener("click", () => {
-    const isOpen = settingsBody.classList.contains("visible");
-    settingsBody.classList.toggle("visible");
-    settingsArrow.classList.toggle("open");
+  // --- SETTINGS MODAL ---
+  function openSettings() {
+    settingsPanel.classList.add("visible");
+    setTimeout(() => inputApiUrl.focus(), 50);
+  }
+  function closeSettings() {
+    settingsPanel.classList.remove("visible");
+  }
+
+  btnSettings.addEventListener("click", openSettings);
+  btnSettingsClose.addEventListener("click", closeSettings);
+
+  // Close when clicking outside the modal card
+  settingsPanel.addEventListener("click", (e) => {
+    if (e.target === settingsPanel) closeSettings();
   });
 
-  // Settings button in controls bar
-  btnSettings.addEventListener("click", () => {
-    const isOpen = settingsBody.classList.contains("visible");
-    settingsBody.classList.toggle("visible");
-    settingsArrow.classList.toggle("open");
-    if (!isOpen) {
-      inputDbConn.focus();
+  // Close on Escape
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && settingsPanel.classList.contains("visible")) {
+      closeSettings();
     }
   });
 
-  // Toggle connection-string visibility
+  // Toggle token visibility
   btnToggleVisibility.addEventListener("click", () => {
-    if (inputDbConn.type === "password") {
-      inputDbConn.type = "text";
-      btnToggleVisibility.textContent = "Hide";
-    } else {
-      inputDbConn.type = "password";
-      btnToggleVisibility.textContent = "👁️";
-    }
+    inputToken.type = inputToken.type === "password" ? "text" : "password";
+    btnToggleVisibility.style.color =
+      inputToken.type === "text" ? "var(--accent-orange)" : "";
   });
 
   // Save API config
   btnSaveConfig.addEventListener("click", () => {
-    const connString = inputDbConn.value.trim();
+    const apiUrl = inputApiUrl.value.trim();
+    const token = inputToken.value.trim();
     const vmName = (inputVmName && inputVmName.value || "").trim();
-    if (!connString) {
-      setSettingsStatus("Database connection không được để trống.", "error");
+    if (!apiUrl) {
+      setSettingsStatus("API URL không được để trống.", "error");
       return;
     }
-    if (!/^postgres(ql)?:\/\//.test(connString)) {
-      setSettingsStatus("Connection phải bắt đầu bằng postgresql://", "error");
+    if (!apiUrl.startsWith("http")) {
+      setSettingsStatus("API URL phải bắt đầu bằng http:// hoặc https://", "error");
+      return;
+    }
+    if (!token) {
+      setSettingsStatus("Token không được để trống.", "error");
+      return;
+    }
+    if (!vmName) {
+      setSettingsStatus("VM Code không được để trống (vd: VM08).", "error");
       return;
     }
 
     chrome.runtime.sendMessage(
-      { action: "SAVE_DB_CONFIG", data: { connString, vmName } },
+      { action: "SAVE_DB_CONFIG", data: { apiUrl, token, vmName } },
       (response) => {
         if (response && response.ok) {
           setSettingsStatus("Đã lưu cấu hình.", "success");
@@ -1719,34 +1747,35 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   });
 
-  // Test DB connection (Neon select 1 via background)
+  // Test API connection
   btnTestConn.addEventListener("click", async () => {
-    const connString = inputDbConn.value.trim();
-    if (!connString) {
-      setSettingsStatus("Nhập Database connection trước.", "error");
+    const apiUrl = inputApiUrl.value.trim();
+    const token = inputToken.value.trim();
+    if (!apiUrl || !token) {
+      setSettingsStatus("Nhập API URL và Token trước.", "error");
       return;
     }
-    // Persist first so background uses the latest value for the test.
-    await new Promise((resolve) => {
-      chrome.runtime.sendMessage(
-        { action: "SAVE_DB_CONFIG", data: { connString, vmName: (inputVmName && inputVmName.value || "").trim() } },
-        resolve
-      );
-    });
 
     btnTestConn.disabled = true;
     btnTestConn.textContent = "Testing...";
     setSettingsStatus("Đang kiểm tra kết nối...", "info");
 
-    chrome.runtime.sendMessage({ action: "TEST_DB_CONNECTION" }, (res) => {
-      if (res && res.ok) {
-        setSettingsStatus("Kết nối Neon OK.", "success");
+    try {
+      const res = await fetch(apiUrl.replace(/\/+$/, "") + "/api/v1/auth/me", {
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSettingsStatus(`Kết nối OK — ${data.email || "authenticated"}`, "success");
       } else {
-        setSettingsStatus("Kết nối thất bại: " + ((res && res.error) || "unknown"), "error");
+        setSettingsStatus(`Lỗi ${res.status}: Token không hợp lệ hoặc hết hạn.`, "error");
       }
+    } catch (e) {
+      setSettingsStatus("Kết nối thất bại: " + e.message, "error");
+    } finally {
       btnTestConn.disabled = false;
       btnTestConn.textContent = "Test Connection";
-    });
+    }
   });
 
   function setSettingsStatus(message, type) {
@@ -1789,15 +1818,23 @@ document.addEventListener("DOMContentLoaded", () => {
     saveKeywordUrlTemplate();
   });
 
-  // Load saved DB config on popup open
+  const DEFAULT_API_URL = "https://nguyenphamdieuhien.online";
+
+  // Load saved API config on popup open
   function loadDbConfig() {
     chrome.runtime.sendMessage({ action: "GET_DB_CONFIG" }, (response) => {
-      if (response && response.connString) inputDbConn.value = response.connString;
+      inputApiUrl.value = (response && response.apiUrl) || DEFAULT_API_URL;
+      if (response && response.token) inputToken.value = response.token;
       if (response && response.vmName && inputVmName) inputVmName.value = response.vmName;
     });
   }
 
   // --- INIT ---
+  try {
+    const ver = chrome.runtime.getManifest().version;
+    const el = document.getElementById("brand-version");
+    if (el) el.textContent = "v" + ver;
+  } catch (e) { /* noop */ }
   loadKeywordUrlTemplate();
   renderKeywordQueue();
   loadData();

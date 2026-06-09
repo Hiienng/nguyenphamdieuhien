@@ -1,5 +1,5 @@
 // ===========================================================================
-// Getify Ads Spy — MAIN World Interceptor
+// EtseeMate Ads Spy — MAIN World Interceptor
 // Injected via manifest.json "world": "MAIN" at document_start
 // NO DOM elements created. NO chrome.* APIs used. Completely invisible.
 // ===========================================================================
@@ -8,7 +8,7 @@
   "use strict";
 
   // --- CONFIG ---
-  var MSG_TYPE = "__RDT_UPD_a9f3c"; // Camouflaged as React DevTools internal update
+  var MSG_TYPE = "__RDT_UPD_a9f3c"; // Camouflaged as React DevTools EtseeMate update
 
   // URL patterns that indicate API calls worth capturing
   // TODO: Remove the "TEST MODE" entries after verifying the extension works
