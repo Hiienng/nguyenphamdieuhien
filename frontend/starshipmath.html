@@ -388,7 +388,7 @@
 
         .hero h1 {
             font-family: var(--font-title);
-            font-size: 3.5rem;
+            font-size: clamp(2.4rem, 12vw, 3.5rem);
             letter-spacing: 4px;
             margin-bottom: 10px;
             text-transform: uppercase;
@@ -576,6 +576,48 @@
             .download-card {
                 flex-direction: column;
                 text-align: center;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 0 14px;
+            }
+
+            header {
+                height: auto;
+                min-height: 64px;
+                padding: 10px 0;
+            }
+
+            .app-icon {
+                width: 32px;
+                height: 32px;
+            }
+
+            .logo-text {
+                font-size: 1rem;
+                letter-spacing: 0.5px;
+                white-space: nowrap;
+            }
+
+            .lang-selector {
+                gap: 3px;
+                padding: 3px;
+            }
+
+            .lang-btn {
+                padding: 3px 6px;
+                font-size: 0.6rem;
+            }
+
+            .title-accent-wrap {
+                padding: 6px 18px;
+            }
+
+            .title-accent {
+                font-size: 1.5rem;
+                letter-spacing: 4px;
             }
         }
 
