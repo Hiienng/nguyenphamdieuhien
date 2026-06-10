@@ -118,32 +118,35 @@ def upsert_extense(dsn: str, items: list[dict]):
             cur.execute("""
                 UPDATE listing_extense SET
                     price          = COALESCE(%s, price),
+                    original_price = COALESCE(%s, original_price),
                     title          = COALESCE(%s, title),
                     rating         = COALESCE(%s, rating),
                     badge          = COALESCE(%s, badge),
                     discount       = COALESCE(%s, discount),
                     review_count   = COALESCE(%s, review_count),
+                    shop_name      = COALESCE(%s, shop_name),
                     free_shipping  = %s,
                     import_date    = %s,
                     updated_at     = now()
                 WHERE id = %s
             """, (
-                item.get("price"), item.get("title"),
+                item.get("price"), item.get("original_price"), item.get("title"),
                 item.get("rating_score"), item.get("badge"),
                 item.get("discount"), item.get("review_count"),
+                item.get("shop"),
                 bool(item.get("free_shipping")), today, lid,
             ))
             updated += cur.rowcount
         else:
             cur.execute("""
                 INSERT INTO listing_extense
-                    (id, search_tag, product_type, title, price, shop_name,
-                     rating, review_count, badge, discount, free_shipping, is_ad,
-                     tag_ranking, url, import_date, importer)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'crawl_EtseeMate')
+                    (id, search_tag, product_type, title, price, original_price,
+                     shop_name, rating, review_count, badge, discount,
+                     free_shipping, is_ad, tag_ranking, url, import_date, importer)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'crawl_EtseeMate')
             """, (
                 lid, item.get("category"), item.get("category"),
-                item.get("title"), item.get("price"),
+                item.get("title"), item.get("price"), item.get("original_price"),
                 item.get("shop"), item.get("rating_score"),
                 item.get("review_count"), item.get("badge"),
                 item.get("discount"), bool(item.get("free_shipping")),
@@ -170,8 +173,110 @@ def fill_original_price(dsn: str) -> int:
     return n
 
 
-# ── JS extractor (search-result cards, ported from market_batch_scraper.py) ──
+# ── JS extractor — detail page (direct listing URL) ───────────────────────────
 
+DETAIL_EXTRACT_JS = """
+() => {
+    const clean = s => s ? s.replace(/\\s+/g,' ').trim() : '';
+    const parsePrice = (text) => {
+        if (!text) return null;
+        const t = text.trim();
+        const dots   = (t.match(/\\./g) || []).length;
+        const commas = (t.match(/,/g)  || []).length;
+        let n;
+        if (dots > 1)        n = t.replace(/\\./g,'').replace(/,/g,'.');
+        else if (commas > 1) n = t.replace(/,/g,'');
+        else if (dots===1 && commas===1)
+            n = t.lastIndexOf('.') > t.lastIndexOf(',')
+                ? t.replace(/,/g,'')
+                : t.replace(/\\./g,'').replace(',', '.');
+        else {
+            n = t.replace(/[^\\d.,]/g,'');
+            if (/\\.\\d{3}$/.test(n) && dots===1 && commas===0) n = n.replace('.','');
+        }
+        const v = parseFloat(n.replace(/[^\\d.]/g,''));
+        return isFinite(v) && v > 0 ? v : null;
+    };
+
+    const h1 = document.querySelector('h1');
+    const title = h1 ? clean(h1.textContent) : '';
+    if (!title) return null;  // not a listing page
+
+    // price (current/sale)
+    let priceText = '';
+    const priceSels = [
+        '[data-buy-box-region="price"] [class*="text-title"]',
+        '[data-buy-box-region="price"] [class*="currency"]',
+        '.wt-text-title-larger','.wt-text-title-03',
+        'span[class*="currency-value"]','span[class*="price-value"]',
+    ];
+    for (const s of priceSels) {
+        const e = document.querySelector(s);
+        if (e && e.textContent.trim()) { priceText = e.textContent; break; }
+    }
+    const price = parsePrice(priceText);
+
+    // original_price (strikethrough)
+    let originalText = '';
+    const origSels = [
+        '[data-selector="price-original"]',
+        '[class*="strikethrough"]','[class*="original-price"]',
+        '.wt-text-strikethrough','del',
+    ];
+    for (const s of origSels) {
+        const e = document.querySelector(s);
+        if (e && e.textContent.trim()) { originalText = e.textContent; break; }
+    }
+    const original_price = parsePrice(originalText);
+
+    // discount %
+    let discount = null;
+    const body = document.body.textContent || '';
+    const dm = body.match(/\\b(\\d{1,2})\\s*%\\s*off\\b/i) || body.match(/\\bsave\\s*(\\d{1,2})\\s*%/i);
+    if (dm) { const v = parseInt(dm[1]); if (v>0 && v<100) discount = v; }
+
+    // shop
+    let shop = '';
+    const shopLink = document.querySelector('a[href*="/shop/"]');
+    if (shopLink) {
+        const parts = shopLink.pathname.split('/shop/');
+        if (parts.length > 1) shop = parts[1].split('/')[0];
+    }
+
+    // rating + reviews
+    let rating = null, review_count = null;
+    const ratingLink = document.querySelector('a[href*="#reviews"]');
+    if (ratingLink) {
+        const m = ratingLink.textContent.match(/([\\d.]+)\\s*\\(([\\d,]+)\\)/);
+        if (m) { rating = parseFloat(m[1]); review_count = parseInt(m[2].replace(/,/g,'')); }
+    }
+    if (!rating) {
+        const ariaEl = document.querySelector('[aria-label*="star"]');
+        if (ariaEl) {
+            const aria = ariaEl.getAttribute('aria-label') || '';
+            const m1 = aria.match(/([\\d.]+)\\s+star/);
+            const m2 = aria.match(/(\\d[\\d,]*)\\s+review/);
+            if (m1) rating = parseFloat(m1[1]);
+            if (m2 && !review_count) review_count = parseInt(m2[1].replace(/,/g,''));
+        }
+    }
+
+    // badge
+    let badge = null;
+    const bm = body.match(/\\b(Bestseller|Star Seller|Popular now|Etsy's Pick)\\b/);
+    if (bm) badge = bm[1];
+
+    // free shipping
+    const free_shipping = /FREE shipping/i.test(body);
+
+    return {
+        title, price, original_price, discount,
+        shop_name: shop, rating, review_count, badge, free_shipping,
+    };
+}
+"""
+
+# Legacy alias (kept for diff churn) — unused by new direct-URL flow
 SEARCH_EXTRACT_JS = """
 (maxItems) => {
     const clean = s => s ? s.replace(/\\s+/g, ' ').trim() : '';
@@ -371,12 +476,13 @@ async def handle_captcha(page: Page) -> bool:
 
 async def crawl_all(targets: list[dict], dsn: str):
     """
-    Sequential crawl: for each internal listing, search Etsy by its listing_id
-    (anti-bot friendly — same path as market_batch_scraper.scrape_search),
-    find its card in the result set, upsert into listing_extense.
+    Sequential crawl: open each internal listing's URL directly in real Chrome,
+    human-scroll, then extract via DETAIL_EXTRACT_JS. Success is detected by
+    presence of <h1> + title in the returned JSON (positive signal — the legacy
+    is_blocked check false-positives on every listing page).
     """
     total_upserted = 0
-    total_missed   = 0
+    total_failed   = 0
 
     launch_chrome()
     print("[>] Waiting 5s for Chrome to settle...")
@@ -400,57 +506,47 @@ async def crawl_all(targets: list[dict], dsn: str):
         try:
             for idx, row in enumerate(targets, 1):
                 lid = row["listing_id"]
-                search_url = f"https://www.etsy.com/search?q={lid}&currency=USD"
-                print(f"  [{idx}/{len(targets)}] ID:{lid} -> search")
+                url = row.get("url") or f"https://www.etsy.com/listing/{lid}"
+                print(f"  [{idx}/{len(targets)}] ID:{lid} -> {url}")
 
                 try:
-                    await page.goto(search_url, wait_until="domcontentloaded", timeout=NAV_TIMEOUT_MS)
+                    await page.goto(url, wait_until="domcontentloaded", timeout=NAV_TIMEOUT_MS)
                     await asyncio.sleep(random.uniform(RENDER_WAIT_MIN, RENDER_WAIT_MAX))
                 except Exception as e:
                     print(f"  [{idx}] Navigation failed: {e}")
+                    total_failed += 1
                     continue
-
-                # Wait for results cards; if not present, then check for real block.
-                has_cards = await wait_for_listings(page)
-                if not has_cards:
-                    try:
-                        _t = (await page.title())[:80]; _u = page.url
-                    except Exception:
-                        _t = _u = "?"
-                    print(f"  [{idx}] No cards loaded — url={_u!r} title={_t!r}")
-                    if await is_blocked(page):
-                        ok = await handle_captcha(page)
-                        if not ok:
-                            print(f"  [{idx}] Blocked — skipping.")
-                            continue
-                    else:
-                        print(f"  [{idx}] Empty result page — skipping.")
-                        continue
 
                 await simulate_scroll(page)
 
                 try:
-                    cards = await page.evaluate(SEARCH_EXTRACT_JS, MAX_ITEMS) or []
+                    data = await page.evaluate(DETAIL_EXTRACT_JS)
                 except Exception as e:
                     print(f"  [{idx}] JS extract failed: {e}")
+                    total_failed += 1
                     continue
 
-                # find own card in results
-                own = next((c for c in cards if str(c.get("listing_id")) == str(lid)), None)
-                if not own:
-                    total_missed += 1
-                    print(f"  [{idx}] Not found in {len(cards)} cards — skipping.")
-                else:
-                    item = dict(own)
-                    item["listing_id"] = lid
-                    item["url"] = item.get("url") or row.get("url")
-                    item["category"] = row.get("category")
-                    # adapt key names to upsert_extense() schema
-                    item["shop"]         = item.get("shop_name")
-                    item["rating_score"] = item.get("rating")
-                    n = upsert_extense(dsn, [item])
-                    total_upserted += n
-                    print(f"  [{idx}] Upserted {n} for {lid}  rank_in_results={item.get('tag_ranking')}  (total {total_upserted})")
+                if not data or not data.get("title"):
+                    try:
+                        _t = (await page.title())[:80]; _u = page.url
+                    except Exception:
+                        _t = _u = "?"
+                    print(f"  [{idx}] No H1/title — listing closed or blocked. url={_u!r} title={_t!r}")
+                    total_failed += 1
+                    continue
+
+                item = dict(data)
+                item["listing_id"]   = lid
+                item["url"]          = url
+                item["category"]     = row.get("category")
+                item["shop"]         = item.get("shop_name")
+                item["rating_score"] = item.get("rating")
+                item["is_ad"]        = False
+                item["tag_ranking"]  = None
+
+                n = upsert_extense(dsn, [item])
+                total_upserted += n
+                print(f"  [{idx}] Upserted {n} for {lid}  price={item.get('price')} disc={item.get('discount')} shop={item.get('shop')!r}  (total {total_upserted})")
 
                 if idx < len(targets):
                     delay = random.uniform(DELAY_MIN, DELAY_MAX)
@@ -459,7 +555,7 @@ async def crawl_all(targets: list[dict], dsn: str):
         finally:
             await browser.close()
 
-    print(f"\n[summary] upserted={total_upserted}  not_found_in_search={total_missed}")
+    print(f"\n[summary] upserted={total_upserted}  failed={total_failed}")
     return total_upserted
 
 
