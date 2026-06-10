@@ -537,6 +537,48 @@
             background: rgba(255, 109, 59, 0.2);
         }
 
+        /* Download / QR */
+        .download-card {
+            display: flex;
+            align-items: center;
+            background: #1c1e2e;
+            border-radius: 18px;
+            padding: 24px;
+            gap: 20px;
+            margin-bottom: 60px;
+        }
+
+        .download-qr {
+            width: 110px;
+            height: 110px;
+            border-radius: 12px;
+            background: #fff;
+            padding: 6px;
+            flex-shrink: 0;
+            object-fit: contain;
+        }
+
+        .download-text h3 {
+            font-family: var(--font-title);
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+            color: var(--accent-cyan);
+            margin-bottom: 4px;
+        }
+
+        .download-text p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        @media (max-width: 480px) {
+            .download-card {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
         .card-hard h3 {
             color: #FF6D3B;
         }
@@ -636,6 +678,14 @@
                     </div>
                 </article>
             </div>
+
+            <div class="download-card">
+                <img src="QR-app-android.png" alt="QR code to download Starship Math on Android" class="download-qr">
+                <div class="download-text">
+                    <h3 id="downloadTitle">GET IT ON ANDROID</h3>
+                    <p id="downloadDesc">Scan the QR code to download Starship Math from Google Play.</p>
+                </div>
+            </div>
         </section>
 
         <!-- Hidden section for AI Agent Indexing (GEO) -->
@@ -675,7 +725,9 @@
                 mediumDesc: "Catch the right operator tiles falling from space",
                 hardTitle: "Mars",
                 hardDesc: "Connect-the-dots puzzle · trace the path 1→N",
-                poweredBy: "Powered by Fin Data Solution"
+                poweredBy: "Powered by Fin Data Solution",
+                downloadTitle: "GET IT ON ANDROID",
+                downloadDesc: "Scan the QR code to download Starship Math from Google Play."
             },
             es: {
                 pageTitle: "Starship Math - Aventura Matemática Cósmica",
@@ -690,7 +742,9 @@
                 mediumDesc: "Atrapa los operadores correctos que caen del espacio",
                 hardTitle: "Marte",
                 hardDesc: "Une los puntos · traza el camino del 1 al N",
-                poweredBy: "Impulsado por Fin Data Solution"
+                poweredBy: "Impulsado por Fin Data Solution",
+                downloadTitle: "DISPONIBLE EN ANDROID",
+                downloadDesc: "Escanea el código QR para descargar Starship Math desde Google Play."
             },
             ptBR: {
                 pageTitle: "Starship Math - Aventura Matemática Cósmica",
@@ -705,7 +759,9 @@
                 mediumDesc: "Pegue os operadores certos caindo do espaço",
                 hardTitle: "Marte",
                 hardDesc: "Ligue os pontos · trace o caminho de 1 a N",
-                poweredBy: "Desenvolvido por Fin Data Solution"
+                poweredBy: "Desenvolvido por Fin Data Solution",
+                downloadTitle: "DISPONÍVEL NO ANDROID",
+                downloadDesc: "Escaneie o código QR para baixar o Starship Math na Google Play."
             },
             fil: {
                 pageTitle: "Starship Math - Pakikipagsapalarang Math",
@@ -720,7 +776,9 @@
                 mediumDesc: "Saluhin ang tamang operator mula sa kalawakan",
                 hardTitle: "Mars",
                 hardDesc: "Pagdugtungin ang mga tuldok 1→N",
-                poweredBy: "Powered by Fin Data Solution"
+                poweredBy: "Powered by Fin Data Solution",
+                downloadTitle: "AVAILABLE SA ANDROID",
+                downloadDesc: "I-scan ang QR code para i-download ang Starship Math sa Google Play."
             },
             hi: {
                 pageTitle: "Starship Math - ब्रह्मांडीय गणित साहसिक",
@@ -735,7 +793,9 @@
                 mediumDesc: "अंतरिक्ष से गिरते सही ऑपरेटर पकड़ें",
                 hardTitle: "मंगल",
                 hardDesc: "बिंदु जोड़ें · 1 से N तक का रास्ता बनाएं",
-                poweredBy: "Fin Data Solution द्वारा संचालित"
+                poweredBy: "Fin Data Solution द्वारा संचालित",
+                downloadTitle: "एंड्रॉइड पर उपलब्ध",
+                downloadDesc: "Google Play से Starship Math डाउनलोड करने के लिए QR कोड स्कैन करें।"
             },
             vi: {
                 pageTitle: "Starship Math - Phiêu Lưu Toán Học Vũ Trụ",
@@ -750,7 +810,9 @@
                 mediumDesc: "Bắt các toán tử rơi từ không gian",
                 hardTitle: "Sao Hỏa",
                 hardDesc: "Nối điểm · vẽ đường đi từ 1→N",
-                poweredBy: "Cung cấp bởi Fin Data Solution"
+                poweredBy: "Cung cấp bởi Fin Data Solution",
+                downloadTitle: "TẢI VỀ TRÊN ANDROID",
+                downloadDesc: "Quét mã QR để tải Starship Math từ Google Play."
             }
         };
 
@@ -784,6 +846,8 @@
             document.getElementById('hardTitle').innerText = t.hardTitle;
             document.getElementById('hardDesc').innerText = t.hardDesc;
             document.getElementById('poweredBy').innerText = t.poweredBy;
+            document.getElementById('downloadTitle').innerText = t.downloadTitle;
+            document.getElementById('downloadDesc').innerText = t.downloadDesc;
 
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.lang === lang);
